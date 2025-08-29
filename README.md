@@ -39,5 +39,6 @@ Discuss what you need to develop this project. This includes background informat
 
 
 [Joo Cha](https://github.com/tuh14497) •
+[Jude Piacentino](https://github.com/JudeP2) •
 
 </div>
