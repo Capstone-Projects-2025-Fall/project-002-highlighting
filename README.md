@@ -41,5 +41,6 @@ Discuss what you need to develop this project. This includes background informat
 [Joo Cha](https://github.com/tuh14497) •
 [Jude Piacentino](https://github.com/JudeP2) •
 [Hemanth Kamana](https://github.com/123GetBuckets) •
+[Kevin Hitch](https://github.com/tun72869) •
 
 </div>
