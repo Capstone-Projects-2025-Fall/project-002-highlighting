@@ -4,12 +4,30 @@ sidebar_position: 5
 
 # Use-case descriptions
 
-## Use Case 1 - Predicting answers
-A parent would ask their child a question and the AAC device would pick up the question through audio input (speech to text) and then give the child a display of suggestive options to form a sentence that would function as a relevant response. 
+## Use Case 1 - Predicting answers 
+<i>As a user, it is important that the device can display options to me based on what is being spoken by the other person in conversation </i>
+1. A parent asks their child a question
+2. AAC device would pick up the question through audio input (speech to text)
+3. Displays suggestive options to form a sentence that would function as a relevant response. 
+4. Child's mom could ask what the child wants for dinner with the board actively listening
+5. Board will highlight several food word options to choose from
+
 ## Use Case 2 - Use context to highlight suggestions
-A child could try to form a sentence using the board by having predictive texts given i.e. first word could be choices like pronouns and then the following word could be something like a verb which follows up to another subject.
-## Use Case 3 - contextualized prediciting based on relationships 
-When a child goes home from school, the AI model will be able to predict words based on who they are speaking to using context from previous conversations and communication styles.
+<i>As a user it is important that the board can provide me relevant options to what I’ve put in the board already</i>
+1. A child tries to form a sentence using the AAC board
+2. Predictive texts are given i.e. first word could be choices like pronouns and then the following word could be something like a verb which follows up to another subject.
+3. Predictive text highlights relevant words regarding to where user is in sentence making process, 
+4. Child putting “I” in first in the AAC board
+5. Board highlight words like need or want
+6. Child picks one of these words then board highlight words like food or toys or words that might be relevant to the sentence
+
+
+
+## Use Case 3 - Contextualized contact based predicting
+<i>As a user it is important that based on who is speaking relevant options will be provided based on what is commonly talked about in conversations with them</i>
+1. The AI model will predict words based on who they are speaking to using context from previous conversations and communication styles.
+2. Child using AAC board with their mom might highlight more relevant words like regarding to wanting food
+3. Child using AAC board with friends might highlight more relevant words to things like playing games
 
 ## Use Case 4 - Toggling microphone when not in a conversation
 <i>As a user, it is important that I can toggle on and off the microphone when I am not in a conversation to prevent false postitives and potential secruity violations.</i>
