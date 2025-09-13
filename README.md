@@ -44,6 +44,8 @@ Discuss what you need to develop this project. This includes background informat
 [Hemanth Kamana](https://github.com/123GetBuckets) •
 [Kevin Hitch](https://github.com/tun72869) •
 [Sley Chery](https://github.com/SleyChery) •
+[Anim Ohene](https://github.com/tun66280) •
+
 
 </div>
 
