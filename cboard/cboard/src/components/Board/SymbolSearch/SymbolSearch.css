@@ -1,0 +1,86 @@
+.react-autosuggest__container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.react-autosuggest__input {
+  width: calc(100% - 16px);
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 4px;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: 'Helvetica', 'Arial', sans-serif;
+  border: 0;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.25);
+  outline: 0;
+}
+
+.react-autosuggest__input::placeholder {
+  color: rgba(255, 255, 255, 0.26);
+}
+
+.react-autosuggest__clear {
+  margin-right: 1em;
+}
+
+.react-autosuggest__suggestions-container {
+  position: absolute;
+  top: 120px;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  z-index: 1;
+  color: #222;
+  background: #fff;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 600px) {
+  .react-autosuggest__suggestions-container {
+    top: 128px;
+  }
+}
+
+.react-autosuggest__suggestions-container--open {
+  height: fit-content;
+}
+
+.react-autosuggest__suggestions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  background: rgba(63, 81, 181, 0.2);
+}
+
+.react-autosuggest__suggestion {
+  width: 25%;
+  height: 100px;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+@media (min-width: 600px) {
+  .react-autosuggest__suggestion {
+    width: 20%;
+  }
+}
+
+.SymbolSearch__Suggestion {
+  height: 100%;
+  width: 100%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.SymbolSearch__Suggestion--highlighted {
+  border-color: #9d3fb5;
+}

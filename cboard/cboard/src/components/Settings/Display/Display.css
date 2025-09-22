@@ -1,0 +1,14 @@
+.Display .Display__Options .Display__Options__Row {
+  display: flex;
+  flex-direction: row;
+}
+
+.Display .Display__Options .Display__Options__Row label {
+  display: flex;
+  flex-direction: column-reverse;
+  margin: 0 20px;
+}
+
+.Display__ListItemText {
+  max-width: 75%;
+}

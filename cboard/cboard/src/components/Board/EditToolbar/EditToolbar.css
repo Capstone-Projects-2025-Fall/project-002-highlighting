@@ -1,0 +1,72 @@
+.EditToolbar {
+  position: relative;
+  display: flex;
+  justify-content: space-around;
+  height: 40px;
+  color: #fff;
+  background-color: #757575;
+  white-space: nowrap;
+}
+
+.EditToolbar button {
+  color: #fff;
+}
+
+.EditToolbar__group {
+  display: flex;
+  flex: 1 1;
+  align-items: center;
+}
+
+.EditToolbar .EditToolbar__Spinner {
+  color: white;
+  margin: 0;
+}
+
+.EditToolbar .EditToolbar__BoardTitle {
+  display: flex;
+  order: 2;
+  align-items: center;
+  justify-content: center;
+  top: 0;
+  right: 0;
+  height: 100%;
+  margin: 0;
+  font-size: 1.14rem;
+  font-weight: 400;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.EditToolbar .EditToolbar__BoardTitle.logged-in {
+  cursor: pointer;
+}
+
+.EditToolbar--selecting {
+  background-color: #2196f3;
+}
+
+.EditToolbar__group--start {
+  justify-content: flex-start;
+}
+
+.EditToolbar__group--start--button {
+  justify-content: flex-start;
+  margin-right: 5px;
+}
+
+.EditToolbar__group--end {
+  order: 2;
+  justify-content: flex-end;
+}
+@media (max-width: 480px) {
+  .EditToolbar .EditToolbar__BoardTitle {
+    display: none;
+  }
+  .SelectedCounter {
+    display: none;
+  }
+  .EditToolbar__group .MuiIconButton-root {
+    padding: 9px;
+  }
+}
