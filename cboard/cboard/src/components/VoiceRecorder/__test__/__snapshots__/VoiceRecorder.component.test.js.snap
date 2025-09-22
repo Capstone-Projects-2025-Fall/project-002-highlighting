@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`VoiceRecorder tests default renderer 1`] = `
+<VoiceRecorder
+  intl={
+    Object {
+      "formatMessage": [Function],
+    }
+  }
+  onChange={[MockFunction]}
+  onClick={[MockFunction]}
+  src="string"
+  user={
+    Object {
+      "email": "test@qa.com",
+    }
+  }
+/>
+`;

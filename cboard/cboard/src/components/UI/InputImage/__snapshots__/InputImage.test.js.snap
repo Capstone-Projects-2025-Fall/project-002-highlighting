@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`InputImage tests default render  1`] = `ReactWrapper {}`;

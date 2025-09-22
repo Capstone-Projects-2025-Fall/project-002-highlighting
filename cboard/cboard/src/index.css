@@ -1,0 +1,37 @@
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+html {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  touch-action: manipulation;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  height: 100%;
+}
+
+.adSense__test__marker {
+  border: 3px inset var(--swiper-theme-color);
+}
+.adSense__test__marker::before {
+  content: 'Space for ads';
+  display: flex;
+  justify-content: center;
+  padding: 2em;
+}

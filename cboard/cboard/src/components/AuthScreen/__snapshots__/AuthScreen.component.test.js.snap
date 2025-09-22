@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AuthScreen tests default renderer 1`] = `
+<AuthScreen
+  history={
+    Object {
+      "goBack": [Function],
+    }
+  }
+  intl={
+    Object {
+      "formatMessage": [Function],
+    }
+  }
+/>
+`;

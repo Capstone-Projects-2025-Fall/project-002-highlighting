@@ -1,0 +1,15 @@
+.Import__ButtonContainer {
+  position: relative;
+}
+
+.Import__ListItem {
+  max-height: 100%;
+}
+
+.Import__ListItemText {
+  max-width: 75%;
+}
+
+.Import__ButtonContainer--spinner {
+  vertical-align: middle;
+}

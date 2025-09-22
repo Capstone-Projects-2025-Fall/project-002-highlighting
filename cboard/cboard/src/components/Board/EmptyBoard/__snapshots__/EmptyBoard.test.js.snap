@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`EmptyBoard tests default renderer 1`] = `
+<EmptyBoard
+  classes={
+    Object {
+      "background": "EmptyBoard-background-3",
+      "icon": "EmptyBoard-icon-1",
+      "text": "EmptyBoard-text-2",
+    }
+  }
+/>
+`;

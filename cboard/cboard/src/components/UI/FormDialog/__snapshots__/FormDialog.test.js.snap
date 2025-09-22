@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FormDialog tests default renderer 1`] = `null`;
+
+exports[`FormDialog tests props renderer 1`] = `null`;
