@@ -1,0 +1,17 @@
+name: Test Application
+
+on:
+  push:
+    branches: ["**"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GIT_USER: ${{secrets.USER}}
+      GIT_PASS: ${{secrets.TOKEN}}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test Frontend
+        run: cd frontend && npm i && npm run test
+      - name: Test Backend
+        run: cd backend && pip install -r requirements.txt && python -m spacy download en_core_web_md && pytest --cov=src
