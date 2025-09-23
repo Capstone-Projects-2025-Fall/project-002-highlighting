@@ -12,6 +12,6 @@ export type ModalProviderProps = { children: React.ReactNode };
  * @returns Provider with children rendered
  */
 export default function ModalProvider(props: ModalProviderProps) {
-    const [isOpen, toggleModal] = useModal(false);
+    const [isOpen, toggleModal] = useModal(true);
     return <ManualModeModalContext.Provider value={[isOpen, toggleModal]}>{props.children}</ManualModeModalContext.Provider>;
 }
