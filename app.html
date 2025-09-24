@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>React Project</title>
+        
+        <!-- Reference the React CDNs (Content Delivery Networks, basically just a hosted web resource) -->
+        <script crossorigin src='https://unpkg.com/react@16/umd/react.development.js' ></script>
+        <script crossorigin src='https://unpkg.com/react-dom@16/umd/react-dom.development.js' ></script>
+        <!-- Socket.IO client from CDN -->
+        <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+        <!-- By referencing the Babel CDN, we can use JSX (HTML tags in JavaScript) --> 
+        <script crossorigin src='https://unpkg.com/babel-standalone@6/babel.min.js' ></script>  
+
+    </head>
+    <body>
+        <h3>AJAX - Update State Using useState (new)</h3>
+        <p>
+            DEMO audio using babel since we havent decided on aac board device
+        </p>
+        <div id="root"></div>
+        
+        <script type="text/babel">
+            
+          
+                       
+            const Audio = () => {
+               const [record, setRecording] = React.useState(false);
+               const [transcribe, setTranscription] = React.useState(false);
+
+                let mediaRecorder;
+
+                const startRecording = async () => {
+
+                    navigator.mediaDevices.enumerateDevices().then(devices => {
+                    console.log(devices);
+                    });
+                    setRecording(true);
+                    let stream = null;
+
+                    try{
+
+                        console.log("Asking for mic permission...");
+
+                        stream = await navigator.mediaDevices.getUserMedia({audio: true});
+                        // Resume here after user clicks allow
+                        console.log("Got mic stream!", stream);
+
+                    }
+
+                    catch(err) {
+                        console.log("Failed to get stream:",err);
+                    }
+
+
+
+                };
+
+
+
+                const stopRecording = () => {
+                    setRecording(false);
+                }
+                //const socket = io("https://localhost:5500");
+
+             /*   React.useEffect( () =>{
+                    
+                    socket.on("connect", () => {
+                        console.log("Connected:", socket.id);
+                    });
+
+
+
+                },
+                []);
+            */
+                return (
+                    <div>
+                        <h2>Hello with Socket.io</h2>
+                        <button onClick = {startRecording}>Start</button>
+                         <button onClick = {stopRecording}>Stop</button>
+                         <p>Recording: {record ? "Yes" : "No"}</p>
+                        
+                    </div>
+                    
+
+                );
+            }; 
+
+            ReactDOM.render(
+                <Audio/>,
+                document.getElementById("root")
+            );
+    
+        </script>
+    </body>
+</html>
