@@ -1,0 +1,75 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+env
+
+# testing
+coverage
+.coverage
+
+# next.js
+.next
+out
+
+# production
+build/*
+
+# misc
+.DS_Store
+*.pem
+.idea
+.vscode
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Generated files
+.docusaurus
+
+# Misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# service worker outputs
+frontend/public/sw.js
+frontend/public/sw.js.map
+frontend/public/workbox-*.js
+frontend/public/workbox-*.js.map
+frontend/.swc
+
+# docs - obsidian
+.obsidian
+
+# docs - typedoc
+documentation/static/typedoc
+
+# python
+venv/
+__pycache__
+.vscode
+.pytest_cache
+
+# terraform 
+.terraform
+.terraform.lock.hcl
+*.tfvars
+
+# Hidden secrets
+.env.local
+trash
