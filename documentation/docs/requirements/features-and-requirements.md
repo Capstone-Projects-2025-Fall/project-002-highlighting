@@ -12,10 +12,6 @@ sidebar_position: 4
     - pronouns are highlighted in yellow
     - nouns are highlighted in orange
 
-### User-Intitated Suggestions 
-* 
-
-
 ### Speech Driven Suggestions
 * The system must  support  speech recogntion
 * The board **listens** to context and populates replies automatically 
