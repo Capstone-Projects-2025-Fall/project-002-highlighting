@@ -1,97 +1,137 @@
-
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>React Project</title>
-        
-        <!-- Reference the React CDNs (Content Delivery Networks, basically just a hosted web resource) -->
-        <script crossorigin src='https://unpkg.com/react@16/umd/react.development.js' ></script>
-        <script crossorigin src='https://unpkg.com/react-dom@16/umd/react-dom.development.js' ></script>
-        <!-- Socket.IO client from CDN -->
-        <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-        <!-- By referencing the Babel CDN, we can use JSX (HTML tags in JavaScript) --> 
-        <script crossorigin src='https://unpkg.com/babel-standalone@6/babel.min.js' ></script>  
 
-    </head>
-    <body>
-        <h3>AJAX - Update State Using useState (new)</h3>
-        <p>
-            DEMO audio using babel since we havent decided on aac board device
-        </p>
-        <div id="root"></div>
-        
-        <script type="text/babel">
+<head>
+    <title>Speech and transcription demo</title>
+
+    <!-- Reference the React CDNs (Content Delivery Networks, basically just a hosted web resource) -->
+    <script crossorigin src='https://unpkg.com/react@16/umd/react.development.js'></script>
+    <script crossorigin src='https://unpkg.com/react-dom@16/umd/react-dom.development.js'></script>
+    <!-- Socket.IO client from CDN -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- By referencing the Babel CDN, we can use JSX (HTML tags in JavaScript) -->
+    <script crossorigin src='https://unpkg.com/babel-standalone@6/babel.min.js'></script>
+
+</head>
+
+<body>
+    <h3>AJAX - Update State Using useState (new)</h3>
+    <p>
+        DEMO audio using babel scripts since we havent decided on aac board device
+    </p>
+    <div id="root"></div>
+
+    <script type="text/babel">
+
+
+        /* This React component creates a live audio stream, records the audio, then sends it to 
+        node.js backend to be transcribed by whisper.ai via a websocket. Upon transcription the server sends 
+        trasncribed text to be processed by this React component. */
+
+        const AudioTranscription = () => {
+
+            // Create record state variable. Can be flipped on and off by clicking ona button
+            const [record, setRecording] = React.useState(false);
+            // coming soon...
+            const [transcribe, setTranscription] = React.useState(false);
+            // Declare(not yet instiated) variable that will record audio stream 
+            const [audioURL, setaudioURL] = React.useState(null);
+            const chunksRef = React.useRef([]); // store audio chunks
+            const mediaRecorderRef = React.useRef(null);
             
-          
-                       
-            const Audio = () => {
-               const [record, setRecording] = React.useState(false);
-               const [transcribe, setTranscription] = React.useState(false);
-
-                let mediaRecorder;
-
-                const startRecording = async () => {
-
-                    navigator.mediaDevices.enumerateDevices().then(devices => {
-                    console.log(devices);
-                    });
-                    setRecording(true);
-                    let stream = null;
-
-                    try{
-
-                        console.log("Asking for mic permission...");
-
-                        stream = await navigator.mediaDevices.getUserMedia({audio: true});
-                        // Resume here after user clicks allow
-                        console.log("Got mic stream!", stream);
-
-                    }
-
-                    catch(err) {
-                        console.log("Failed to get stream:",err);
-                    }
+            React.useEffect(()=> {
+            if (navigator.mediaDevices) {
 
 
 
-                };
+                // creates stream. You should get a pop up on your browser on whether or not to allow streaming
+                console.log("Asking for mic permission...");
+                navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+                    // Resume here after user clicks allow 
+                    console.log("Got mic stream!", stream);
+                    // create recorder
+                    mediaRecorderRef.current = new MediaRecorder(stream);
+
+                    let chunks = [];
 
 
 
-                const stopRecording = () => {
-                    setRecording(false);
+                    mediaRecorderRef.current.ondataavailable = (e) => {
+                        chunksRef.current.push(e.data);
+                    };
+
+
+
+                    mediaRecorderRef.current.onstop = (e) => {
+                        console.log("Data available after MediaRecorder.stop() called");
+                        const blob = new Blob(chunksRef.current, { type: "audio/ogg; codecs=opus" });
+                        chunksRef.current = [];
+                        setaudioURL(URL.createObjectURL(blob));
+                    };
+
+
+                }).catch((err) => {
+                    console.error("The following error occured: ", err);
                 }
-                //const socket = io("https://localhost:5500");
-
-             /*   React.useEffect( () =>{
-                    
-                    socket.on("connect", () => {
-                        console.log("Connected:", socket.id);
-                    });
-
-
-
-                },
-                []);
-            */
-                return (
-                    <div>
-                        <h2>Hello with Socket.io</h2>
-                        <button onClick = {startRecording}>Start</button>
-                         <button onClick = {stopRecording}>Stop</button>
-                         <p>Recording: {record ? "Yes" : "No"}</p>
-                        
-                    </div>
-                    
-
                 );
-            }; 
 
-            ReactDOM.render(
-                <Audio/>,
-                document.getElementById("root")
+            }},[]);
+            // Start recording functionality
+            const startRecording = () => {
+                setRecording(true);
+                //Check if browser sees any audio-in devices(if you have no mic, no stream object will be created)
+                navigator.mediaDevices.enumerateDevices().then(devices => {
+                    // Print whether your device has a mic or not(f12)
+                    console.log(devices);
+                });
+
+
+
+                mediaRecorderRef.current.start(4000);
+                // print mediaRecorder state
+                console.log("recorder state", mediaRecorderRef.current.state);
+                console.log("recorder started");
+
+
+
+            };
+
+            const stopRecording = () => {
+                setRecording(false);
+                mediaRecorderRef.current.stop();
+                console.log(mediaRecorderRef.current.state);
+                console.log("recorder stopped");
+
+            };
+
+
+
+
+            return (
+                <div>
+                    <h2>Hello with Socket.io</h2>
+                    <button onClick={startRecording} >Start</button>
+                    <button onClick={stopRecording}>Stop</button>
+                    <p>Recording: {record ? "Yes" : "No"}</p>
+                    {audioURL && (
+                        <div>
+                            <p>Click to listen:</p>
+                            <audio src={audioURL} controls />
+                        </div>
+                    )}
+
+                </div>
+
+
             );
-    
-        </script>
-    </body>
+        };
+
+        ReactDOM.render(
+            <AudioTranscription />,
+            document.getElementById("root")
+        );
+
+    </script>
+</body>
+
 </html>
