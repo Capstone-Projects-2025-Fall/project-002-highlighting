@@ -30,52 +30,61 @@
 
         const AudioTranscription = () => {
 
+            const socket = io("http://localhost:5000");
+
             // Create record state variable. Can be flipped on and off by clicking ona button
             const [record, setRecording] = React.useState(false);
             // coming soon...
-            const [transcribe, setTranscription] = React.useState(false);
+            const [transcript, setTranscript] = React.useState("");
             // Declare(not yet instiated) variable that will record audio stream 
             const [audioURL, setaudioURL] = React.useState(null);
-            const chunksRef = React.useRef([]); // store audio chunks
-            const mediaRecorderRef = React.useRef(null);
-            
-            React.useEffect(()=> {
-            if (navigator.mediaDevices) {
+            const chunksRef = React.useRef([]); // store audio chunks (UseRef ensures no re-render when var changes)
+            const mediaRecorderRef = React.useRef(null); // declare mediaRecorder var
+            // Request mic permision 
+            React.useEffect(() => {
+                if (navigator.mediaDevices) {
 
 
 
-                // creates stream. You should get a pop up on your browser on whether or not to allow streaming
-                console.log("Asking for mic permission...");
-                navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-                    // Resume here after user clicks allow 
-                    console.log("Got mic stream!", stream);
-                    // create recorder
-                    mediaRecorderRef.current = new MediaRecorder(stream);
+                    // creates stream. You should get a pop up on your browser on whether or not to allow streaming
+                    console.log("Asking for mic permission...");
+                    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+                        // Resume here after user clicks allow 
+                        console.log("Got mic stream!", stream);
+                        // create recorder
+                        mediaRecorderRef.current = new MediaRecorder(stream);
 
-                    let chunks = [];
-
-
-
-                    mediaRecorderRef.current.ondataavailable = (e) => {
-                        chunksRef.current.push(e.data);
-                    };
+                        let chunks = [];
 
 
+                        // event that triggers when recorder picks up audio
+                        mediaRecorderRef.current.ondataavailable = (e) => {
+                            if (e.data.size > 0) {
 
-                    mediaRecorderRef.current.onstop = (e) => {
-                        console.log("Data available after MediaRecorder.stop() called");
-                        const blob = new Blob(chunksRef.current, { type: "audio/ogg; codecs=opus" });
-                        chunksRef.current = [];
-                        setaudioURL(URL.createObjectURL(blob));
-                    };
+                                e.data.arrayBuffer().then((buffer) => {
+                                    socket.emit("audio-chunk", buffer);
+                                });
+                            }
+                            chunksRef.current.push(e.data);
+                        };
 
 
-                }).catch((err) => {
-                    console.error("The following error occured: ", err);
+                        // event that triggers when Recorder is stopped
+                        mediaRecorderRef.current.onstop = (e) => {
+                            console.log("Data available after MediaRecorder.stop() called");
+                            const blob = new Blob(chunksRef.current, { type: "audio/ogg; codecs=opus" });
+                            chunksRef.current = [];
+                            setaudioURL(URL.createObjectURL(blob));
+                        };
+
+
+                    }).catch((err) => {
+                        console.error("The following error occured: ", err);
+                    }
+                    );
+
                 }
-                );
-
-            }},[]);
+            }, []);
             // Start recording functionality
             const startRecording = () => {
                 setRecording(true);
@@ -86,8 +95,8 @@
                 });
 
 
-
-                mediaRecorderRef.current.start(4000);
+                // start recorder
+                mediaRecorderRef.current.start(3000);
                 // print mediaRecorder state
                 console.log("recorder state", mediaRecorderRef.current.state);
                 console.log("recorder started");
@@ -95,7 +104,7 @@
 
 
             };
-
+            // turn off recorder
             const stopRecording = () => {
                 setRecording(false);
                 mediaRecorderRef.current.stop();
@@ -104,15 +113,22 @@
 
             };
 
+            React.useEffect(() => {
+                socket.on("transcript", (text) => {
+                    setTranscript((prev) => prev + " " + text);
+                });
+            }, []);
 
 
 
+            // return  DOM element to be injected into root id div
             return (
                 <div>
                     <h2>Hello with Socket.io</h2>
                     <button onClick={startRecording} >Start</button>
                     <button onClick={stopRecording}>Stop</button>
                     <p>Recording: {record ? "Yes" : "No"}</p>
+                    <p>Transcript: {transcript}</p>
                     {audioURL && (
                         <div>
                             <p>Click to listen:</p>
@@ -125,6 +141,7 @@
 
             );
         };
+
 
         ReactDOM.render(
             <AudioTranscription />,
