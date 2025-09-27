@@ -7,64 +7,73 @@ import fs from "fs";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-
+// loads variable from .env file into process.env
 dotenv.config();
 import { File } from "node:buffer";
 globalThis.File = File;
 
 // init
+//create expresss application object
 const app = express();
+//create http server, attaching express app to handle request
 const server = http.createServer(app);
+// create socket.io server, and binds it to http server
 const io = new Server(server, {
   cors: { origin: "*" },
 });
 
-// resolve __dirname for ES modules
+// resolve __dirname for ES modules //??
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // serve static files
 app.use(express.static(__dirname));
 
-// main route -> send app.html
+// main route -> send app.html // ??
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "app.html"));
 });
 
+// Checks if API key is defined else exit
 if (!process.env.OPENAI_API_KEY) {
   console.error(" Missing OPENAI_API_KEY in environment");
   process.exit(1);
 }
 console.log("API key loaded? Yes");
-
+// Load API key from .env file
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// server listens on port 5000
 server.listen(5000, () => {
   console.log("Server running on http://localhost:5000");
 });
 
-// -----------------------------
-// socket connection
-// -----------------------------
+// Listen for new web socket connection. logs when a client connects
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
   let ffmpeg;
+  // allocate new empty aiudo buffer
   let audioBuffer = Buffer.alloc(0);
+  // flag to prevent overlapping transcription
   let isProcessing = false;
+  //sequential number for temp file names //
   let fileCounter = 0;
+  // tracks consecutive empty inputs
   let silenceCounter = 0;
-  const CHUNK_DURATION = 4000; // Process every 4 seconds
+  // Process every 4 seconds
+  const CHUNK_DURATION = 4000; 
 
+  // FFmpeg converts webm files into wav files
   const initializeFFmpeg = () => {
     ffmpeg = spawn("ffmpeg", [
-      "-f", "webm",
-      "-i", "pipe:0",
+      "-f", "webm", // input format : webm
+      "-i", "pipe:0", // input goes into stdin
       "-ar", "16000",
       "-ac", "1",
       "-acodec", "pcm_s16le",
-      "-f", "s16le",
-      "pipe:1",
+      "-f", "s16le", // output format raw PCM(what whisper takes in)
+      "pipe:1", //writes output to stdout
     ]);
 
     ffmpeg.stderr.on("data", (data) => {
@@ -79,7 +88,7 @@ io.on("connection", (socket) => {
       console.error("FFmpeg error:", err);
     });
   };
-
+  // intialize ffmpeg process 
   initializeFFmpeg();
 
   // Collect raw PCM data instead of WAV data
@@ -87,6 +96,7 @@ io.on("connection", (socket) => {
     audioBuffer = Buffer.concat([audioBuffer, chunk]);
   });
 
+  // Manually construrct WAV file (wave header + pcm data)
   const createWavFile = (pcmData) => {
     const wavHeader = Buffer.alloc(44);
     const dataSize = pcmData.length;
@@ -113,7 +123,9 @@ io.on("connection", (socket) => {
     return Buffer.concat([wavHeader, pcmData]);
   };
 
+
   const processAudio = async () => {
+    // Skip processing if already busy or audio buffer is too small
     if (isProcessing || audioBuffer.length < 32000) { // Need at least 1 second of audio
       silenceCounter++;
       if (silenceCounter > 3) {
@@ -123,34 +135,37 @@ io.on("connection", (socket) => {
       }
       return;
     }
-    
+    // lock processing
     isProcessing = true;
     silenceCounter = 0;
     
     // Take a chunk of audio (4 seconds worth = 16000 samples/sec * 2 bytes/sample * 4 sec = 128000 bytes)
     const chunkSize = Math.min(audioBuffer.length, 128000);
+    // new buffer that crops referenced buffer(audio buffer) to only 4 seconds of audio
     const pcmChunk = audioBuffer.slice(0, chunkSize);
     
     // Keep the remaining audio for next chunk
     audioBuffer = audioBuffer.slice(chunkSize);
     
+    // Generate a unique filename per chunk
     const filename = `temp_${socket.id}_${Date.now()}_${fileCounter++}.wav`;
     
+    // try creating the wavefile
     try {
       const wavData = createWavFile(pcmChunk);
       fs.writeFileSync(filename, wavData);
       console.log(`Saved ${wavData.length} bytes → ${filename}`);
-
+      // call whisper ai 
       const transcription = await openai.audio.transcriptions.create({
         model: "whisper-1",
-        file: fs.createReadStream(filename),
+        file: fs.createReadStream(filename), // upload the wav file via stream
         language: "en",
         response_format: "json"
       });
       
       console.log("Transcript:", transcription.text);
       socket.emit("transcript", transcription.text);
-      
+      // error handling
     } catch (err) {
       console.error("Transcription error:", err);
       if (err.status === 400) {
@@ -164,10 +179,12 @@ io.on("connection", (socket) => {
     } finally {
       // Clean up temp file
       try {
+        //delete temp file
         fs.unlinkSync(filename);
       } catch (cleanupErr) {
         console.error("Error cleaning up file:", cleanupErr);
       }
+      //reset isProcessing
       isProcessing = false;
     }
   };
