@@ -14,7 +14,7 @@ sidebar_position: 4
 
 ### Speech Driven Suggestions
 * The system must  support  speech recogntion
-* The board **listens** to context and populates replies automatically 
+* The board **listens** to conversational context and highlights relevant picture symbols accordingly
 * The environment is required to have have a microphone on/off toggle feature to respectively enable or disable the systems speech recogntion capability
 
 ## Nonfunctional Requirements
@@ -25,6 +25,6 @@ sidebar_position: 4
 
 
 ### AAC Board Coherence
-* Word tiles must stay in the same place as to not interfere with the users muscle memory
-* Word tiles can be grouped by topic so that specific words can be easily found.
+* Picture symbols must stay in the same place as to not interfere with the users muscle memory
+* Picture symbols can be grouped by topic so that specific words can be easily found.
     - These topics or groups should be included in the attention drawing feature. 
