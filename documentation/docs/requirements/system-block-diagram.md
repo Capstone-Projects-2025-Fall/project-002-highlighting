@@ -6,7 +6,8 @@ sidebar_position: 2
 # System Block Diagram
 
 
-<img width="921" height="1010" alt="System_Block_Diagram" src="documentation\docs\requirements\updatedDiagram.jpg" />
+![updatedDiagram](https://github.com/user-attachments/assets/b447473f-edb8-4f1e-9b94-763201a9a4f8)
+
 
 
 
