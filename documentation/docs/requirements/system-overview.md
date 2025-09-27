@@ -5,7 +5,7 @@ sidebar_position: 1
 # System Overview
 
 ## Project Abstract
-This document proposes an application that aims to replicate the intelligent text prediction found within smartphones into an AAC device. The application will use methods of highlighting to direct the attention of the user of the AAC device. This includes primarily the use of different levels of opacity to draw more attention to specific words that are relevant to the context of conversation. The application will allow the user to use the device's microphone to listen to conversations and highlight relevant words to choose from that best fit the context.
+This application aims to replicate the intelligent text prediction found within smartphones into an AAC device. The application will use methods of highlighting to direct the attention of the user of the AAC device. This includes primarily the use of different levels of opacity to draw more attention to specific words that are relevant to the context of conversation. The application will allow the user to use the device's microphone to listen to conversations and highlight relevant words to choose from that best fit the context.
 
 The goal of this application is to give the user a more efficient time to engage in conversation with others using an AAC device, while not limiting or overloading them with word options to choose from.
 
