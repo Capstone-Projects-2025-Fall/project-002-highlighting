@@ -1,5 +1,0 @@
-export const TAB_INDEXES = {
-  COMMUNICATOR_BOARDS: 0,
-  PUBLIC_BOARDS: 1,
-  MY_BOARDS: 2
-};
