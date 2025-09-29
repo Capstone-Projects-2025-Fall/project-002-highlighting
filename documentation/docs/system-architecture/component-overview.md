@@ -2,7 +2,7 @@
 sidebar_position: 6
 ---
 
-# System Components and Interfaces
+# Component Overview
 ## Client Side (TypeScript)
 ### Responsibilities:
 Captures audio from the user’s microphone.
