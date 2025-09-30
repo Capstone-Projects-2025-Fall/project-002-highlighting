@@ -22,6 +22,8 @@ import LoginPopupProvider from "@/react-state-management/providers/LoginPopupPro
 import useDisableZoom from "@/react-helpers/hooks/useDisableZoom";
 import CaretakerScreen from "@/components/AAC/CaretakerScreen";
 import HealthCheckProvider from "@/react-state-management/providers/HealthCheckProvider";
+import AudioTranscription from "@/components/AAC/AudioTranscription";
+
 /**
  *
  * @returns the homepage for this app
@@ -69,6 +71,12 @@ export default function Home() {
                     </RekognitionProvider>
                 </TileProvider>
             </HealthCheckProvider>
+
+            <div className="fixed bottom-4 right-4 bg-white border shadow-lg p-4 rounded w-[300px] z-50">
+                <p className="font-bold mb-2">Audio Transcription</p>
+                <AudioTranscription />
+            </div>
+
         </section>
     );
 }
