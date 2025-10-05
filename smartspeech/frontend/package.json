@@ -60,6 +60,8 @@
 
         "react-icons": "^4.11.0",
 
+        "socket.io-client": "^4.8.1",
+
         "standardized-audio-context": "^25.3.57",
 
         "tailwindcss": "3.3.3",
