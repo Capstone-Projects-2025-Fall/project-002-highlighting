@@ -1,3 +1,11 @@
+/**
+ * Audio Transcription Server
+ * 
+ * @module server
+ * @description A Node.js server that handles real-time audio transcription using Socket.io and OpenAI's Whisper API.
+ * The server receives audio chunks from clients, processes them using FFmpeg, and sends them to OpenAI for transcription.
+ */
+
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -12,59 +20,151 @@ dotenv.config();
 import { File } from "node:buffer";
 globalThis.File = File;
 
-// init
-//create expresss application object
+/**
+ * Express application instance
+ * 
+ * @type {express.Application}
+ * @description The main Express application object that handles HTTP requests
+ */
 const app = express();
-//create http server, attaching express app to handle request
+
+/**
+ * HTTP server instance
+ * 
+ * @type {http.Server}
+ * @description HTTP server created from the Express application
+ */
 const server = http.createServer(app);
-// create socket.io server, and binds it to http server
+
+/**
+ * Socket.io server instance
+ * 
+ * @type {Server}
+ * @description Socket.io server bound to the HTTP server with CORS enabled
+ */
 const io = new Server(server, {
   cors: { origin: "*" },
 });
 
-// resolve __dirname for ES modules //
+/**
+ * Current file path
+ * 
+ * @type {string}
+ * @description Absolute path to the current module file
+ */
 const __filename = fileURLToPath(import.meta.url);
+
+/**
+ * Current directory path
+ * 
+ * @type {string}
+ * @description Absolute path to the directory containing the current module
+ */
 const __dirname = path.dirname(__filename);
 
-// serve static files
+/**
+ * Configure Express to serve static files
+ * 
+ * @description Sets up middleware to serve static files from the current directory
+ */
 app.use(express.static(__dirname));
 
-// main route -> send app.html // 
-//app.get("/", (req, res) => {
- // res.sendFile(path.join(__dirname, "app.html"));
-//});
-
-// Checks if API key is defined else exit
+/**
+ * OpenAI API client
+ * 
+ * @type {OpenAI}
+ * @description Initialized OpenAI client with API key from environment variables
+ * @throws {Error} If OPENAI_API_KEY is not defined in environment variables
+ */
 if (!process.env.OPENAI_API_KEY) {
   console.error(" Missing OPENAI_API_KEY in environment");
   process.exit(1);
 }
 console.log("API key loaded? Yes");
-// Load API key from .env file
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// server listens on port 5000
+/**
+ * Start the HTTP server
+ * 
+ * @function listen
+ * @description Starts the server on port 5000
+ * 
+ * @postcondition Server is running and listening for connections on port 5000
+ */
 server.listen(5000, () => {
   console.log("Server running on http://localhost:5000");
 });
 
-// Listen for new web socket connection. logs when a client connects
+/**
+ * Socket.io connection event handler
+ * 
+ * @event connection
+ * @description Handles new client connections and sets up audio processing for each client
+ * 
+ * @param {Socket} socket - The Socket.io socket object for the connected client
+ */
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
+  /**
+   * FFmpeg child process
+   * 
+   * @type {ChildProcess}
+   * @description Child process running FFmpeg for audio conversion
+   */
   let ffmpeg;
-  // allocate new empty aiudo buffer
+  
+  /**
+   * Audio buffer for storing processed audio chunks
+   * 
+   * @type {Buffer}
+   * @description Buffer that accumulates audio data from FFmpeg for processing
+   */
   let audioBuffer = Buffer.alloc(0);
-  // flag to prevent overlapping transcription
+  
+  /**
+   * Flag to prevent concurrent audio processing
+   * 
+   * @type {boolean}
+   * @description When true, indicates that audio processing is in progress
+   */
   let isProcessing = false;
-  //sequential number for temp file names //
+  
+  /**
+   * Counter for generating unique temporary filenames
+   * 
+   * @type {number}
+   * @description Incremented for each processed audio chunk to ensure unique filenames
+   */
   let fileCounter = 0;
-  // tracks consecutive empty inputs
+  
+  /**
+   * Counter for tracking consecutive empty audio inputs
+   * 
+   * @type {number}
+   * @description Tracks how many consecutive times the audio buffer was too small to process
+   */
   let silenceCounter = 0;
-  // Process every 4 seconds
+  
+  /**
+   * Duration in milliseconds between audio processing attempts
+   * 
+   * @type {number}
+   * @description Defines how frequently the audio buffer is processed (4 seconds)
+   */
   const CHUNK_DURATION = 4000; 
 
-  // FFmpeg converts webm files into wav files
+  /**
+   * Initializes the FFmpeg process for audio conversion
+   * 
+   * @function initializeFFmpeg
+   * @description Creates a new FFmpeg child process configured to convert WebM audio to raw PCM format
+   * 
+   * @precondition FFmpeg must be installed on the system
+   * @postcondition ffmpeg variable contains a running FFmpeg process ready to receive audio data
+   * 
+   * @throws {Error} If FFmpeg is not installed or encounters an error during initialization
+   */
   const initializeFFmpeg = () => {
     ffmpeg = spawn("ffmpeg", [
       "-f", "webm", // input format : webm
@@ -76,27 +176,68 @@ io.on("connection", (socket) => {
       "pipe:1", //writes output to stdout
     ]);
 
+    /**
+     * FFmpeg stderr data event handler
+     * 
+     * @event stderr.data
+     * @description Logs FFmpeg error output for debugging
+     * 
+     * @param {Buffer} data - The error data from FFmpeg
+     */
     ffmpeg.stderr.on("data", (data) => {
       console.log("ffmpeg:", data.toString());
     });
 
+    /**
+     * FFmpeg close event handler
+     * 
+     * @event close
+     * @description Logs when the FFmpeg process closes
+     * 
+     * @param {number} code - The exit code from the FFmpeg process
+     */
     ffmpeg.on("close", (code) => {
       console.log("ffmpeg closed with code", code);
     });
 
+    /**
+     * FFmpeg error event handler
+     * 
+     * @event error
+     * @description Handles errors from the FFmpeg process
+     * 
+     * @param {Error} err - The error object
+     */
     ffmpeg.on("error", (err) => {
       console.error("FFmpeg error:", err);
     });
   };
-  // intialize ffmpeg process 
+  
+  // Initialize ffmpeg process 
   initializeFFmpeg();
 
-  // Collect raw PCM data instead of WAV data
+  /**
+   * FFmpeg stdout data event handler
+   * 
+   * @event stdout.data
+   * @description Collects converted PCM audio data from FFmpeg
+   * 
+   * @param {Buffer} chunk - A chunk of PCM audio data
+   * @postcondition Audio data is appended to the audioBuffer
+   */
   ffmpeg.stdout.on("data", (chunk) => {
     audioBuffer = Buffer.concat([audioBuffer, chunk]);
   });
 
-  // Manually construrct WAV file (wave header + pcm data)
+  /**
+   * Creates a WAV file from raw PCM data
+   * 
+   * @function createWavFile
+   * @description Manually constructs a WAV file by adding a WAV header to PCM data
+   * 
+   * @param {Buffer} pcmData - The raw PCM audio data
+   * @returns {Buffer} A complete WAV file as a buffer
+   */
   const createWavFile = (pcmData) => {
     const wavHeader = Buffer.alloc(44);
     const dataSize = pcmData.length;
@@ -123,7 +264,18 @@ io.on("connection", (socket) => {
     return Buffer.concat([wavHeader, pcmData]);
   };
 
-
+  /**
+   * Processes audio data and sends it for transcription
+   * 
+   * @function processAudio
+   * @description Takes a chunk of audio from the buffer, converts it to WAV, and sends it to OpenAI for transcription
+   * 
+   * @precondition Sufficient audio data must be available in the buffer
+   * @postcondition Transcription results are emitted to the client if successful
+   * 
+   * @throws {Error} If there are issues with file operations or the OpenAI API
+   * @async
+   */
   const processAudio = async () => {
     // Skip processing if already busy or audio buffer is too small
     if (isProcessing || audioBuffer.length < 32000) { // Need at least 1 second of audio
@@ -189,9 +341,23 @@ io.on("connection", (socket) => {
     }
   };
 
-  // Process audio every 4 seconds
+  /**
+   * Interval for regular audio processing
+   * 
+   * @type {NodeJS.Timeout}
+   * @description Timer that triggers audio processing at regular intervals
+   */
   const interval = setInterval(processAudio, CHUNK_DURATION);
 
+  /**
+   * Audio chunk event handler
+   * 
+   * @event audio-chunk
+   * @description Receives audio chunks from the client and passes them to FFmpeg
+   * 
+   * @param {ArrayBuffer} data - The audio data chunk from the client
+   * @throws {Error} If there are issues writing to the FFmpeg process
+   */
   socket.on("audio-chunk", (data) => {
     try {
       if (ffmpeg && ffmpeg.stdin.writable) {
@@ -207,6 +373,14 @@ io.on("connection", (socket) => {
     }
   });
 
+  /**
+   * Socket disconnect event handler
+   * 
+   * @event disconnect
+   * @description Cleans up resources when a client disconnects
+   * 
+   * @postcondition FFmpeg process is terminated, interval is cleared, and buffer is reset
+   */
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
     clearInterval(interval);
