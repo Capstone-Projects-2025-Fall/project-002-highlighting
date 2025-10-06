@@ -1,17 +1,25 @@
 import { Point, Points } from "@/util/types/typing";
 import { browser, image, scalar, tidy, Rank } from "@tensorflow/tfjs";
-
-//tests
 import { LayersModel, Tensor } from "@tensorflow/tfjs";
 
+/**
+ * Represents a bounding box with minimum and maximum points.
+ */
 type BoundingBox = {
     min: Point;
     max: Point;
 };
+
+/**
+ * Represents inference data with a class name and probability.
+ */
 export type InferenceData = { name: string; prob: number };
 
 /**
- * Input the array of drawing coordinates.
+ * Calculates the bounding box for a set of coordinates.
+ * 
+ * @param coords - Array of points representing drawing coordinates
+ * @returns A bounding box containing the minimum and maximum coordinates
  */
 function getBoundingBox(coords: Point[]): BoundingBox {
     // Get coordinate arrays
@@ -33,8 +41,15 @@ function getBoundingBox(coords: Point[]): BoundingBox {
     };
 }
 
+/**
+ * Extracts image data from a canvas based on a bounding box.
+ * 
+ * @param bb - The bounding box defining the area to extract
+ * @param canvas - The HTML canvas element containing the drawing
+ * @returns The image data within the bounding box or null if dimensions are invalid
+ * @throws Error if the canvas rendering context is not available
+ */
 function getImageData(bb: BoundingBox, canvas: HTMLCanvasElement): ImageData | null {
-
     const ctx = canvas.getContext("2d");
     if (!ctx) {
         throw new Error("CanvasRenderingContext2D is not available");
@@ -61,6 +76,14 @@ function getImageData(bb: BoundingBox, canvas: HTMLCanvasElement): ImageData | n
     return imgData;
 }
 
+/**
+ * Preprocesses image data for model inference.
+ * Converts image data to a tensor, resizes to 28x28, normalizes values,
+ * and adds a batch dimension.
+ * 
+ * @param imgData - The image data to preprocess
+ * @returns A tensor ready for model inference
+ */
 function preprocess(imgData: ImageData) {
     return tidy(() => {
         // Convert to a tensor
@@ -80,11 +103,27 @@ function preprocess(imgData: ImageData) {
     });
 }
 
+/**
+ * Performs inference using a TensorFlow.js model.
+ * 
+ * @param model - The TensorFlow.js model to use for inference
+ * @param processedData - The preprocessed tensor data to run inference on
+ * @returns The model's prediction tensor
+ */
 function performInference(model: LayersModel, processedData: Tensor) {
     const pred = model.predict(processedData);
     return pred;
 }
 
+/**
+ * Converts model inference results to a structured format.
+ * Extracts probabilities from the tensor, maps them to class names,
+ * sorts by probability, and returns the top 5 results.
+ * 
+ * @param wordDict - Array of class names corresponding to model output indices
+ * @param inferenceResult - Tensor containing model prediction probabilities
+ * @returns Array of InferenceData objects with class names and rounded probabilities
+ */
 function getInferenceData(wordDict: string[], inferenceResult: Tensor<Rank>): InferenceData[] {
     // Convert the inference tensor into an array
     const probabilities = Array.from(inferenceResult.dataSync() as Float32Array);
@@ -104,6 +143,12 @@ function getInferenceData(wordDict: string[], inferenceResult: Tensor<Rank>): In
     return top5InferenceData.map((data) => ({ name: data.name, prob: Math.round(data.prob * 100) / 100 }));
 }
 
+/**
+ * Flattens an array of point arrays into a single array of points.
+ * 
+ * @param coords - Array of point arrays to flatten
+ * @returns A single array containing all points from the input arrays
+ */
 function convertCoords(coords: Points[]): Points {
     const allPoints: Point[] = [];
     coords.forEach((points) => {
@@ -112,6 +157,13 @@ function convertCoords(coords: Points[]): Points {
     return allPoints;
 }
 
+/**
+ * Draws a bounding box on a canvas context.
+ * 
+ * @param ctx - The canvas rendering context to draw on
+ * @param bb - The bounding box to draw
+ * @returns void
+ */
 function drawBoundingBox(ctx: CanvasRenderingContext2D, bb: BoundingBox) {
     if (!ctx) return;
 
@@ -123,8 +175,17 @@ function drawBoundingBox(ctx: CanvasRenderingContext2D, bb: BoundingBox) {
 }
 
 /**
- * Process a drawing from coordinates and canvas object.
- * Return predictions as an array of classes and probabilities.
+ * Processes a drawing from coordinates and canvas to generate predictions.
+ * Takes drawing coordinates and a canvas element, extracts the drawing area,
+ * preprocesses the image data, runs inference through the model, and returns
+ * the top predictions with their probabilities.
+ * 
+ * @param model - The TensorFlow.js model to use for inference
+ * @param wordDict - Array of class names corresponding to model output indices
+ * @param coords - Array of point arrays representing the drawing strokes
+ * @param canvas - The HTML canvas element containing the drawing
+ * @returns Promise resolving to an array of InferenceData objects with class names and probabilities,
+ *          or an empty array if the drawing area is invalid
  */
 export async function processDrawing(model: LayersModel, wordDict: string[], coords: Points[], canvas: HTMLCanvasElement): Promise<InferenceData[]> {
     // Get minimum bounding box from coordinate array.

@@ -6,34 +6,57 @@ import React from "react";
 export const tileColors = ["red", "purple", "orange", "yellow", "green", "blue"];
 export type TileColor = "red" | "purple" | "orange" | "yellow" | "green" | "blue";
 
+/**
+ * Properties for the Tile component.
+ * Defines the appearance and behavior of a tile in the AAC interface.
+ */
 export interface TileProps {
     /**
-     * image is displayed in center of tile
+     * Path to the image displayed in the center of the tile.
+     * This image visually represents the concept or word.
      */
     image: string;
+    
     /**
-     * sound is played when this tile is spoken
+     * Text to be spoken when the tile is clicked.
+     * If not provided, the tile will be silent when clicked.
      */
     sound?: string;
+    
     /**
-     * text is displayed as a caption under image
+     * Text displayed as a caption under the image.
+     * This text identifies the concept or word represented by the tile.
      */
     text: string;
+    
     /**
-     * color of the tile background
+     * Color of the tile background.
+     * Used for visual categorization and distinction between different types of tiles.
      */
     tileColor: TileColor;
 }
 
 /**
- * @returns data-testid for a tile that contains text as a prop
+ * Computes a consistent test ID for a tile based on its text.
+ * Used for targeting tiles in automated tests.
+ * 
+ * @param text - The text displayed on the tile
+ * @returns A formatted string to be used as a data-testid attribute
  */
 export function computeTileContainerName(text: string) {
     return `tile-container-${text.replace(" ", "_")}`;
 }
 
 /**
- * @returns Component which will display a tile with `text` and onclick use the WebSpeech API to play `sound`.
+ * A clickable tile component that displays an image with text and plays a sound when clicked.
+ * Used as the primary interactive element in the AAC interface.
+ * 
+ * @param props - The properties for the Tile component
+ * @param props.image - Path to the image displayed in the center of the tile
+ * @param props.sound - Text to be spoken when the tile is clicked
+ * @param props.text - Text displayed as a caption under the image
+ * @param props.tileColor - Color of the tile background
+ * @returns A React component that renders a clickable tile with image and text
  */
 export default function Tile({ image, sound, text, tileColor }: TileProps) {
     const { addTile } = useUtteredTiles();

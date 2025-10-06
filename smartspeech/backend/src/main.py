@@ -1,7 +1,14 @@
+"""
+Main application module for the SmartSpeech backend API.
+
+This module initializes the FastAPI application, configures CORS middleware,
+and includes all the router modules for different API endpoints.
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# custom modules
+# Custom modules
 from .routers.s3 import router as s3_router
 from .routers.rekognition import router as rekognition_router
 from .routers.tts import router as tts_router
@@ -37,9 +44,21 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
+    """
+    Root endpoint that returns a simple greeting message.
+    
+    Returns:
+        dict: A dictionary containing a greeting message
+    """
     return {"message": "Hello World"}
 
 
 @app.get("/health-check")
 async def healthCheck():
+    """
+    Health check endpoint to verify the API is running.
+    
+    Returns:
+        dict: A dictionary containing a health status message
+    """
     return {"message": "an apple a day keeps the doctor away"}
