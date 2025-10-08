@@ -40,7 +40,14 @@ export default function Tiles() {
                 {Object.keys(currentFrame).map((key) => {
                     const tileData = currentFrame[key];
                     const { image, text, sound, tileColor, subTiles } = tileData;
-                    const renderedTile = <Tile image={image} text={text} sound={subTiles ? "" : sound} tileColor={tileColor} />;
+                    // Set opacity to 40 for green tiles
+                    const renderedTile = <Tile 
+                        image={image} 
+                        text={text} 
+                        sound={subTiles ? "" : sound} 
+                        tileColor={tileColor} 
+                        opacity={tileColor === "green" ? 40 : undefined} 
+                    />;
 
                     const clickHandler = subTiles
                         ? // attach navigator if subtiles exist
@@ -60,7 +67,12 @@ export default function Tiles() {
                 })}
                 {dataLocation.length > 0 && (
                     <div onClick={() => dispatch({ type: "remove" })}>
-                        <Tile image="/AAC_assets/img/standard/back_arrow.png" text={BACK_BTN_TEXT} tileColor="green" />
+                        <Tile 
+                            image="/AAC_assets/img/standard/back_arrow.png" 
+                            text={BACK_BTN_TEXT} 
+                            tileColor="green" 
+                            opacity={40} 
+                        />
                     </div>
                 )}
             </div>
