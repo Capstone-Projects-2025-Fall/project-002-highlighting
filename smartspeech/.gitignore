@@ -45,6 +45,7 @@ next-env.d.ts
 .env.development.local
 .env.test.local
 .env.production.local
+.env
 
 # service worker outputs
 frontend/public/sw.js
