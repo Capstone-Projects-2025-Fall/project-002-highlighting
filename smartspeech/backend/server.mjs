@@ -15,6 +15,7 @@ import fs from "fs";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import ffmpegPath from "ffmpeg-static";
 // loads variable from .env file into process.env
 dotenv.config();
 import { File } from "node:buffer";
@@ -166,7 +167,7 @@ io.on("connection", (socket) => {
    * @throws {Error} If FFmpeg is not installed or encounters an error during initialization
    */
   const initializeFFmpeg = () => {
-    ffmpeg = spawn("ffmpeg", [
+    ffmpeg = spawn(ffmpegPath, [
       "-f", "webm", // input format : webm
       "-i", "pipe:0", // input goes into stdin
       "-ar", "16000",
