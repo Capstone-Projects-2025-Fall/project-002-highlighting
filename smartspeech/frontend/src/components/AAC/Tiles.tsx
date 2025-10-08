@@ -4,7 +4,7 @@ import { stackReducer } from "@/react-state-management/reducers/stackReducer";
 import { TileAssets } from "./TileTypes";
 import { useTilesProvider } from "@/react-state-management/providers/tileProvider";
 
-export const BACK_BTN_TEXT = "back";
+export const BACK_BTN_TEXT = "Back";
 
 export const TilesTestIds = {
     mainContainer: "tiles-container",
@@ -37,10 +37,15 @@ export default function Tiles() {
     return (
         <section className="w-full flex justify-center">
             <div className="grid grid-cols-8 gap-4 2xl-max:grid-cols-7 md-max:gap-2" data-testid="tiles-container">
+                {dataLocation.length > 0 && (
+                    <div onClick={() => dispatch({ type: "remove" })}>
+                        <Tile image="/AAC_assets/img/standard/back_arrow.png" text={BACK_BTN_TEXT} tileColor="gray" />
+                    </div>
+                )}
                 {Object.keys(currentFrame).map((key) => {
                     const tileData = currentFrame[key];
                     const { image, text, sound, tileColor, subTiles } = tileData;
-                    const renderedTile = <Tile image={image} text={text} sound={subTiles ? "" : sound} tileColor={tileColor} />;
+                    const renderedTile = <Tile image={image} text={text} sound={subTiles ? "" : sound} tileColor={tileColor} hasSubTiles={!!subTiles} />;
 
                     const clickHandler = subTiles
                         ? // attach navigator if subtiles exist
@@ -58,11 +63,6 @@ export default function Tiles() {
                         </div>
                     );
                 })}
-                {dataLocation.length > 0 && (
-                    <div onClick={() => dispatch({ type: "remove" })}>
-                        <Tile image="/AAC_assets/img/standard/back_arrow.png" text={BACK_BTN_TEXT} tileColor="green" />
-                    </div>
-                )}
             </div>
         </section>
     );

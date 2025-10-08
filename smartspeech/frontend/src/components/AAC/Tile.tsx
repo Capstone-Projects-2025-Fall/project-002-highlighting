@@ -34,6 +34,12 @@ export interface TileProps {
      * Used for visual categorization and distinction between different types of tiles.
      */
     tileColor: TileColor;
+    
+    /**
+     * Whether this tile has sub-tiles (folder icon will be shown if true).
+     * Used to indicate that the tile leads to a sub-menu.
+     */
+    hasSubTiles?: boolean;
 }
 
 /**
@@ -58,7 +64,7 @@ export function computeTileContainerName(text: string) {
  * @param props.tileColor - Color of the tile background
  * @returns A React component that renders a clickable tile with image and text
  */
-export default function Tile({ image, sound, text, tileColor }: TileProps) {
+export default function Tile({ image, sound, text, tileColor, hasSubTiles = false }: TileProps) {
     const { addTile } = useUtteredTiles();
 
     const handleTileClick = () => {
@@ -77,11 +83,28 @@ export default function Tile({ image, sound, text, tileColor }: TileProps) {
 
     return (
         <div
-            className={`bg-${tileColor}-300 w-44 h-44 flex flex-col justify-center items-center rounded-lg shadow-lg hover:shadow-xl hover:cursor-pointer p-4 2xl-max:w-36 2xl-max:h-36 xl-max:w-32 xl-max:h-32 lg-max:w-28 lg-max:h-28 mid-max:w-24 mid-max:h-24 md-max:w-20 md-max:h-20 xs-max:w-16 xs-max:h-16`}
+            className={`bg-${tileColor}-300 w-44 h-44 flex flex-col justify-center items-center rounded-lg shadow-lg hover:shadow-xl hover:cursor-pointer p-4 2xl-max:w-36 2xl-max:h-36 xl-max:w-32 xl-max:h-32 lg-max:w-28 lg-max:h-28 mid-max:w-24 mid-max:h-24 md-max:w-20 md-max:h-20 xs-max:w-16 xs-max:h-16 relative`}
             onClick={handleTileClick}
             id="tileResize"
             data-testid={computeTileContainerName(text)}
         >
+            {hasSubTiles && (
+                <div className="absolute top-2 right-2 bg-white bg-opacity-80 rounded-full p-1 shadow-md">
+                    <svg 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="text-gray-700"
+                    >
+                        <path 
+                            d="M10 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6H12L10 4Z" 
+                            fill="currentColor"
+                        />
+                    </svg>
+                </div>
+            )}
             <h2 className="font-bold text-2xl lg-max:text-xl md-max:text-sm break-words" data-testid="tile-text">
                 {text}
             </h2>
