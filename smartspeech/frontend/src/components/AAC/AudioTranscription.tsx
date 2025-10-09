@@ -1,5 +1,6 @@
 import React from "react";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
+import styles from "./AudioTranscription.module.css";
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -18,7 +19,7 @@ const AudioTranscription = () => {
      * @type {Socket}
      * @description Establishes a connection to the local transcription server
      */
-    const socket = io("http://localhost:5000");
+    const socketRef = React.useRef<Socket | null>(null);
 
     /**
      * State to track whether recording is active
@@ -27,6 +28,7 @@ const AudioTranscription = () => {
      * @description Controls the recording state of the component
      */
     const [record, setRecording] = React.useState(false);
+    const isRecordingRef = React.useRef<boolean>(false);
     
     /**
      * State to store the transcribed text from the server
@@ -43,6 +45,40 @@ const AudioTranscription = () => {
      * @description Holds the object URL for the recorded audio blob
      */
     const [audioURL, setaudioURL] = React.useState<string | null >(null);
+    
+    /**
+     * State to track audio playback progress
+     * 
+     * @type {number}
+     * @description Current playback position as a percentage (0-100)
+     */
+    const [audioProgress, setAudioProgress] = React.useState(0);
+    const [currentTimeSec, setCurrentTimeSec] = React.useState(0);
+    const [durationSec, setDurationSec] = React.useState(0);
+    
+    /**
+     * State to track if audio is currently playing
+     * 
+     * @type {boolean}
+     * @description Indicates whether the audio is currently playing
+     */
+    const [isPlaying, setIsPlaying] = React.useState(false);
+    
+    /**
+     * Reference to the audio element
+     * 
+     * @type {React.MutableRefObject<HTMLAudioElement | null>}
+     * @description Reference to the audio element for controlling playback
+     */
+    const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
+    const formatTime = (seconds: number) => {
+        if (!isFinite(seconds) || seconds < 0) return "0:00";
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        const sPadded = s < 10 ? `0${s}` : `${s}`;
+        return `${m}:${sPadded}`;
+    };
     
     /**
      * Reference to store audio chunks during recording
@@ -95,7 +131,7 @@ const AudioTranscription = () => {
                 mediaRecorderRef.current.ondataavailable = (e) => {
                     if (e.data.size > 0) {
                         e.data.arrayBuffer().then((buffer) => {
-                            socket.emit("audio-chunk", buffer);
+                            socketRef.current?.emit("audio-chunk", buffer);
                         });
                     }
                     chunksRef.current.push(e.data);
@@ -137,6 +173,10 @@ const AudioTranscription = () => {
      */
     const startRecording = () => {
         setRecording(true);
+        isRecordingRef.current = true;
+        if (socketRef.current) {
+            socketRef.current.on("transcript", transcriptHandler);
+        }
         //Check if browser sees any audio-in devices(if you have no mic, no stream object will be created)
         navigator.mediaDevices.enumerateDevices().then(devices => {
             // Print whether your device has a mic or not(f12)
@@ -163,11 +203,95 @@ const AudioTranscription = () => {
      */
     const stopRecording = () => {
         setRecording(false);
+        isRecordingRef.current = false;
         mediaRecorderRef.current!.stop();
+        if (socketRef.current) {
+            socketRef.current.off("transcript", transcriptHandler);
+        }
         console.log(mediaRecorderRef.current!.state);
         console.log("recorder stopped");
     };
 
+    /**
+     * Test
+     * Gets the current transcript text
+     * 
+     * @method getTranscript
+     * @description Returns the current transcribed text from the audio recording
+     * 
+     * @returns {string} The current transcript text
+     */
+    const getTranscript = (): string => {
+        return transcript;
+    };
+
+    /**
+     * Handles audio time update events
+     * 
+     * @method handleTimeUpdate
+     * @description Updates the progress bar based on current playback position
+     */
+    const handleTimeUpdate = () => {
+        if (audioRef.current) {
+            const current = audioRef.current.currentTime;
+            const duration = audioRef.current.duration || 0;
+            setCurrentTimeSec(current);
+            setDurationSec(duration);
+            const progress = duration > 0 ? (current / duration) * 100 : 0;
+            setAudioProgress(progress);
+        }
+    };
+
+    /**
+     * Handles audio play events
+     * 
+     * @method handlePlay
+     * @description Sets playing state to true when audio starts playing
+     */
+    const handlePlay = () => {
+        setIsPlaying(true);
+    };
+
+    /**
+     * Handles audio pause events
+     * 
+     * @method handlePause
+     * @description Sets playing state to false when audio is paused
+     */
+    const handlePause = () => {
+        setIsPlaying(false);
+    };
+
+    /**
+     * Handles audio ended events
+     * 
+     * @method handleEnded
+     * @description Resets playing state and progress when audio ends
+     */
+    const handleEnded = () => {
+        setIsPlaying(false);
+        setAudioProgress(0);
+        setCurrentTimeSec(0);
+    };
+
+    /**
+     * Toggles audio playback
+     * 
+     * @method togglePlayback
+     * @description Plays or pauses the audio based on current state
+     */
+    const togglePlayback = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+            } else {
+                audioRef.current.play();
+            }
+        }
+    };
+
+
+    
     /**
      * Effect to set up Socket.io event listener for transcription results
      * 
@@ -177,10 +301,19 @@ const AudioTranscription = () => {
      * @precondition Socket connection must be established
      * @postcondition Component will receive and display transcription updates
      */
+    const transcriptHandler = React.useCallback((text: string) => {
+        setTranscript((prev) => prev + " " + text);
+    }, []);
+
     React.useEffect(() => {
-        socket.on("transcript", (text: String) => {
-            setTranscript((prev) => prev + " " + text);
-        });
+        // establish socket once
+        socketRef.current = io("http://localhost:5000");
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
+        };
     }, []);
 
     /**
@@ -192,16 +325,50 @@ const AudioTranscription = () => {
      * @returns {JSX.Element} The rendered component with recording controls and transcript display
      */
     return (
-        <div>
-            <h2>Hello with Socket.io</h2>
-            <button onClick={startRecording} >Start</button>
-            <button onClick={stopRecording}>Stop</button>
-            <p>Recording: {record ? "Yes" : "No"}</p>
-            <p>Transcript: {transcript}</p>
+        <div className={styles.audioTranscriptionContainer}>
+            <div className={styles.controlsContainer}>
+                <button 
+                    className={record ? styles.stopButton : styles.recordButton} 
+                    onClick={record ? stopRecording : startRecording}
+                >
+                    {record ? "Stop Recording" : "Start Recording"}
+                </button>
+            </div>
+
+            <div className={styles.transcriptContainer}>
+                <div className={styles.transcriptText}>
+                    {transcript || "Transcript will appear here..."}
+                </div>
+            </div>
+
             {audioURL && (
-                <div>
-                    <p>Click to listen:</p>
-                    <audio src={audioURL} controls />
+                <div className={styles.audioContainer}>
+                    <button 
+                        className={styles.playButton} 
+                        onClick={togglePlayback}
+                        title={isPlaying ? "Pause" : "Play"}
+                    >
+                        {isPlaying ? "⏸️" : "▶️"}
+                    </button>
+                    <div className={styles.progressContainer}>
+                        <div className={styles.timeText}>{formatTime(currentTimeSec)}</div>
+                        <div className={styles.progressBar}>
+                            <div 
+                                className={styles.progressFill} 
+                                style={{ width: `${audioProgress}%` }}
+                            ></div>
+                        </div>
+                        <div className={styles.timeText}>{formatTime(durationSec)}</div>
+                    </div>
+                    <audio 
+                        ref={audioRef}
+                        src={audioURL} 
+                        onTimeUpdate={handleTimeUpdate}
+                        onPlay={handlePlay}
+                        onPause={handlePause}
+                        onEnded={handleEnded}
+                        className={styles.audioPlayer}
+                    />
                 </div>
             )}
         </div>
