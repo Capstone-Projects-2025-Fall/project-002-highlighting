@@ -63,6 +63,16 @@ export default function Tiles() {
                         </div>
                     );
                 })}
+                {dataLocation.length > 0 && (
+                    <div onClick={() => dispatch({ type: "remove" })}>
+                        <Tile 
+                            image="/AAC_assets/img/standard/back_arrow.png" 
+                            text={BACK_BTN_TEXT} 
+                            tileColor="green" 
+                            opacity={40} 
+                        />
+                    </div>
+                )}
             </div>
         </section>
     );
