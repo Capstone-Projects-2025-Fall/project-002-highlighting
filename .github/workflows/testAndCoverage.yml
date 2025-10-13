@@ -22,22 +22,29 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: |
+            smartspeech/frontend/package-lock.json
+            
 
       # Install dependencies
       - name: Install dependencies
+        working-directory: smartspeech/frontend
         run: npm ci
+        
 
       # Run Jest tests with coverage enabled
       - name: Run tests with coverage
+        working-directory: smartspeech/frontend
         run: npm test -- --coverage --watchAll=false
 
       # Move the coverage report into the Docusaurus static folder
       - name: Copy coverage report to Docusaurus static folder
         run: |
           mkdir -p docs/static/coverage
-          cp -r coverage/lcov-report/* docs/static/coverage/
-      # Deploy Docusaurus site after successful test run
-      - name: Deploy Docusaurus Site
-        run: |
-          npm run build --prefix docs
-          npx gh-pages -d docs/build
+          cp -r smartspeech/frontend/coverage/lcov-report/* docs/static/coverage/
+      
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-coverage-report
+          path: smartspeech/frontend/coverage/lcov-report
