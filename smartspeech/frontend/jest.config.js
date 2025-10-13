@@ -11,6 +11,9 @@ const customJestConfig = {
     resetMocks: true,
     automock: false,
     setupFiles: ["./setupJest.js"],
+    collectCoverage: true,
+    coverageReporters: ["text", "lcov", "html"],
+    coverageDirectory: "coverage",
 };
 
 module.exports = createJestConfig(customJestConfig);

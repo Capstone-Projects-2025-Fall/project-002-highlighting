@@ -16,7 +16,11 @@
 
         "lint": "next lint",
 
-        "test": "jest --coverage"
+        "test": "jest --coverage",
+
+        "test:coverage": "jest --coverage --coverageReporters=html",
+
+        "coverage:open": "open coverage/index.html"
 
     },
 
