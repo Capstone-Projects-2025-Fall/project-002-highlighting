@@ -89,12 +89,15 @@ export default function Tile({ image, sound, text, tileColor, hasSubTiles = fals
         });
     };
 
-    // Convert opacity to nearest Tailwind opacity class (in increments of 5)
-    const opacityClass = `opacity-${Math.round(opacity / 5) * 5}`;
+    // Get style object for opacity
+    const style = {
+        opacity: opacity / 100
+    };
 
     return (
         <div
-            className={`bg-${tileColor}-300 ${opacityClass} w-44 h-44 flex flex-col justify-center items-center rounded-lg shadow-lg hover:shadow-xl hover:cursor-pointer p-4 2xl-max:w-36 2xl-max:h-36 xl-max:w-32 xl-max:h-32 lg-max:w-28 lg-max:h-28 mid-max:w-24 mid-max:h-24 md-max:w-20 md-max:h-20 xs-max:w-16 xs-max:h-16 relative`}
+            className={`bg-${tileColor}-300 w-44 h-44 flex flex-col justify-center items-center rounded-lg shadow-lg hover:shadow-xl hover:cursor-pointer p-4 2xl-max:w-36 2xl-max:h-36 xl-max:w-32 xl-max:h-32 lg-max:w-28 lg-max:h-28 mid-max:w-24 mid-max:h-24 md-max:w-20 md-max:h-20 xs-max:w-16 xs-max:h-16 relative`}
+            style={style}
             onClick={handleTileClick}
             id="tileResize"
             data-testid={computeTileContainerName(text)}
