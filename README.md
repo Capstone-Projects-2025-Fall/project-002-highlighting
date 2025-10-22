@@ -24,15 +24,50 @@ Describe the requirements – i.e., what the product does and how it does it fro
 
 ## Conceptual Design
 
-Describe the initial design concept: Hardware/software architecture, programming language, operating system, etc.
+The application will be built upon a previous capstone project that made an AAC board, Smartspeech will provide the basis for this project for us to build on it to incorporate the highlighting portion into it. The application will mainly incorporate Typescript and Python for the coding languages as the board was made primarily with them.
+
+For the speech recognition to apply the highlighting to specific words, we will be using Whisper AI which is an automatic speech recognition system model. The frontend will be using Vercel to host on a browser for easy and convenient access to the board and its highlighting features.
 
 ## Background
 
-The background will contain a more detailed description of the product and a comparison to existing similar projects/products. A literature search should be conducted and the results listed. Proper citation of sources is required. If there are similar open-source products, you should state whether existing source will be used and to what extent. If there are similar closed-source/proprietary products, you should state how the proposed product will be similar and different.
+The use of AAC devices is imperative for non-verbal communication and autism spectrum children. This application aims to improve the time efficiency of communication this way as in most AAC devices now still are lacking in how fast conversations are expected to be. The project hopes to solve this problem of conversations taking longer than expected by using context awareness methods like speech recognition and highlighting.
+
+## How to Run:
+
+* Clone this repo.
+* CD into smartspeech/backend and create a .env file 
+* In the .env file add in : OPENAI_API_KEY = yourownkey
+* Run the following commands in smartspeech/backend:
+'''
+npm install
+node server.mjs & (FOR Ubunut / MAC OS)
+start node server.mjs (FOR Powershell)
+'''
+* Run the following commands in smartspeech/frontend: 
+'''
+npm i
+npm run dev
+'''
+* Go to http://localhost:3000 to view the website
+
 
 ## Required Resources
 
-Discuss what you need to develop this project. This includes background information you will need to acquire, hardware resources, and software resources. If these are not part of the standard Computer Science Department lab resources, these must be identified early and discussed with the instructor.
+What users will need:
+
+Ipad or tablet device
+Needs microphone for active listening
+Internet access
+
+What the project needs:
+
+Github and git commands
+Strong enough machine to run AAC board and its features locally
+Whisper AI for speech recognition
+Typescript
+Python
+Docusaurus for convenient documentation
+Vercel to host the AAC board
 
 ## Collaborators
 
