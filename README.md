@@ -32,7 +32,10 @@ The use of AAC devices is imperative for non-verbal communication and autism spe
 
 1. Clone this repo.
 2. CD into smartspeech/backend and create a .env file 
-3. In the .env file add in : OPENAI_API_KEY = yourownkey
+3. In the .env file add in : 
+```shell 
+OPENAI_API_KEY = yourownkey
+```
 4. Run the following commands in smartspeech/backend:
 ```shell 
 npm install
