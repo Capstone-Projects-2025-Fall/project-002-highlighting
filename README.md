@@ -36,8 +36,8 @@ The use of AAC devices is imperative for non-verbal communication and autism spe
 4. Run the following commands in smartspeech/backend:
 ```shell 
 npm install
-    node server.mjs & (FOR Ubunut / MAC OS)
-    start node server.mjs (FOR Powershell)
+node server.mjs & (FOR Ubunut / MAC OS)
+start node server.mjs (FOR Powershell)
 ```
 
 5. Run the following commands in smartspeech/frontend:
