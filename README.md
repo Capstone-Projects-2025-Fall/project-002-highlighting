@@ -34,13 +34,18 @@ The use of AAC devices is imperative for non-verbal communication and autism spe
 2. CD into smartspeech/backend and create a .env file 
 3. In the .env file add in : OPENAI_API_KEY = yourownkey
 4. Run the following commands in smartspeech/backend:
-''' shell npm install
+```shell 
+npm install
     node server.mjs & (FOR Ubunut / MAC OS)
-    start node server.mjs (FOR Powershell) '''
-5. Run the following commands in smartspeech/frontend: 
-'''shell npm i
+    start node server.mjs (FOR Powershell)
+```
+
+5. Run the following commands in smartspeech/frontend:
+```shell
+npm i
 npm run dev
-'''
+```
+
 6. Go to http://localhost:3000 to view the website
 
 
