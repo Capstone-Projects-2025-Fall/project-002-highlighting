@@ -6,25 +6,30 @@ sidebar_position: 4
 
 ## Functional Requirements
 
-### Virtual AAC Board
-* The system must be organized in the fitzgerald key organization -- color coding system to represent different grammatical categories and parts of speech
+### Audio Input and Transcription
+* Audio input will be captured via device's microphone
+* Whisper AI will convert the speech to text
+* User will be able to toggle the microphone on/off through AAC Board
+
+### Virtual AAC Board 
+* The system will be organized in the fitzgerald color key organization.
     - verbs are highlighted in green
     - pronouns are highlighted in yellow
     - nouns are highlighted in orange
+    - adjectives are highlighted in blue
+* Categories will be a folder in which corresponding tiles will be placed
 
-### Speech Driven Suggestions
-* The system must  support  speech recogntion
-* The board **listens** to conversational context and highlights relevant picture symbols accordingly
-* The environment is required to have have a microphone on/off toggle feature to respectively enable or disable the systems speech recogntion capability
+### Context Analysis ###
+* The system will analyze text to determine key context words
+* The model will compare the key words to the AAC vocabulary list to determine best possible suggestions and show through opacity of each tile
 
 ## Nonfunctional Requirements
 
 ### Performance
 * Accurate speech to text transcription
-*  Speech to text transcriptions should be low latency( ~ 3-4 second lag to transcribe what was said)
-
+* Speech to text transcriptions should be low latency( ~ 3-4 second lag to transcribe what was said)
 
 ### AAC Board Coherence
 * Picture symbols must stay in the same place as to not interfere with the users muscle memory
 * Picture symbols can be grouped by topic so that specific words can be easily found.
-    - These topics or groups should be included in the attention drawing feature. 
+

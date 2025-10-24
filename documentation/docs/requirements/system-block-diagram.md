@@ -6,7 +6,10 @@ sidebar_position: 2
 # System Block Diagram
 
 
-![updatedDiagram](https://github.com/user-attachments/assets/b447473f-edb8-4f1e-9b94-763201a9a4f8)
+# System Block Diagram
+
+[View System Block Diagram (PDF)](docs/System_Block_Diagram.pdf)
+
 
 
 
@@ -18,6 +21,6 @@ sidebar_position: 2
 
 
 # Description
-User and Dialogue are inputs to the AAC Board. From there the information is processed using machine learning and generates the highlighting and predictive anchoring. The predictive anchoring and highlighting will help guide the user to more relevant words that are relevant to communication via audio input.
+User speech is audio input to the AAC Board. Audio recording is transcribed by Whisper AI and saved into transcription which will then be sent back to the AAC board and sent to an intelligent contextual model which will analyze possible suggestions to answer audio input based on similarity scores. Analyzed scores will be sent to backend database and will change opacity of tiles on AAC board based on how well answer choices fit the audio input.
 
 
