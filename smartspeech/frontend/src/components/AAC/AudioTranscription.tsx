@@ -65,6 +65,46 @@ const AudioTranscription = () => {
     const [isPlaying, setIsPlaying] = React.useState(false);
     
     /**
+     * State to store predicted next tiles
+     * 
+     * @type {string[]}
+     * @description Array of suggested next tiles from the prediction API
+     */
+    const [predictedTiles, setPredictedTiles] = React.useState<string[]>([]);
+    
+    /**
+     * State to track if prediction is loading
+     * 
+     * @type {boolean}
+     * @description Indicates whether a prediction request is in progress
+     */
+    const [isPredicting, setIsPredicting] = React.useState(false);
+    
+    /**
+     * Reference to store the last prediction timestamp
+     * 
+     * @type {React.MutableRefObject<number>}
+     * @description Tracks when the last prediction was made to avoid too frequent calls
+     */
+    const lastPredictionRef = React.useRef<number>(0);
+    
+    /**
+     * Reference to store the auto-prediction timeout
+     * 
+     * @type {React.MutableRefObject<NodeJS.Timeout | null>}
+     * @description Stores the timeout ID for auto-prediction to allow cancellation
+     */
+    const autoPredictionTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+    
+    /**
+     * State to track when predictions were last updated
+     * 
+     * @type {number}
+     * @description Timestamp of when predictions were last updated
+     */
+    const [predictionTimestamp, setPredictionTimestamp] = React.useState<number>(0);
+    
+    /**
      * Reference to the audio element
      * 
      * @type {React.MutableRefObject<HTMLAudioElement | null>}
@@ -290,6 +330,56 @@ const AudioTranscription = () => {
         }
     };
 
+    /**
+     * Predicts next tiles based on current transcript
+     * 
+     * @method predictNextTiles
+     * @description Calls the backend API to get suggested next tiles with throttling
+     * 
+     * @async
+     * @throws {Error} If the API request fails
+     */
+    const predictNextTiles = React.useCallback(async () => {
+        if (!transcript.trim()) {
+            setPredictedTiles([]);
+            return;
+        }
+
+        // Always allow manual prediction (no throttling for manual requests)
+        const now = Date.now();
+        lastPredictionRef.current = now;
+        setIsPredicting(true);
+        
+        try {
+            const response = await fetch('http://localhost:5000/api/nextTilePred', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ transcript }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                setPredictedTiles(data.predictedTiles || []);
+                setPredictionTimestamp(Date.now());
+            } else {
+                console.error('Prediction error:', data.error);
+                setPredictedTiles([]);
+            }
+        } catch (error) {
+            console.error('Error predicting next tiles:', error);
+            setPredictedTiles([]);
+        } finally {
+            setIsPredicting(false);
+        }
+    }, [transcript]);
+
 
     
     /**
@@ -302,7 +392,18 @@ const AudioTranscription = () => {
      * @postcondition Component will receive and display transcription updates
      */
     const transcriptHandler = React.useCallback((text: string) => {
-        setTranscript((prev) => prev + " " + text);
+        setTranscript((prev) => {
+            const newTranscript = prev + " " + text;
+            
+            // No automatic prediction - only manual via search button
+            // Cancel any existing auto-prediction timeout if it exists
+            if (autoPredictionTimeoutRef.current) {
+                clearTimeout(autoPredictionTimeoutRef.current);
+                autoPredictionTimeoutRef.current = null;
+            }
+            
+            return newTranscript;
+        });
     }, []);
 
     React.useEffect(() => {
@@ -312,6 +413,10 @@ const AudioTranscription = () => {
             if (socketRef.current) {
                 socketRef.current.disconnect();
                 socketRef.current = null;
+            }
+            // Clean up auto-prediction timeout
+            if (autoPredictionTimeoutRef.current) {
+                clearTimeout(autoPredictionTimeoutRef.current);
             }
         };
     }, []);
@@ -338,6 +443,36 @@ const AudioTranscription = () => {
             <div className={styles.transcriptContainer}>
                 <div className={styles.transcriptText}>
                     {transcript || "Transcript will appear here..."}
+                </div>
+            </div>
+
+            <div className={styles.predictionContainer}>
+                <button 
+                    className={styles.searchButton} 
+                    onClick={predictNextTiles}
+                    disabled={isPredicting || !transcript.trim()}
+                    title="Get next tile suggestions"
+                >
+                    {isPredicting ? "🔍..." : "🔍"}
+                </button>
+                
+                <div className={styles.predictionResults}>
+                    <div className={styles.predictionLabel}>
+                        Suggested next tiles
+                    </div>
+                    <div className={styles.predictionTiles}>
+                        {predictedTiles.length > 0 ? (
+                            predictedTiles.map((tile, index) => (
+                                <span key={index} className={styles.predictionTile}>
+                                    {tile}
+                                </span>
+                            ))
+                        ) : (
+                            <span className={styles.predictionTile}>
+                                No suggestions yet
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
