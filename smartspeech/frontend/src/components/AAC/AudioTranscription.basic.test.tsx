@@ -61,7 +61,7 @@ describe('AudioTranscription Component - Basic Tests', () => {
   describe('Component Rendering', () => {
     test('renders without crashing', () => {
       render(<AudioTranscription />);
-      expect(screen.getByRole('button')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /start recording/i })).toBeInTheDocument();
     });
 
     test('displays start recording button initially', () => {
@@ -175,8 +175,8 @@ describe('AudioTranscription Component - Basic Tests', () => {
     test('has accessible button with proper role', () => {
       render(<AudioTranscription />);
       
-      const button = screen.getByRole('button');
-      expect(button).toBeInTheDocument();
+      const recordButton = screen.getByRole('button', { name: /start recording/i });
+      expect(recordButton).toBeInTheDocument();
     });
 
     test('button has descriptive text', () => {
