@@ -22,6 +22,7 @@ export default function Tiles() {
     const [opacity, setOpacity] = useState<number>(100);
     const [tacoModeActive, setTacoModeActive] = useState<boolean>(false);
     const [opacityControlsVisible, setOpacityControlsVisible] = useState<boolean>(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
     useEffect(() => {
         if (Object.keys(tiles).length === 0) return;
@@ -76,14 +77,43 @@ export default function Tiles() {
 
     return (
         <>
-            {/* Settings button */}
-            <button
-                onClick={() => {/* Add settings handler here */}}
-                className="fixed top-18 left-3.5 z-50 w-10 h-10 bg-emerald-400 hover:bg-emerald-500 flex items-center justify-center transition-colors duration-200"
-                title="Settings"
-            >
-                <FaCog className="w-5 h-5 text-white" />
-            </button>
+            {/* Settings button and dropdown */}
+            <div className="fixed top-18 left-3.5 z-50">
+                <button
+                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                    className="w-10 h-10 bg-emerald-400 hover:bg-emerald-500 flex items-center justify-center transition-colors duration-200"
+                    title="Settings"
+                >
+                    <FaCog className="w-5 h-5 text-white" />
+                </button>
+                
+                {/* Settings dropdown menu */}
+                {isSettingsOpen && (
+                    <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                        <div className="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-50 border-b">
+                            Highlighting Method
+                        </div>
+                        <div className="py-1">
+                            {[1, 2, 3, 4].map((num) => (
+                                <button
+                                    key={num}
+                                    onClick={() => {
+                                        // Add highlighting option handler here
+                                        setIsSettingsOpen(false);
+                                    }}
+                                    className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 text-left"
+                                >
+                                    {/* Replace the text for each option here */}
+                                    {num === 1 && "Opacity"}
+                                    {num === 2 && "Border"}
+                                    {num === 3 && "Pulse"}
+                                    {num === 4 && "Darken"}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Only show the toggle button when controls are hidden */}
             {!opacityControlsVisible && (
