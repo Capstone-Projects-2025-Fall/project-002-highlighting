@@ -3,6 +3,7 @@ import Tile from "./Tile";
 import { stackReducer } from "@/react-state-management/reducers/stackReducer";
 import { TileAssets, TileData } from "./TileTypes";
 import { useTilesProvider } from "@/react-state-management/providers/tileProvider";
+import { FaCog } from 'react-icons/fa';
 import type { MouseEvent } from "react";
 
 export const BACK_BTN_TEXT = "Back";
@@ -75,9 +76,18 @@ export default function Tiles() {
 
     return (
         <>
+            {/* Settings button */}
+            <button
+                onClick={() => {/* Add settings handler here */}}
+                className="fixed top-18 left-3.5 z-50 w-10 h-10 bg-emerald-400 hover:bg-emerald-500 flex items-center justify-center transition-colors duration-200"
+                title="Settings"
+            >
+                <FaCog className="w-5 h-5 text-white" />
+            </button>
+
             {/* Only show the toggle button when controls are hidden */}
             {!opacityControlsVisible && (
-                <div className="fixed top-31 left-0 right-0 z-40 ">
+                <div className="fixed top-31 left-0 right-0 z-40">
                     <div className="max-w-7xl mx-auto px-4 py-2">
                         <div className="flex items-center space-x-4">
                             <button
