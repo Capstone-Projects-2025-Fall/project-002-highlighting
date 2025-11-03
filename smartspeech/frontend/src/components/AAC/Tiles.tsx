@@ -21,6 +21,9 @@ export default function Tiles() {
     const [currentFrame, setCurrentFrame] = useState<TileAssets>({});
     const [opacity, setOpacity] = useState<number>(100);
     const [tacoModeActive, setTacoModeActive] = useState<boolean>(false);
+    // highlightMode controls how tiles are visually highlighted. Possible values:
+    // 'opacity' (default), 'border', 'pulse', 'darken'
+    const [highlightMode, setHighlightMode] = useState<string>('opacity');
     const [opacityControlsVisible, setOpacityControlsVisible] = useState<boolean>(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
@@ -42,11 +45,21 @@ export default function Tiles() {
         const renderTile = (key: string, tileData: TileData): JSX.Element => {
         const { image, text, sound, tileColor, subTiles } = tileData;
         
-        // Calculate tile opacity based on tacoMode and tile text
-        let tileOpacity = opacity;
-        if (tacoModeActive) {
-            tileOpacity = ['Eat', 'Taste', 'Taco'].includes(text) ? 100 : 40;
+        // Determine whether this tile should be considered "highlighted"
+        const tacoRelevant = ['Eat', 'Taste', 'Taco'].includes(text);
+
+        // Calculate tile opacity only when opacity highlighting is active
+        let tileOpacity = 100;
+        if (highlightMode === 'opacity') {
+            tileOpacity = opacity;
+            if (tacoModeActive) {
+                tileOpacity = tacoRelevant ? 100 : 40;
+            }
         }
+
+    // For border highlighting, determine if this tile should get a border.
+    // Apply border highlighting only when taco mode is active and the tile is taco-relevant.
+    const tileHasBorder = highlightMode === 'border' && tacoModeActive && tacoRelevant;
 
         const tile = (
             <Tile 
@@ -55,7 +68,8 @@ export default function Tiles() {
                 sound={subTiles ? "" : sound} 
                 tileColor={tileColor} 
                 hasSubTiles={!!subTiles} 
-                opacity={tileOpacity} 
+                opacity={tileOpacity}
+                hasBorder={tileHasBorder}
             />
         );
 
@@ -94,20 +108,21 @@ export default function Tiles() {
                             Highlighting Method
                         </div>
                         <div className="py-1">
-                            {[1, 2, 3, 4].map((num) => (
+                            {[
+                                { key: 'opacity', label: 'Opacity' },
+                                { key: 'border', label: 'Border' },
+                                { key: 'pulse', label: 'Pulse' },
+                                { key: 'darken', label: 'Darken' },
+                            ].map((opt) => (
                                 <button
-                                    key={num}
+                                    key={opt.key}
                                     onClick={() => {
-                                        // Add highlighting option handler here
+                                        setHighlightMode(opt.key);
                                         setIsSettingsOpen(false);
                                     }}
-                                    className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 text-left"
+                                    className={`w-full px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900 text-left ${highlightMode === opt.key ? 'font-bold text-black' : 'text-gray-700'}`}
                                 >
-                                    {/* Replace the text for each option here */}
-                                    {num === 1 && "Opacity"}
-                                    {num === 2 && "Border"}
-                                    {num === 3 && "Pulse"}
-                                    {num === 4 && "Darken"}
+                                    {opt.label}
                                 </button>
                             ))}
                         </div>

@@ -47,6 +47,10 @@ export interface TileProps {
      * Default is 100 (fully opaque).
      */
     opacity?: number;
+    /**
+     * Whether a black border should be displayed around the tile.
+     */
+    hasBorder?: boolean;
 }
 
 /**
@@ -72,7 +76,7 @@ export function computeTileContainerName(text: string) {
  * @param props.opacity - Opacity of the tile (0-100), default is 100
  * @returns A React component that renders a clickable tile with image and text
  */
-export default function Tile({ image, sound, text, tileColor, hasSubTiles = false, opacity = 100 }: TileProps) {
+export default function Tile({ image, sound, text, tileColor, hasSubTiles = false, opacity = 100, hasBorder = false }: TileProps) {
     const { addTile } = useUtteredTiles();
 
     const handleTileClick = () => {
@@ -93,6 +97,10 @@ export default function Tile({ image, sound, text, tileColor, hasSubTiles = fals
     const style = {
         opacity: opacity / 100
     };
+    // Add border styling if requested
+    if (hasBorder) {
+        Object.assign(style, { border: '4px solid #000', boxSizing: 'border-box' });
+    }
 
     return (
         <div
