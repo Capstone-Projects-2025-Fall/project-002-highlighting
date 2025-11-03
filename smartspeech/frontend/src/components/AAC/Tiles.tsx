@@ -130,15 +130,15 @@ export default function Tiles() {
                 )}
             </div>
 
-            {/* Only show the toggle button when controls are hidden */}
+            {/* Small grey plus button that expands to show controls (taco toggle) */}
             {!opacityControlsVisible && (
                 <div className="fixed top-31 left-0 right-0 z-40">
                     <div className="max-w-7xl mx-auto px-4 py-2">
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center justify-start">
                             <button
-                                onClick={() => setOpacityControlsVisible(!opacityControlsVisible)}
+                                onClick={() => setOpacityControlsVisible(true)}
                                 className="w-8 h-8 bg-gray-300 hover:bg-gray-400 rounded-full flex items-center justify-center transition-colors duration-200"
-                                title="Show opacity controls"
+                                title="Show controls"
                             >
                                 <span className="text-xs font-bold text-gray-700">+</span>
                             </button>
@@ -146,53 +146,31 @@ export default function Tiles() {
                     </div>
                 </div>
             )}
-            
-            {/* Show full controls when expanded */}
+
             {opacityControlsVisible && (
                 <div className="fixed top-31 left-0 right-0 z-40 bg-white shadow-md">
                     <div className="max-w-7xl mx-auto px-4 py-2">
                         <div className="flex items-center space-x-4">
-                            {/* Toggle Circle Button */}
+                            {/* Toggle Circle Button (collapse) */}
                             <button
-                                onClick={() => setOpacityControlsVisible(!opacityControlsVisible)}
+                                onClick={() => setOpacityControlsVisible(false)}
                                 className="w-8 h-8 bg-gray-300 hover:bg-gray-400 rounded-full flex items-center justify-center transition-colors duration-200"
-                                title="Hide opacity controls"
+                                title="Hide controls"
                             >
                                 <span className="text-xs font-bold text-gray-700">−</span>
                             </button>
-                            
-                            {/* Opacity Controls */}
-                            <div className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2 border">
-                                <label className="flex items-center space-x-2">
-                                    <span className="text-sm font-medium">Opacity:</span>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        value={opacity}
-                                        onChange={(e) => setOpacity(Number(e.target.value))}
-                                        className="w-24"
-                                    />
-                                    <span className="text-sm font-medium w-8">{opacity}%</span>
-                                </label>
-                                <button
-                                    onClick={() => setOpacity(100)}
-                                    className="px-2 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors duration-200"
-                                >
-                                    Reset
-                                </button>
-                            </div>
-                            
-                            {/* Taco Mode Button */}
+
+                            {/* Square-style Taco Mode Toggle Button inside expanded controls */}
                             <button
                                 onClick={() => setTacoModeActive(!tacoModeActive)}
-                                className={`px-4 py-2 ${
+                                className={`h-10 px-3 ${
                                     tacoModeActive
                                         ? 'bg-yellow-500 text-black'
                                         : 'bg-yellow-400 text-black'
-                                } rounded-md hover:bg-yellow-500 transition-colors duration-200`}
+                                } rounded-md flex items-center justify-center transition-colors duration-200`}
+                                title="Toggle Taco example"
                             >
-                                {tacoModeActive ? 'Taco example: On' : 'Taco example: Off'}
+                                <span className="text-sm font-medium">Taco example: {tacoModeActive ? 'On' : 'Off'}</span>
                             </button>
                         </div>
                     </div>
