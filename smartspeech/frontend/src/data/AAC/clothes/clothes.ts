@@ -1,8 +1,8 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 import feelings from "../feelings/feelings";
 
-export const CLOTHES_NOUN_TILES_COLOR = "orange";
-export const CLOTHES_ADJECTIVE_TILES_COLOR = "blue";
+export const CLOTHES_NOUN_TILES_COLOR = "blue";
+export const CLOTHES_ADJECTIVE_TILES_COLOR = "gray";
 export const CLOTHES_VERB_TILES_COLOR = "green";
 
 const clothes: TileAssets = {

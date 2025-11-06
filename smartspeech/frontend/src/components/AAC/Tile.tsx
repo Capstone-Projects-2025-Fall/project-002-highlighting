@@ -3,8 +3,18 @@ import { speak } from "@/util/AAC/Speech";
 import Image from "next/image";
 import React from "react";
 
-export const tileColors = ["red", "purple", "orange", "yellow", "green", "blue"];
-export type TileColor = "red" | "purple" | "orange" | "yellow" | "green" | "blue";
+export const tileColors = ["yellow", "green", "blue", "orange", "red", "purple", "gray"] as const;
+export type TileColor = (typeof tileColors)[number];
+
+const tileColorClassMap: Record<TileColor, string> = {
+    yellow: "tile-color-yellow",
+    green: "tile-color-green",
+    blue: "tile-color-blue",
+    orange: "tile-color-orange",
+    red: "tile-color-red",
+    purple: "tile-color-purple",
+    gray: "tile-color-gray",
+};
 
 /**
  * Properties for the Tile component.
@@ -74,6 +84,7 @@ export function computeTileContainerName(text: string) {
  */
 export default function Tile({ image, sound, text, tileColor, hasSubTiles = false, opacity = 100 }: TileProps) {
     const { addTile } = useUtteredTiles();
+    const colorClass = tileColorClassMap[tileColor] ?? tileColorClassMap.yellow;
 
     const handleTileClick = () => {
         // tiles that are just covers are soundless since they are
@@ -96,7 +107,7 @@ export default function Tile({ image, sound, text, tileColor, hasSubTiles = fals
 
     return (
         <div
-            className={`bg-${tileColor}-300 w-44 h-44 flex flex-col justify-center items-center rounded-lg shadow-lg hover:shadow-xl hover:cursor-pointer p-4 2xl-max:w-36 2xl-max:h-36 xl-max:w-32 xl-max:h-32 lg-max:w-28 lg-max:h-28 mid-max:w-24 mid-max:h-24 md-max:w-20 md-max:h-20 xs-max:w-16 xs-max:h-16 relative`}
+            className={`${colorClass} w-44 h-44 flex flex-col justify-center items-center rounded-lg shadow-lg hover:shadow-xl hover:cursor-pointer p-4 2xl-max:w-36 2xl-max:h-36 xl-max:w-32 xl-max:h-32 lg-max:w-28 lg-max:h-28 mid-max:w-24 mid-max:h-24 md-max:w-20 md-max:h-20 xs-max:w-16 xs-max:h-16 relative`}
             style={style}
             onClick={handleTileClick}
             id="tileResize"

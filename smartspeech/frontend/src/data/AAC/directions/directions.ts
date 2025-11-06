@@ -1,6 +1,6 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 
-export const DIRECTIONS_TILES_COLOR = "orange";
+export const DIRECTIONS_TILES_COLOR = "blue";
 
 const directions: TileAssets ={
     direction: {

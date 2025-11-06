@@ -1,6 +1,6 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 
-export const SKY_TILES_COLOR = "orange";
+export const SKY_TILES_COLOR = "blue";
 
 const sky: TileAssets ={
     sky: {

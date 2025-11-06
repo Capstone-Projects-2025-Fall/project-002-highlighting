@@ -2,7 +2,7 @@ import { TileAssets } from "@/components/AAC/TileTypes";
 import who from "@/data/AAC/who/who";
 import { WHO_TILES_COLOR } from "@/data/AAC/who/who";
 
-export const THEY_NOUN_TILES_COLOR = "orange";
+export const THEY_NOUN_TILES_COLOR = "blue";
 export const THEY_PRONOUN_TILES_COLOR = "yellow";
 
 const they: TileAssets = {

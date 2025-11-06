@@ -42,6 +42,19 @@ const PRONOUN_PRIORITY = [
 const pronounPriorityMap = new Map(PRONOUN_PRIORITY.map((word, index) => [word, index]));
 const SPECIAL_FOLDER_KEYS = new Set(["shapes"]);
 const BOARD_COLUMN_COUNT = 8;
+const NON_FOLDER_PRIORITY = ["good", "bad", "stop"];
+const nonFolderPriorityMap = new Map(NON_FOLDER_PRIORITY.map((word, index) => [word, index]));
+const ROOT_MAX_ROWS = 3;
+const ROOT_LAYOUT_COLUMN_KEYS: readonly (readonly string[])[] = [
+    ["self", "you", "they"],
+    ["good", "bad", "stop"],
+    ["tell", "these", "touch"],
+    ["go", "eat", "is"],
+    ["body", "clothing", "colors"],
+    ["feelings", "things", "technology"],
+    ["shapes", "animals"],
+];
+
 
 /**
  * @returns Component which will fetch tiles and display them
@@ -49,6 +62,7 @@ const BOARD_COLUMN_COUNT = 8;
 export default function Tiles() {
     const { tiles } = useTilesProvider();
     const [dataLocation, dispatch] = useReducer(stackReducer<string>, []);
+    const isRootView = dataLocation.length === 0;
     const [currentFrame, setCurrentFrame] = useState<TileAssets>({});
     const [opacity, setOpacity] = useState<number>(100);
     const [tacoModeActive, setTacoModeActive] = useState<boolean>(false);
@@ -56,7 +70,7 @@ export default function Tiles() {
 
     useEffect(() => {
         if (Object.keys(tiles).length === 0) return;
-        if (dataLocation.length === 0) return setCurrentFrame(tiles);
+        if (isRootView) return setCurrentFrame(tiles);
 
         let newFrame = tiles;
 
@@ -67,16 +81,54 @@ export default function Tiles() {
         });
 
         setCurrentFrame(newFrame);
-    }, [tiles, dataLocation]);
+    }, [tiles, dataLocation, isRootView]);
 
     const orderedTiles = useMemo(() => {
         const entries = Object.entries(currentFrame);
 
+        if (isRootView) {
+            const remainingEntries = new Map(entries);
+
+            const columns: [string, TileData][][] = ROOT_LAYOUT_COLUMN_KEYS.map((columnKeys) => {
+                const columnEntries: [string, TileData][] = [];
+
+                columnKeys.forEach((tileKey) => {
+                    const tileData = remainingEntries.get(tileKey);
+                    if (!tileData) return;
+                    columnEntries.push([tileKey, tileData]);
+                    remainingEntries.delete(tileKey);
+                });
+
+                return columnEntries;
+            });
+
+            if (remainingEntries.size > 0) {
+                const leftovers = Array.from(remainingEntries.entries());
+                for (let i = 0; i < leftovers.length; i += ROOT_MAX_ROWS) {
+                    columns.push(leftovers.slice(i, i + ROOT_MAX_ROWS));
+                }
+            }
+
+            const maxRows = columns.reduce((acc, column) => Math.max(acc, column.length), 0);
+            const arranged: [string, TileData][] = [];
+
+            for (let row = 0; row < maxRows; row++) {
+                columns.forEach((column) => {
+                    const entry = column[row];
+                    if (entry) arranged.push(entry);
+                });
+            }
+
+            return arranged;
+        }
+
         const pronounEntries: [string, TileData][] = [];
         const nonFolderEntries: [string, TileData][] = [];
+        const entryIndexMap = new Map<string, number>();
         const folderEntries: [string, TileData][] = [];
 
-        entries.forEach(([key, tileData]) => {
+        entries.forEach(([key, tileData], index) => {
+            entryIndexMap.set(key, index);
             const normalizedText = tileData.text.trim().toLowerCase();
             if (pronounPriorityMap.has(normalizedText)) {
                 pronounEntries.push([key, tileData]);
@@ -91,11 +143,30 @@ export default function Tiles() {
             nonFolderEntries.push([key, tileData]);
         });
 
-        pronounEntries.sort(([, tileA], [, tileB]) => {
+        pronounEntries.sort(([keyA, tileA], [keyB, tileB]) => {
             const priorityA = pronounPriorityMap.get(tileA.text.trim().toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
             const priorityB = pronounPriorityMap.get(tileB.text.trim().toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
-            if (priorityA === priorityB) return 0;
-            return priorityA < priorityB ? -1 : 1;
+            if (priorityA !== priorityB) return priorityA - priorityB;
+            const indexA = entryIndexMap.get(keyA) ?? Number.MAX_SAFE_INTEGER;
+            const indexB = entryIndexMap.get(keyB) ?? Number.MAX_SAFE_INTEGER;
+            return indexA - indexB;
+        });
+        nonFolderEntries.sort(([keyA, tileA], [keyB, tileB]) => {
+            const textA = tileA.text.trim().toLowerCase();
+            const textB = tileB.text.trim().toLowerCase();
+            const priorityA = nonFolderPriorityMap.get(textA);
+            const priorityB = nonFolderPriorityMap.get(textB);
+            if (priorityA !== undefined && priorityB !== undefined) {
+                if (priorityA !== priorityB) return priorityA - priorityB;
+                const indexA = entryIndexMap.get(keyA) ?? Number.MAX_SAFE_INTEGER;
+                const indexB = entryIndexMap.get(keyB) ?? Number.MAX_SAFE_INTEGER;
+                return indexA - indexB;
+            }
+            if (priorityA !== undefined) return -1;
+            if (priorityB !== undefined) return 1;
+            const indexA = entryIndexMap.get(keyA) ?? Number.MAX_SAFE_INTEGER;
+            const indexB = entryIndexMap.get(keyB) ?? Number.MAX_SAFE_INTEGER;
+            return indexA - indexB;
         });
 
         const specialFolderEntries: [string, TileData][] = [];
@@ -118,11 +189,12 @@ export default function Tiles() {
             ...restNonFolder,
             ...remainingFolderEntries,
         ];
-    }, [currentFrame]);
+    }, [currentFrame, isRootView]);
 
     const columnMajorTiles = useMemo(() => {
         const totalTiles = orderedTiles.length;
         if (totalTiles === 0) return orderedTiles;
+        if (isRootView) return orderedTiles;
 
         const columnCount = Math.min(BOARD_COLUMN_COUNT, totalTiles);
         const rows = Math.ceil(totalTiles / columnCount);
@@ -136,7 +208,7 @@ export default function Tiles() {
         }
 
         return arranged;
-    }, [orderedTiles]);
+    }, [orderedTiles, isRootView]);
 
     const renderTile = (key: string, tileData: TileData): JSX.Element => {
         const { image, text, sound, tileColor, subTiles } = tileData;
@@ -173,6 +245,18 @@ export default function Tiles() {
             </div>
         );
     };
+
+    const rootColumnCount = isRootView
+        ? Math.max(ROOT_LAYOUT_COLUMN_KEYS.length, Math.ceil(orderedTiles.length / ROOT_MAX_ROWS))
+        : null;
+
+    const gridClassName = isRootView
+        ? rootColumnCount && rootColumnCount >= 8
+            ? "grid grid-cols-8 gap-4 2xl-max:grid-cols-7 md-max:gap-2"
+            : rootColumnCount && rootColumnCount >= 7
+                ? "grid grid-cols-7 gap-4 2xl-max:grid-cols-6 xl-max:grid-cols-5 lg-max:grid-cols-4 md-max:grid-cols-3 xs-max:grid-cols-2 md-max:gap-2"
+                : "grid grid-cols-6 gap-4 2xl-max:grid-cols-6 xl-max:grid-cols-5 lg-max:grid-cols-4 md-max:grid-cols-3 xs-max:grid-cols-2 md-max:gap-2"
+        : "grid grid-cols-8 gap-4 2xl-max:grid-cols-7 md-max:gap-2";
 
     return (
         <>

@@ -3,7 +3,7 @@ import body from "@/data/AAC/body/body";
 import colors, { COLOR_TILES_COLOR } from "./colors/colors";
 import shapes from "./shapes/shapes";
 import foods from "./foods/foods";
-import locations, { LOCATION_TILES_COLOR } from "./locations/locations";
+import locations from "./locations/locations";
 import clothes from "./clothes/clothes";
 import feelings from "./feelings/feelings";
 import things from "./things/things";
@@ -11,15 +11,23 @@ import tell from "./tell/tell";
 import these from "./these/these";
 import they from "./they/they";
 import touch from "./touch/touch";
-import { TileProps } from "@/components/AAC/Tile";
+import { TileColor, TileProps } from "@/components/AAC/Tile";
 import is from "./is/is";
 import animals from "./animals/animals";
 import electronics from "./electronics/electronics";
+import { applyParentColorToTiles, tintTileAssets } from "@/util/AAC/tintTiles";
 
 /**
  * Maps words to tile data for each tile in our AAC board
  */
-const data: TileAssets = {
+const ACTION_TILE_COLOR: TileColor = "green";
+
+const actionFoods = tintTileAssets(foods, ACTION_TILE_COLOR);
+const actionLocations = tintTileAssets(locations, ACTION_TILE_COLOR);
+const actionTell = tintTileAssets(tell, ACTION_TILE_COLOR);
+const actionTouch = tintTileAssets(touch, ACTION_TILE_COLOR);
+
+const rawTiles: TileAssets = {
   colors: {
     image: "/AAC_assets/img/colors/colorwheel.png",
     text: "Colors",
@@ -49,40 +57,40 @@ const data: TileAssets = {
     image: "/AAC_assets/img/shapes/shapes.png",
     text: "Shape",
     sound: "Shape",
-    tileColor: "yellow",
+    tileColor: "blue",
     subTiles: shapes,
   },
   self: {
     image: "/AAC_assets/img/standard/self.png",
     text: "I",
     sound: "Eye",
-    tileColor: "blue",
+    tileColor: "yellow",
   },
   you: {
     image: "/AAC_assets/img/standard/you.png",
     text: "You",
     sound: "You",
-    tileColor: "green",
+    tileColor: "yellow",
   },
   eat: {
     image: "/AAC_assets/img/food/eat.png",
     text: "Eat",
     sound: "Eat",
-    tileColor: "green",
-    subTiles: foods,
+    tileColor: ACTION_TILE_COLOR,
+    subTiles: actionFoods,
   },
   go: {
     image: "/AAC_assets/img/locations/go.png",
     text: "Go",
     sound: "Go",
-    tileColor: "yellow",
-    subTiles: locations,
+    tileColor: ACTION_TILE_COLOR,
+    subTiles: actionLocations,
   },
   clothing: {
     image: "/AAC_assets/img/clothes/clothes.png",
     text: "Clothes",
     sound: "Clothes",
-    tileColor: "purple",
+    tileColor: "blue",
     subTiles: clothes,
   },
   feelings: {
@@ -96,22 +104,22 @@ const data: TileAssets = {
     image: "/AAC_assets/img/things/things.png",
     text: "Things",
     sound: "Things",
-    tileColor: "red",
+    tileColor: "blue",
     subTiles: things,
   },
   animals: {
     image: "/AAC_assets/img/animals/animal.png",
     text: "Animals",
     sound: "Animals",
-    tileColor: "green",
+    tileColor: "blue",
     subTiles: animals,
   },
   tell: {
     image: "/AAC_assets/img/tell/tell.png",
     text: "Tell",
     sound: "Tell",
-    tileColor: "yellow",
-    subTiles: tell,
+    tileColor: ACTION_TILE_COLOR,
+    subTiles: actionTell,
   },
   these: {
     image: "/AAC_assets/img/this/this.png",
@@ -131,21 +139,21 @@ const data: TileAssets = {
     image: "/AAC_assets/img/body/body.png",
     text: "Body",
     sound: "Body",
-    tileColor: "orange",
+    tileColor: "blue",
     subTiles: body,
   },
   touch: {
     image: "/AAC_assets/img/touch/touch.png",
     text: "Touch",
     sound: "Touch",
-    tileColor: "blue",
-    subTiles: touch,
+    tileColor: ACTION_TILE_COLOR,
+    subTiles: actionTouch,
   },
   is: {
     image: "/AAC_assets/img/is/is.png",
     text: "Is",
     sound: "is",
-    tileColor: "blue",
+    tileColor: "gray",
     subTiles: is,
   },
   technology: {
@@ -162,22 +170,24 @@ export const mockSuggestedTileData: TileAssets = {
     image: "/AAC_assets/img/locations/bathroom.png",
     text: "Bathroom",
     sound: "Bathroom",
-    tileColor: LOCATION_TILES_COLOR,
+    tileColor: ACTION_TILE_COLOR,
   },
   hospital: {
     image: "/AAC_assets/img/locations/hospital.png",
     text: "Hospital",
     sound: "Hospital",
-    tileColor: LOCATION_TILES_COLOR,
+    tileColor: ACTION_TILE_COLOR,
   },
   stop: {
     image: "/AAC_assets/img/standard/stop.png",
     text: "Stop",
     sound: "Stop",
-    tileColor: "red",
+    tileColor: ACTION_TILE_COLOR,
   },
 };
 
-export const blacklist: TileProps[] = [data.good, data.bad];
+const tilesWithParentColors = applyParentColorToTiles(rawTiles);
 
-export default data;
+export const blacklist: TileProps[] = [tilesWithParentColors.good, tilesWithParentColors.bad];
+
+export default tilesWithParentColors;

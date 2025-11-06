@@ -1,6 +1,6 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 
-export const THINGS_TILES_COLOR = "green";
+export const THINGS_TILES_COLOR = "blue";
 
 const animals: TileAssets ={
     animal: {
