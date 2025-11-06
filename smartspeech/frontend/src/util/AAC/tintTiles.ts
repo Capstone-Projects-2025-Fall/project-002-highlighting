@@ -36,19 +36,7 @@ export function applyParentColorToTiles(tiles: TileAssets): TileAssets {
 
         if (tile.subTiles) {
             const parentColor = tile.tileColor as TileColor;
-            const tintedChildren = tintTileAssets(tile.subTiles, parentColor);
-
-            Object.entries(tile.subTiles).forEach(([childKey, childTile]) => {
-                if (childTile.tileColor === "gray") {
-                    const normalizedChild = applyParentColorToTiles({ [childKey]: childTile })[childKey];
-                    tintedChildren[childKey] = {
-                        ...normalizedChild,
-                        tileColor: "gray",
-                    };
-                }
-            });
-
-            clone.subTiles = tintedChildren;
+            clone.subTiles = tintTileAssets(tile.subTiles, parentColor);
         }
 
         normalized[key] = clone;

@@ -153,7 +153,7 @@ const rawTiles: TileAssets = {
     image: "/AAC_assets/img/is/is.png",
     text: "Is",
     sound: "is",
-    tileColor: "gray",
+    tileColor: "orange",
     subTiles: is,
   },
   technology: {
