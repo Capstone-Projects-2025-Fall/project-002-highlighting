@@ -81,3 +81,31 @@ img.clear-button {
         height: calc(100vh - 384px);
     }
 }
+
+.tile-color-yellow {
+    background-color: #f7e886;
+}
+
+.tile-color-green {
+    background-color: #b9fbc0;
+}
+
+.tile-color-blue {
+    background-color: #c7d9ff;
+}
+
+.tile-color-orange {
+    background-color: #ffd7a3;
+}
+
+.tile-color-red {
+    background-color: #f7b0c0;
+}
+
+.tile-color-purple {
+    background-color: #e0c3fc;
+}
+
+.tile-color-gray {
+    background-color: #e2e2e2;
+}

@@ -1,7 +1,7 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 export const WHO_TILES_COLOR = "purple";
 
-export const WHO_NOUN_TILES_COLOR = "orange";
+export const WHO_NOUN_TILES_COLOR = "blue";
 export const WHO_PRONOUN_TILES_COLOR = "yellow";
 
 const who: TileAssets = {

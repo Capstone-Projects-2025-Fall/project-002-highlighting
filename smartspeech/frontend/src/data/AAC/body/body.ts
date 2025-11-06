@@ -1,6 +1,6 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 
-export const BODY_TILES_COLOR = "orange";
+export const BODY_TILES_COLOR = "blue";
 
 const body: TileAssets = {
   arm: {

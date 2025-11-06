@@ -2,7 +2,7 @@ import { TileAssets } from "@/components/AAC/TileTypes";
 import materials from "../materials/materials";
 import tools from "../tools/tools";
 
-export const THINGS_TILES_COLOR = "red";
+export const THINGS_TILES_COLOR = "blue";
 
 const things: TileAssets = {
     things: {
