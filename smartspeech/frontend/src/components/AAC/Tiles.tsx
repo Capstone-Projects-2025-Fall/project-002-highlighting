@@ -277,6 +277,10 @@ export default function Tiles() {
     // Apply border highlighting only when taco mode is active and the tile is taco-relevant.
     const tileHasBorder = highlightMode === 'border' && tacoModeActive && tacoRelevant;
 
+        // Determine whether this tile should pulse when 'pulse' highlight mode is active.
+        // When tacoModeActive is true, only tacoRelevant tiles should pulse; otherwise all pulse.
+        const tileIsPulsing = highlightMode === 'pulse' && (tacoModeActive ? tacoRelevant : true);
+
         const tile = (
             <Tile 
                 image={image} 
@@ -287,6 +291,7 @@ export default function Tiles() {
                 opacity={tileOpacity}
                 hasBorder={tileHasBorder}
                 overrideBgColor={overrideBgColor}
+                isPulsing={tileIsPulsing}
             />
         );
 

@@ -66,6 +66,10 @@ export interface TileProps {
      * Useful for highlight modes that need to programmatically darken or change the tile color.
      */
     overrideBgColor?: string;
+    /**
+     * Whether the tile should show a pulsing animation (used by highlight pulse mode)
+     */
+    isPulsing?: boolean;
 }
 
 /**
@@ -91,7 +95,7 @@ export function computeTileContainerName(text: string) {
  * @param props.opacity - Opacity of the tile (0-100), default is 100
  * @returns A React component that renders a clickable tile with image and text
  */
-export default function Tile({ image, sound, text, tileColor, hasSubTiles = false, opacity = 100, hasBorder = false, overrideBgColor }: TileProps) {
+export default function Tile({ image, sound, text, tileColor, hasSubTiles = false, opacity = 100, hasBorder = false, overrideBgColor, isPulsing = false }: TileProps) {
     const { addTile } = useUtteredTiles();
     const colorClass = tileColorClassMap[tileColor] ?? tileColorClassMap.yellow;
 
@@ -124,7 +128,7 @@ export default function Tile({ image, sound, text, tileColor, hasSubTiles = fals
 
     return (
         <div
-            className={`${colorClass} w-44 h-44 flex flex-col justify-center items-center rounded-lg shadow-lg hover:shadow-xl hover:cursor-pointer p-4 2xl-max:w-36 2xl-max:h-36 xl-max:w-32 xl-max:h-32 lg-max:w-28 lg-max:h-28 mid-max:w-24 mid-max:h-24 md-max:w-20 md-max:h-20 xs-max:w-16 xs-max:h-16 relative`}
+            className={`${colorClass} w-44 h-44 flex flex-col justify-center items-center rounded-lg shadow-lg hover:shadow-xl hover:cursor-pointer p-4 2xl-max:w-36 2xl-max:h-36 xl-max:w-32 xl-max:h-32 lg-max:w-28 lg-max:h-28 mid-max:w-24 mid-max:h-24 md-max:w-20 md-max:h-20 xs-max:w-16 xs-max:h-16 relative ${isPulsing ? 'pulse-highlight' : ''}`}
             style={style}
             onClick={handleTileClick}
             id="tileResize"
