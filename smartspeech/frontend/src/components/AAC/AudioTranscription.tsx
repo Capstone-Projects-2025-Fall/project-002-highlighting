@@ -29,7 +29,7 @@ const AudioTranscription = () => {
      */
     const [record, setRecording] = React.useState(false);
     const isRecordingRef = React.useRef<boolean>(false);
-    
+
     /**
      * State to store the transcribed text from the server
      * 
@@ -37,15 +37,15 @@ const AudioTranscription = () => {
      * @description Accumulates transcribed text received from the server
      */
     const [transcript, setTranscript] = React.useState("");
-    
+
     /**
      * State to store the URL for the recorded audio
      * 
      * @type {string | null}
      * @description Holds the object URL for the recorded audio blob
      */
-    const [audioURL, setaudioURL] = React.useState<string | null >(null);
-    
+    const [audioURL, setaudioURL] = React.useState<string | null>(null);
+
     /**
      * State to track audio playback progress
      * 
@@ -55,7 +55,7 @@ const AudioTranscription = () => {
     const [audioProgress, setAudioProgress] = React.useState(0);
     const [currentTimeSec, setCurrentTimeSec] = React.useState(0);
     const [durationSec, setDurationSec] = React.useState(0);
-    
+
     /**
      * State to track if audio is currently playing
      * 
@@ -63,7 +63,7 @@ const AudioTranscription = () => {
      * @description Indicates whether the audio is currently playing
      */
     const [isPlaying, setIsPlaying] = React.useState(false);
-    
+
     /**
      * State to store predicted next tiles
      * 
@@ -71,7 +71,7 @@ const AudioTranscription = () => {
      * @description Array of suggested next tiles from the prediction API
      */
     const [predictedTiles, setPredictedTiles] = React.useState<string[]>([]);
-    
+
     /**
      * State to track if prediction is loading
      * 
@@ -79,7 +79,7 @@ const AudioTranscription = () => {
      * @description Indicates whether a prediction request is in progress
      */
     const [isPredicting, setIsPredicting] = React.useState(false);
-    
+
     /**
      * Reference to store the last prediction timestamp
      * 
@@ -87,7 +87,7 @@ const AudioTranscription = () => {
      * @description Tracks when the last prediction was made to avoid too frequent calls
      */
     const lastPredictionRef = React.useRef<number>(0);
-    
+
     /**
      * Reference to store the auto-prediction timeout
      * 
@@ -95,7 +95,7 @@ const AudioTranscription = () => {
      * @description Stores the timeout ID for auto-prediction to allow cancellation
      */
     const autoPredictionTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-    
+
     /**
      * State to track when predictions were last updated
      * 
@@ -103,7 +103,7 @@ const AudioTranscription = () => {
      * @description Timestamp of when predictions were last updated
      */
     const [predictionTimestamp, setPredictionTimestamp] = React.useState<number>(0);
-    
+
     /**
      * Reference to the audio element
      * 
@@ -112,6 +112,9 @@ const AudioTranscription = () => {
      */
     const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
+    // Controls whether the bar is expanded or collapsed
+    const [expanded, setExpanded] = React.useState(false);
+
     const formatTime = (seconds: number) => {
         if (!isFinite(seconds) || seconds < 0) return "0:00";
         const m = Math.floor(seconds / 60);
@@ -119,7 +122,7 @@ const AudioTranscription = () => {
         const sPadded = s < 10 ? `0${s}` : `${s}`;
         return `${m}:${sPadded}`;
     };
-    
+
     /**
      * Reference to store audio chunks during recording
      * 
@@ -128,7 +131,7 @@ const AudioTranscription = () => {
      * @remarks Uses useRef to prevent re-renders when chunks are added
      */
     const chunksRef = React.useRef<Blob[]>([]);
-    
+
     /**
      * Reference to store the MediaRecorder instance
      * 
@@ -136,7 +139,7 @@ const AudioTranscription = () => {
      * @description Holds the MediaRecorder instance for controlling audio recording
      */
     const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
-    
+
     /**
      * Effect to initialize the MediaRecorder and request microphone permissions
      * 
@@ -199,7 +202,7 @@ const AudioTranscription = () => {
             );
         }
     }, []);
-    
+
     /**
      * Starts the audio recording process
      * 
@@ -229,7 +232,7 @@ const AudioTranscription = () => {
         console.log("recorder state", mediaRecorderRef.current!.state);
         console.log("recorder started");
     };
-    
+
     /**
      * Stops the audio recording process
      * 
@@ -349,7 +352,7 @@ const AudioTranscription = () => {
         const now = Date.now();
         lastPredictionRef.current = now;
         setIsPredicting(true);
-        
+
         try {
             const response = await fetch('http://localhost:5000/api/nextTilePred', {
                 method: 'POST',
@@ -364,7 +367,7 @@ const AudioTranscription = () => {
             }
 
             const data = await response.json();
-            
+
             if (data.status === 'success') {
                 setPredictedTiles(data.predictedTiles || []);
                 setPredictionTimestamp(Date.now());
@@ -381,7 +384,7 @@ const AudioTranscription = () => {
     }, [transcript]);
 
 
-    
+
     /**
      * Effect to set up Socket.io event listener for transcription results
      * 
@@ -394,14 +397,14 @@ const AudioTranscription = () => {
     const transcriptHandler = React.useCallback((text: string) => {
         setTranscript((prev) => {
             const newTranscript = prev + " " + text;
-            
+
             // No automatic prediction - only manual via search button
             // Cancel any existing auto-prediction timeout if it exists
             if (autoPredictionTimeoutRef.current) {
                 clearTimeout(autoPredictionTimeoutRef.current);
                 autoPredictionTimeoutRef.current = null;
             }
-            
+
             return newTranscript;
         });
     }, []);
@@ -430,10 +433,19 @@ const AudioTranscription = () => {
      * @returns {JSX.Element} The rendered component with recording controls and transcript display
      */
     return (
-        <div className={styles.audioTranscriptionContainer}>
+        <div
+            className={`${styles.audioTranscriptionContainer} ${expanded ? styles.expanded : styles.collapsed
+                }`}
+        >
+            <div
+                className={styles.pullHandle}
+                onClick={() => setExpanded(!expanded)}
+                title={expanded ? "Collapse" : "Expand"}
+            />
+
             <div className={styles.controlsContainer}>
-                <button 
-                    className={record ? styles.stopButton : styles.recordButton} 
+                <button
+                    className={record ? styles.stopButton : styles.recordButton}
                     onClick={record ? stopRecording : startRecording}
                 >
                     {record ? "Stop Recording" : "Start Recording"}
@@ -447,15 +459,15 @@ const AudioTranscription = () => {
             </div>
 
             <div className={styles.predictionContainer}>
-                <button 
-                    className={styles.searchButton} 
+                <button
+                    className={styles.searchButton}
                     onClick={predictNextTiles}
                     disabled={isPredicting || !transcript.trim()}
                     title="Get next tile suggestions"
                 >
                     {isPredicting ? "🔍..." : "🔍"}
                 </button>
-                
+
                 <div className={styles.predictionResults}>
                     <div className={styles.predictionLabel}>
                         Suggested next tiles
@@ -478,8 +490,8 @@ const AudioTranscription = () => {
 
             {audioURL && (
                 <div className={styles.audioContainer}>
-                    <button 
-                        className={styles.playButton} 
+                    <button
+                        className={styles.playButton}
                         onClick={togglePlayback}
                         title={isPlaying ? "Pause" : "Play"}
                     >
@@ -488,16 +500,16 @@ const AudioTranscription = () => {
                     <div className={styles.progressContainer}>
                         <div className={styles.timeText}>{formatTime(currentTimeSec)}</div>
                         <div className={styles.progressBar}>
-                            <div 
-                                className={styles.progressFill} 
+                            <div
+                                className={styles.progressFill}
                                 style={{ width: `${audioProgress}%` }}
                             ></div>
                         </div>
                         <div className={styles.timeText}>{formatTime(durationSec)}</div>
                     </div>
-                    <audio 
+                    <audio
                         ref={audioRef}
-                        src={audioURL} 
+                        src={audioURL}
                         onTimeUpdate={handleTimeUpdate}
                         onPlay={handlePlay}
                         onPause={handlePause}
@@ -508,6 +520,6 @@ const AudioTranscription = () => {
             )}
         </div>
     );
-}; 
+};
 
 export default AudioTranscription;

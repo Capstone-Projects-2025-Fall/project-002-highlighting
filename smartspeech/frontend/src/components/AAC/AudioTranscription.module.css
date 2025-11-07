@@ -374,3 +374,36 @@
     color: #ccc;
   }
 }
+/* === Pull-Out / Collapsible Behavior === */
+
+.audioTranscriptionContainer {
+  transition: transform 0.4s ease;
+}
+
+/* Collapsed: hidden except for handle */
+.collapsed {
+  transform: translateY(calc(100% - 15px)); /* leaves handle visible */
+}
+
+/* Expanded: fully visible */
+.expanded {
+  transform: translateY(0);
+}
+
+/* Small draggable handle */
+.pullHandle {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.pullHandle:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
