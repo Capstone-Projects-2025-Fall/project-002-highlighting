@@ -1,6 +1,6 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 
-export const MATERIAL_TILES_COLOR = "purple";
+export const MATERIAL_TILES_COLOR = "blue";
 
 const materials: TileAssets = {
   diamond: {

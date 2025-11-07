@@ -1,6 +1,6 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 
-export const TOOL_TILES_COLOR = "red";
+export const TOOL_TILES_COLOR = "blue";
 
 const tools: TileAssets = {
   tools: {

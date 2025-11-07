@@ -1,7 +1,7 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 
 export const TOUCH_VERB_TILES_COLOR = "green";
-export const TOUCH_ADJECTIVE_TILES_COLOR = "blue";
+export const TOUCH_ADJECTIVE_TILES_COLOR = "orange";
 
 const touch: TileAssets = {
   break: {

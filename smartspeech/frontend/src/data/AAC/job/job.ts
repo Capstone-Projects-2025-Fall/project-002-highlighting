@@ -2,7 +2,7 @@ import { TileAssets } from "@/components/AAC/TileTypes";
 import office from "../office/office";
 import employee from "../employee/employee";
 
-export const JOB_TILES_COLOR = "yellow";
+export const JOB_TILES_COLOR = "blue";
 
 const job: TileAssets ={
     job: {

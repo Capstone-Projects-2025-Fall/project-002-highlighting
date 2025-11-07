@@ -1,6 +1,6 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 
-export const OFFICE_TILES_COLOR = "yellow";
+export const OFFICE_TILES_COLOR = "blue";
 
 const office: TileAssets ={
     office: {
