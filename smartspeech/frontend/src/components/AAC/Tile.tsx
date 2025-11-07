@@ -61,6 +61,11 @@ export interface TileProps {
      * Whether a black border should be displayed around the tile.
      */
     hasBorder?: boolean;
+    /**
+     * Optional inline background color to override the CSS class color.
+     * Useful for highlight modes that need to programmatically darken or change the tile color.
+     */
+    overrideBgColor?: string;
 }
 
 /**
@@ -86,7 +91,7 @@ export function computeTileContainerName(text: string) {
  * @param props.opacity - Opacity of the tile (0-100), default is 100
  * @returns A React component that renders a clickable tile with image and text
  */
-export default function Tile({ image, sound, text, tileColor, hasSubTiles = false, opacity = 100, hasBorder = false }: TileProps) {
+export default function Tile({ image, sound, text, tileColor, hasSubTiles = false, opacity = 100, hasBorder = false, overrideBgColor }: TileProps) {
     const { addTile } = useUtteredTiles();
     const colorClass = tileColorClassMap[tileColor] ?? tileColorClassMap.yellow;
 
@@ -105,9 +110,13 @@ export default function Tile({ image, sound, text, tileColor, hasSubTiles = fals
     };
 
     // Get style object for opacity
-    const style = {
+    const style: React.CSSProperties = {
         opacity: opacity / 100
     };
+    // Apply inline background color override if provided (used by darken highlight mode)
+    if (overrideBgColor) {
+        Object.assign(style, { backgroundColor: overrideBgColor });
+    }
     // Add border styling if requested
     if (hasBorder) {
         Object.assign(style, { border: '4px solid #000', boxSizing: 'border-box' });

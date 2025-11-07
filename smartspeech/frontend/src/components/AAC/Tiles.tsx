@@ -231,6 +231,48 @@ export default function Tiles() {
             }
         }
 
+        // For darken highlight mode, compute an inline background color override for highlighted tiles
+        let overrideBgColor: string | undefined = undefined;
+        if (highlightMode === 'darken') {
+            // base color map matches the CSS variables in globals.css
+            const baseColors: Record<string, string> = {
+                yellow: '#f7e886',
+                green: '#b9fbc0',
+                blue: '#c7d9ff',
+                orange: '#ffd7a3',
+                red: '#f7b0c0',
+                purple: '#e0c3fc',
+                gray: '#e2e2e2',
+            };
+
+            const darkenHex = (hex: string, amount = 0.25) => {
+                // amount is fraction to darken (0.25 => 25% darker)
+                const parsed = hex.replace('#', '');
+                const r = parseInt(parsed.substring(0, 2), 16);
+                const g = parseInt(parsed.substring(2, 4), 16);
+                const b = parseInt(parsed.substring(4, 6), 16);
+                const dr = Math.max(0, Math.floor(r * (1 - amount)));
+                const dg = Math.max(0, Math.floor(g * (1 - amount)));
+                const db = Math.max(0, Math.floor(b * (1 - amount)));
+                const toHex = (v: number) => v.toString(16).padStart(2, '0');
+                return `#${toHex(dr)}${toHex(dg)}${toHex(db)}`;
+            };
+
+            const base = baseColors[tileColor as string];
+            if (base) {
+                // Only darken when tacoModeActive controls which tiles are highlighted
+                // (parity with opacity behavior)
+                if (tacoModeActive) {
+                    if (tacoRelevant) {
+                        overrideBgColor = darkenHex(base, 0.25);
+                    }
+                } else {
+                    // If taco mode isn't active, treat all tiles as highlighted for the darken setting
+                    overrideBgColor = darkenHex(base, 0.25);
+                }
+            }
+        }
+
     // For border highlighting, determine if this tile should get a border.
     // Apply border highlighting only when taco mode is active and the tile is taco-relevant.
     const tileHasBorder = highlightMode === 'border' && tacoModeActive && tacoRelevant;
@@ -244,6 +286,7 @@ export default function Tiles() {
                 hasSubTiles={!!subTiles} 
                 opacity={tileOpacity}
                 hasBorder={tileHasBorder}
+                overrideBgColor={overrideBgColor}
             />
         );
 
