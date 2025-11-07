@@ -21,55 +21,26 @@ const tileColorClassMap: Record<TileColor, string> = {
  * Defines the appearance and behavior of a tile in the AAC interface.
  */
 export interface TileProps {
-    /**
-     * Path to the image displayed in the center of the tile.
-     * This image visually represents the concept or word.
-     */
+    /** Path to the image displayed in the center of the tile. */
     image: string;
-    
-    /**
-     * Text to be spoken when the tile is clicked.
-     * If not provided, the tile will be silent when clicked.
-     */
+    /** Text to be spoken when the tile is clicked. */
     sound?: string;
-    
-    /**
-     * Text displayed as a caption under the image.
-     * This text identifies the concept or word represented by the tile.
-     */
+    /** Text displayed as a caption under the image. */
     text: string;
-    
-    /**
-     * Color of the tile background.
-     * Used for visual categorization and distinction between different types of tiles.
-     */
+    /** Color of the tile background. */
     tileColor: TileColor;
-    
-    /**
-     * Whether this tile has sub-tiles (folder icon will be shown if true).
-     * Used to indicate that the tile leads to a sub-menu.
-     */
+    /** Whether this tile has sub-tiles (folder icon will be shown if true). */
     hasSubTiles?: boolean;
-
-    /**
-     * Opacity of the tile (0-100).
-     * Controls the transparency of the entire tile.
-     * Default is 100 (fully opaque).
-     */
+    /** Opacity of the tile (0-100). Default is 100. */
     opacity?: number;
-    /**
-     * Whether a black border should be displayed around the tile.
-     */
+    /** Whether a black border should be displayed around the tile. */
     hasBorder?: boolean;
-    /**
-     * Optional inline background color to override the CSS class color.
-     * Useful for highlight modes that need to programmatically darken or change the tile color.
-     */
+    /** Optional inline background color to override the CSS class color. */
     overrideBgColor?: string;
-    /**
-     * Whether the tile should show a pulsing animation (used by highlight pulse mode)
-     */
+    /** Whether the tile should show a pulsing animation (used by highlight pulse mode) */
     isPulsing?: boolean;
+    /** Whether the tile should use the 3D button appearance */
+    is3D?: boolean;
 }
 
 /**
@@ -95,7 +66,7 @@ export function computeTileContainerName(text: string) {
  * @param props.opacity - Opacity of the tile (0-100), default is 100
  * @returns A React component that renders a clickable tile with image and text
  */
-export default function Tile({ image, sound, text, tileColor, hasSubTiles = false, opacity = 100, hasBorder = false, overrideBgColor, isPulsing = false }: TileProps) {
+export default function Tile({ image, sound, text, tileColor, hasSubTiles = false, opacity = 100, hasBorder = false, overrideBgColor, isPulsing = false, is3D = false }: TileProps) {
     const { addTile } = useUtteredTiles();
     const colorClass = tileColorClassMap[tileColor] ?? tileColorClassMap.yellow;
 
@@ -128,7 +99,7 @@ export default function Tile({ image, sound, text, tileColor, hasSubTiles = fals
 
     return (
         <div
-            className={`${colorClass} w-44 h-44 flex flex-col justify-center items-center rounded-lg shadow-lg hover:shadow-xl hover:cursor-pointer p-4 2xl-max:w-36 2xl-max:h-36 xl-max:w-32 xl-max:h-32 lg-max:w-28 lg-max:h-28 mid-max:w-24 mid-max:h-24 md-max:w-20 md-max:h-20 xs-max:w-16 xs-max:h-16 relative ${isPulsing ? 'pulse-highlight' : ''}`}
+    className={`${colorClass} w-44 h-44 flex flex-col justify-center items-center rounded-lg shadow-lg hover:shadow-xl hover:cursor-pointer p-4 2xl-max:w-36 2xl-max:h-36 xl-max:w-32 xl-max:h-32 lg-max:w-28 lg-max:h-28 mid-max:w-24 mid-max:h-24 md-max:w-20 md-max:h-20 xs-max:w-16 xs-max:h-16 relative ${isPulsing ? 'pulse-highlight' : ''} ${is3D ? 'three-d-button' : ''}`}
             style={style}
             onClick={handleTileClick}
             id="tileResize"

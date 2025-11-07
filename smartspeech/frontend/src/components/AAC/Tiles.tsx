@@ -73,6 +73,7 @@ export default function Tiles() {
     const [highlightMode, setHighlightMode] = useState<string>('opacity');
     const [opacityControlsVisible, setOpacityControlsVisible] = useState<boolean>(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+    const [liveShowcaseActive, setLiveShowcaseActive] = useState<boolean>(false);
 
     useEffect(() => {
         if (Object.keys(tiles).length === 0) return;
@@ -216,6 +217,10 @@ export default function Tiles() {
         return arranged;
     }, [orderedTiles, isRootView]);
 
+    // Note: live showcase toggle currently does not perform any automatic highlighting.
+    // The toggle exists as a no-op state for now and will be wired to transcription-based
+    // suggested tiles in a future change.
+
     const renderTile = (key: string, tileData: TileData): JSX.Element => {
         const { image, text, sound, tileColor, subTiles } = tileData;
         
@@ -279,7 +284,8 @@ export default function Tiles() {
 
         // Determine whether this tile should pulse when 'pulse' highlight mode is active.
         // When tacoModeActive is true, only tacoRelevant tiles should pulse; otherwise all pulse.
-        const tileIsPulsing = highlightMode === 'pulse' && (tacoModeActive ? tacoRelevant : true);
+    const tileIsPulsing = highlightMode === 'pulse' && (tacoModeActive ? tacoRelevant : true);
+    const tileIs3D = highlightMode === 'threeD' && (tacoModeActive ? tacoRelevant : true);
 
         const tile = (
             <Tile 
@@ -292,6 +298,7 @@ export default function Tiles() {
                 hasBorder={tileHasBorder}
                 overrideBgColor={overrideBgColor}
                 isPulsing={tileIsPulsing}
+                is3D={tileIs3D}
             />
         );
 
@@ -347,6 +354,7 @@ export default function Tiles() {
                                 { key: 'border', label: 'Border' },
                                 { key: 'pulse', label: 'Pulse' },
                                 { key: 'darken', label: 'Darken' },
+                                { key: 'threeD', label: '3D Button' },
                             ].map((opt) => (
                                 <button
                                     key={opt.key}
@@ -405,6 +413,18 @@ export default function Tiles() {
                                 title="Toggle Taco example"
                             >
                                 <span className="text-sm font-medium">Taco example: {tacoModeActive ? 'On' : 'Off'}</span>
+                            </button>
+                            {/* Live highlighting showcase toggle button */}
+                            <button
+                                onClick={() => setLiveShowcaseActive(!liveShowcaseActive)}
+                                className={`h-10 px-3 ${
+                                    liveShowcaseActive
+                                        ? 'bg-emerald-500 text-white'
+                                        : 'bg-emerald-300 text-black'
+                                } rounded-md flex items-center justify-center transition-colors duration-200`}
+                                title="Toggle Live Highlight Showcase"
+                            >
+                                <span className="text-sm font-medium">Live showcase: {liveShowcaseActive ? 'On' : 'Off'}</span>
                             </button>
                         </div>
                     </div>
