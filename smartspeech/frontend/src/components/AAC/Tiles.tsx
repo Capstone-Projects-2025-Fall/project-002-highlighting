@@ -86,35 +86,6 @@ export default function Tiles() {
         setCurrentFrame(newFrame);
     }, [tiles, dataLocation, isRootView]);
 
-    const orderedTiles = useMemo(() => {
-        const entries = Object.entries(currentFrame);
-
-        if (isRootView) {
-            const remainingEntries = new Map(entries);
-
-            const columns: [string, TileData][][] = ROOT_LAYOUT_COLUMN_KEYS.map((columnKeys) => {
-                const columnEntries: [string, TileData][] = [];
-
-                columnKeys.forEach((tileKey) => {
-                    const tileData = remainingEntries.get(tileKey);
-                    if (!tileData) return;
-                    columnEntries.push([tileKey, tileData]);
-                    remainingEntries.delete(tileKey);
-                });
-
-                return columnEntries;
-            });
-
-            if (remainingEntries.size > 0) {
-                const leftovers = Array.from(remainingEntries.entries());
-                for (let i = 0; i < leftovers.length; i += ROOT_MAX_ROWS) {
-                    columns.push(leftovers.slice(i, i + ROOT_MAX_ROWS));
-                }
-            }
-
-            const maxRows = columns.reduce((acc, column) => Math.max(acc, column.length), 0);
-            const arranged: [string, TileData][] = [];
-
     /**
      * Recursively check if a tile or any of its subtiles are predicted
      * 
@@ -143,7 +114,35 @@ export default function Tiles() {
         return false;
     };
 
-        const renderTile = (key: string, tileData: TileData): JSX.Element => {
+    const orderedTiles: [string, TileData][] = useMemo(() => {
+        const entries = Object.entries(currentFrame);
+
+        if (isRootView) {
+            const remainingEntries = new Map(entries);
+
+            const columns: [string, TileData][][] = ROOT_LAYOUT_COLUMN_KEYS.map((columnKeys) => {
+                const columnEntries: [string, TileData][] = [];
+
+                columnKeys.forEach((tileKey) => {
+                    const tileData = remainingEntries.get(tileKey);
+                    if (!tileData) return;
+                    columnEntries.push([tileKey, tileData]);
+                    remainingEntries.delete(tileKey);
+                });
+
+                return columnEntries;
+            });
+
+            if (remainingEntries.size > 0) {
+                const leftovers = Array.from(remainingEntries.entries());
+                for (let i = 0; i < leftovers.length; i += ROOT_MAX_ROWS) {
+                    columns.push(leftovers.slice(i, i + ROOT_MAX_ROWS));
+                }
+            }
+
+            const maxRows = columns.reduce((acc, column) => Math.max(acc, column.length), 0);
+            const arranged: [string, TileData][] = [];
+
             for (let row = 0; row < maxRows; row++) {
                 columns.forEach((column) => {
                     const entry = column[row];
@@ -223,7 +222,7 @@ export default function Tiles() {
         ];
     }, [currentFrame, isRootView]);
 
-    const columnMajorTiles = useMemo(() => {
+    const columnMajorTiles: [string, TileData][] = useMemo(() => {
         const totalTiles = orderedTiles.length;
         if (totalTiles === 0) return orderedTiles;
         if (isRootView) return orderedTiles;
