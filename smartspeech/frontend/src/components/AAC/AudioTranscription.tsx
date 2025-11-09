@@ -1,6 +1,7 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
 import styles from "./AudioTranscription.module.css";
+import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -65,12 +66,9 @@ const AudioTranscription = () => {
     const [isPlaying, setIsPlaying] = React.useState(false);
     
     /**
-     * State to store predicted next tiles
-     * 
-     * @type {string[]}
-     * @description Array of suggested next tiles from the prediction API
+     * Predicted tiles from context
      */
-    const [predictedTiles, setPredictedTiles] = React.useState<string[]>([]);
+    const { predictedTiles, setPredictedTiles } = usePredictedTiles();
     
     /**
      * State to track if prediction is loading
@@ -215,7 +213,10 @@ const AudioTranscription = () => {
         setRecording(true);
         isRecordingRef.current = true;
         if (socketRef.current) {
+            console.log("Setting up transcript listener, socket connected:", socketRef.current.connected);
             socketRef.current.on("transcript", transcriptHandler);
+        } else {
+            console.error("Socket not initialized!");
         }
         //Check if browser sees any audio-in devices(if you have no mic, no stream object will be created)
         navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -392,8 +393,10 @@ const AudioTranscription = () => {
      * @postcondition Component will receive and display transcription updates
      */
     const transcriptHandler = React.useCallback((text: string) => {
+        console.log("Received transcript from server:", text);
         setTranscript((prev) => {
             const newTranscript = prev + " " + text;
+            console.log("Updated transcript:", newTranscript);
             
             // No automatic prediction - only manual via search button
             // Cancel any existing auto-prediction timeout if it exists
@@ -409,6 +412,20 @@ const AudioTranscription = () => {
     React.useEffect(() => {
         // establish socket once
         socketRef.current = io("http://localhost:5000");
+        
+        // Add connection logging
+        socketRef.current.on("connect", () => {
+            console.log("Socket connected:", socketRef.current?.id);
+        });
+        
+        socketRef.current.on("disconnect", () => {
+            console.log("Socket disconnected");
+        });
+        
+        socketRef.current.on("connect_error", (error) => {
+            console.error("Socket connection error:", error);
+        });
+        
         return () => {
             if (socketRef.current) {
                 socketRef.current.disconnect();

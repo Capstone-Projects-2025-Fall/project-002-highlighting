@@ -16,6 +16,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import ffmpegPath from "ffmpeg-static";
+import { pipeline } from "@xenova/transformers";
 // loads variable from .env file into process.env
 dotenv.config();
 import { File } from "node:buffer";
@@ -113,22 +114,48 @@ app.use((req, res, next) => {
 });
 
 /**
+ * Configuration: Switch between OpenAI API and Local LLM
+ * 
+ * Options:
+ * - 'openai': Use OpenAI API with vector store (requires API key)
+ * - 'openai-local': Use local LLM with local vector search (offline)
+ */
+//const USE_MODEL = 'openai'; // ← Uncomment to use OpenAI API
+const USE_MODEL = 'openai-local'; // ← Use local LLM with vector search
+
+/**
+ * Configuration: Switch between Local and OpenAI Transcription
+ * 
+ * To switch transcription models, simply comment out one line and uncomment the other:
+ * 
+ * Use Local Whisper Model (offline): const USE_TRANSCRIPTION_MODEL = 'local';
+ * Use OpenAI Whisper API (requires API key): const USE_TRANSCRIPTION_MODEL = 'openai';
+ */
+const USE_TRANSCRIPTION_MODEL = 'local'; // ← Comment this out to use OpenAI
+//const USE_TRANSCRIPTION_MODEL = 'openai'; // ← Uncomment this to use OpenAI
+
+/**
  * OpenAI API client
  * 
  * @type {OpenAI}
  * @description Initialized OpenAI client with API key from environment variables
- * @throws {Error} If OPENAI_API_KEY is not defined in environment variables
+ * @throws {Error} If OPENAI_API_KEY is not defined in environment variables and OpenAI is being used
  */
-if (!process.env.OPENAI_API_KEY) {
-  console.error(" Missing OPENAI_API_KEY in environment");
-  process.exit(1);
+let openai = null;
+if (USE_MODEL === 'openai' || USE_TRANSCRIPTION_MODEL === 'openai') {
+  if (!process.env.OPENAI_API_KEY) {
+    console.error("Missing OPENAI_API_KEY in environment");
+    process.exit(1);
+  }
+  console.log("API key loaded? Yes");
+  openai = new OpenAI({ 
+    apiKey: process.env.OPENAI_API_KEY,
+    // Enable beta features for assistants API
+    defaultQuery: { 'api-version': '2024-02-15-preview' }
+  });
+} else {
+  console.log(`Running in local mode (USE_MODEL=${USE_MODEL}) - OpenAI API key not required`);
 }
-console.log("API key loaded? Yes");
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY,
-  // Enable beta features for assistants API
-  defaultQuery: { 'api-version': '2024-02-15-preview' }
-});
 
 /**
  * Load words from words.json file
@@ -157,10 +184,14 @@ try {
  * @async
  */
 const createVectorStore = async () => {
+  // Skip vector store creation if OpenAI is not initialized (local mode)
+  if (!openai) {
+    console.log('Skipping vector store creation (running in local mode)');
+    return;
+  }
+  
   try {
     console.log('Creating vector store...');
-    // console.log('OpenAI client methods:', Object.keys(openai));
-    // console.log('Vector stores API available:', !!openai.vectorStores);
     
     // Create vector store using the correct API
     const vectorStore = await openai.vectorStores.create({
@@ -285,20 +316,22 @@ const getWordDescription = (word) => {
  * Next Tile Prediction endpoint
  * 
  * @route POST /api/nextTilePred
- * @description Uses OpenAI file search to predict next tiles based on transcript context
+ * @description Uses vector search and local LLM to predict next tiles based on transcript context and pressed tiles
  * 
  * @param {Object} req - Express request object
- * @param {Object} req.body - Request body containing transcript text
+ * @param {Object} req.body - Request body containing transcript text and optionally pressed tiles
  * @param {string} req.body.transcript - The transcript text to analyze
+ * @param {string[]} [req.body.pressedTiles] - Optional array of recently pressed tiles to consider
  * @param {Object} res - Express response object
  * 
  * @returns {Object} JSON response with predicted tiles
  * @returns {string[]} predictedTiles - Array of suggested next tiles
  * @returns {string} status - Success or error status
+ * @returns {string[]} pressedTiles - Array of pressed tiles that were considered
  */
 app.post('/api/nextTilePred', async (req, res) => {
   try {
-    const { transcript } = req.body;
+    const { transcript, pressedTiles } = req.body;
     
     if (!transcript || typeof transcript !== 'string') {
       return res.status(400).json({ 
@@ -318,28 +351,52 @@ app.post('/api/nextTilePred', async (req, res) => {
       });
     }
 
-    try {
-      let relevantWords = [];
-      
-      if (vectorStoreId) {
-        // Use vector store for semantic search
-        console.log('Using vector store for semantic search...');
-        // console.log('Vector store ID:', vectorStoreId);
-        // console.log('OpenAI client methods:', Object.keys(openai));
-        // console.log('Assistants API available:', !!openai.assistants);
-        // console.log('Beta API available:', !!openai.beta);
-        // console.log('Beta assistants available:', !!openai.beta?.assistants);
-        
-        try {
-          // Use Responses API with file search (correct structure)
-          console.log('Using Responses API with file search...');
-          // console.log('Responses API available:', !!openai.responses);
-          
-          // Create a response with vector store using correct Responses API structure
-          const response = await openai.responses.create({
-            input: `Based on this conversation context: "${contextLines}"
+    // Validate pressedTiles if provided
+    const validPressedTiles = Array.isArray(pressedTiles) 
+      ? pressedTiles.filter(t => typeof t === 'string' && t.trim().length > 0)
+      : [];
 
-Find the most relevant words that would be good next tiles to suggest for an AAC user. Use the file search to find contextually relevant words from the available tiles.
+    // Route based on configuration flag
+    if (USE_MODEL === 'openai-local') {
+      console.log('[Prediction] Using Local LLM with vector search');
+      const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 8);
+      return res.json({
+        predictedTiles: predicted,
+        status: 'success',
+        context: contextLines,
+        pressedTiles: validPressedTiles
+      });
+    }
+
+    // OpenAI API path
+    if (USE_MODEL === 'openai') {
+      console.log('[Prediction] Using OpenAI API with vector store');
+      if (!openai) {
+        console.error('OpenAI client not initialized. Falling back to local LLM prediction.');
+        const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 8);
+        return res.json({
+          predictedTiles: predicted,
+          status: 'success',
+          context: contextLines,
+          pressedTiles: validPressedTiles
+        });
+      }
+      
+      try {
+        let relevantWords = [];
+        
+        if (vectorStoreId) {
+          // Use vector store for semantic search
+          try {
+            // Create a response with vector store using correct Responses API structure
+            const pressedTilesInfo = validPressedTiles.length > 0 
+              ? `Recently pressed tiles: ${validPressedTiles.join(', ')}. ` 
+              : '';
+            
+            const response = await openai.responses.create({
+              input: `Based on this conversation context: "${contextLines}"
+
+${pressedTilesInfo}Find the most relevant words that would be good next tiles to suggest for an AAC user. Use the file search to find contextually relevant words from the available tiles.
 
 CRITICAL: Return ONLY a simple list of 5-8 words, one per line, with no explanations, numbers, or formatting. Example:
 eat
@@ -359,13 +416,9 @@ Return ONLY the words, nothing else.`,
               "vector_store_ids": [vectorStoreId]
             }]
           });
-          
-          // console.log('Response created:', response);
-          // console.log('Response ID:', response.id);
 
           if (response.output_text) {
             const responseText = response.output_text;
-            // console.log('AI Response:', responseText);
             
             // Extract words from the response - improved parsing
             const words = responseText
@@ -421,7 +474,6 @@ Return ONLY the words, nothing else.`,
                                  wordsData.tiles.some(tile => tile.toLowerCase().includes(word));
                 
                 if (!wordExists) {
-                  //console.log(`Filtered out word not in tiles: "${word}"`);
                   return false;
                 }
                 
@@ -467,7 +519,6 @@ Return ONLY the words, nothing else.`,
               .map(item => item.word);
             
             relevantWords = sortedWords;
-            // console.log('Selected words:', relevantWords);
           }
           
         } catch (responseError) {
@@ -482,22 +533,35 @@ Return ONLY the words, nothing else.`,
         relevantWords = findRelevantWords(contextLines, wordsData.tiles);
       }
       
-      res.json({
-        predictedTiles: relevantWords,
-        status: 'success',
-        context: contextLines
-      });
+        res.json({
+          predictedTiles: relevantWords,
+          status: 'success',
+          context: contextLines,
+          pressedTiles: validPressedTiles
+        });
 
-    } catch (error) {
-      console.error('Vector store search error:', error);
-      
-      // Fallback to simple text matching
-      const relevantWords = findRelevantWords(contextLines, wordsData.tiles);
-      
-      res.json({
-        predictedTiles: relevantWords,
+      } catch (error) {
+        console.error('Vector store search error:', error);
+        
+        // Fallback to simple text matching
+        const relevantWords = findRelevantWords(contextLines, wordsData.tiles);
+        
+        res.json({
+          predictedTiles: relevantWords,
+          status: 'success',
+          context: contextLines,
+          pressedTiles: validPressedTiles
+        });
+      }
+    } else {
+      // Fallback for unsupported USE_MODEL value
+      console.error('Unsupported USE_MODEL value. Falling back to local LLM prediction.');
+      const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 8);
+      return res.json({
+        predictedTiles: predicted,
         status: 'success',
-        context: contextLines
+        context: contextLines,
+        pressedTiles: validPressedTiles
       });
     }
 
@@ -650,6 +714,532 @@ function findRelevantWords(context, words) {
 
 
 /**
+ * Local embedding pipeline and cache for vector search
+ * Used by Local LLM prediction to find relevant tiles via semantic search
+ */
+let __localEmbeddingPipeline = null;
+let __labelList = wordsData?.tiles || [];
+let __labelEmbeddingsCache = null; // Cache for label embeddings
+
+/**
+ * Local LLM pipeline for text generation
+ * 
+ * @type {Promise<Object>|null}
+ * @description Cached text generation pipeline for local LLM-based prediction
+ */
+let __localLLMPipeline = null;
+
+/**
+ * Local Whisper transcription pipeline
+ * 
+ * @type {Promise<Object>|null}
+ * @description Cached Whisper pipeline for speech-to-text transcription
+ */
+let __localWhisperPipeline = null;
+
+/**
+ * Get or create the local Whisper transcription pipeline
+ * 
+ * @function getLocalWhisperPipeline
+ * @description Initializes and returns a Whisper model pipeline for local transcription
+ * @returns {Promise<Object>} The Whisper pipeline instance
+ * @async
+ */
+async function getLocalWhisperPipeline() {
+  if (!__localWhisperPipeline) {
+    console.log('Loading local Whisper model (this may take a moment on first use)...');
+    // Using whisper-tiny.en for faster processing and lower latency
+    // whisper-tiny.en is smaller (~39MB) and faster, good for real-time transcription
+    // For better accuracy but slower, use 'Xenova/whisper-small.en' (~244MB)
+    __localWhisperPipeline = await pipeline(
+      'automatic-speech-recognition',
+      'Xenova/whisper-tiny.en'
+    );
+    console.log('Local Whisper model loaded successfully');
+  }
+  return __localWhisperPipeline;
+}
+
+/**
+ * Convert WAV buffer to Float32Array for Whisper
+ * 
+ * @function wavToFloat32Array
+ * @description Parses WAV file buffer and converts PCM data to normalized Float32Array
+ * @param {Buffer} wavBuffer - The WAV file buffer (with header)
+ * @returns {Float32Array} Normalized audio samples as Float32Array
+ */
+function wavToFloat32Array(wavBuffer) {
+  // WAV header is 44 bytes
+  // Skip header and get PCM data (16-bit signed integers, little-endian)
+  const pcmData = wavBuffer.slice(44);
+  const samples = new Float32Array(pcmData.length / 2);
+  
+  // Convert 16-bit PCM to normalized float32 (-1.0 to 1.0)
+  let maxAmplitude = 0;
+  
+  for (let i = 0; i < samples.length; i++) {
+    // Read 16-bit signed integer (little-endian)
+    const int16 = pcmData.readInt16LE(i * 2);
+    // Normalize to [-1.0, 1.0] range
+    samples[i] = int16 / 32768.0;
+    maxAmplitude = Math.max(maxAmplitude, Math.abs(samples[i]));
+  }
+  
+  // Skip expensive logging for performance
+  // Only warn if audio is likely to fail
+  if (maxAmplitude < 0.01) {
+    console.warn('WARNING: Audio appears to be silent or very quiet');
+  }
+  
+  return samples;
+}
+
+
+/**
+ * Transcribe audio using local Whisper model
+ * 
+ * @function transcribeAudioLocal
+ * @description Transcribes audio data using the local Whisper model
+ * @param {string} audioFilePath - Path to the WAV audio file
+ * @returns {Promise<string>} The transcribed text
+ * @async
+ */
+async function transcribeAudioLocal(audioFilePath) {
+  try {
+    const whisper = await getLocalWhisperPipeline();
+    
+    // Read the WAV file
+    const wavBuffer = fs.readFileSync(audioFilePath);
+    
+    // Convert WAV to Float32Array (normalized audio samples)
+    // This function also logs audio stats
+    const audioData = wavToFloat32Array(wavBuffer);
+    
+    // Check if audio has sufficient content
+    if (audioData.length < 16000) { // Less than 1 second
+      return '';
+    }
+    
+    // Quick silence check - only check first and last 10% of samples for speed
+    const sampleSize = Math.floor(audioData.length * 0.1);
+    let maxAmplitude = 0;
+    for (let i = 0; i < sampleSize; i++) {
+      maxAmplitude = Math.max(maxAmplitude, Math.abs(audioData[i]));
+      maxAmplitude = Math.max(maxAmplitude, Math.abs(audioData[audioData.length - 1 - i]));
+    }
+    
+    // If first/last samples are silent, check middle section quickly
+    if (maxAmplitude < 0.01) {
+      const midStart = Math.floor(audioData.length * 0.4);
+      const midEnd = Math.floor(audioData.length * 0.6);
+      for (let i = midStart; i < midEnd; i += 100) {
+        maxAmplitude = Math.max(maxAmplitude, Math.abs(audioData[i]));
+      }
+    }
+    
+    // Skip if completely silent (very low threshold to avoid missing quiet speech)
+    if (maxAmplitude < 0.0005) {
+      return '';
+    }
+    
+    // Optimized Whisper call - minimal options for fastest processing
+    let result;
+    try {
+      result = await whisper(audioData, {
+        return_timestamps: false, // Skip timestamps for speed
+        language: 'en', // Specify language to avoid detection step
+      });
+    } catch (error) {
+      console.error('Whisper call failed:', error.message);
+      throw error;
+    }
+    
+    // Extract the transcribed text
+    // @xenova/transformers Whisper returns: { text: string }
+    let transcribedText = '';
+    if (result && result.text !== undefined && result.text !== null) {
+      transcribedText = String(result.text);
+    } else if (result?.chunks && Array.isArray(result.chunks) && result.chunks.length > 0) {
+      // If result has chunks, extract text from first chunk
+      transcribedText = result.chunks[0].text || '';
+    } else if (typeof result === 'string') {
+      // Sometimes the result might be a string directly
+      transcribedText = result;
+    }
+    
+    return transcribedText.trim();
+  } catch (error) {
+    console.error('Local transcription error:', error);
+    throw error;
+  }
+}
+
+async function getLocalEmbeddingPipeline() {
+  if (!__localEmbeddingPipeline) {
+    __localEmbeddingPipeline = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+  }
+  return __localEmbeddingPipeline;
+}
+
+function meanPoolAndNormalize(embeddings) {
+  // Handle different output formats from @xenova/transformers
+  let data;
+  if (Array.isArray(embeddings)) {
+    data = embeddings;
+  } else if (embeddings?.data) {
+    // If it's a Tensor-like object, extract the data
+    data = Array.isArray(embeddings.data) ? embeddings.data : Array.from(embeddings.data);
+  } else if (embeddings?.tolist) {
+    // If it's a Tensor with tolist method
+    data = embeddings.tolist();
+  } else {
+    // Try to convert to array
+    data = Array.from(embeddings);
+  }
+
+  // Handle 2D array (tokens x dimensions) - need to mean pool
+  if (Array.isArray(data[0])) {
+    const tokens = data.length;
+    const dim = data[0].length;
+    const output = new Float32Array(dim);
+    
+    // Mean pooling: average across tokens
+    for (let i = 0; i < tokens; i++) {
+      const row = data[i];
+      for (let d = 0; d < dim; d++) {
+        output[d] += Array.isArray(row) ? row[d] : row;
+      }
+    }
+    for (let d = 0; d < dim; d++) output[d] /= tokens;
+    
+    // L2 normalization
+    let norm = 0;
+    for (let d = 0; d < dim; d++) norm += output[d] * output[d];
+    norm = Math.sqrt(norm) || 1;
+    for (let d = 0; d < dim; d++) output[d] /= norm;
+    
+    return output;
+  } else {
+    // Already 1D array (sentence embedding)
+    const dim = data.length;
+    const output = new Float32Array(dim);
+    for (let d = 0; d < dim; d++) {
+      output[d] = data[d];
+    }
+    
+    // L2 normalization
+    let norm = 0;
+    for (let d = 0; d < dim; d++) norm += output[d] * output[d];
+    norm = Math.sqrt(norm) || 1;
+    for (let d = 0; d < dim; d++) output[d] /= norm;
+    
+    return output;
+  }
+}
+
+async function embedText(text) {
+  const pipe = await getLocalEmbeddingPipeline();
+  const result = await pipe(text);
+  
+  // @xenova/transformers returns embeddings in result.data as a Tensor
+  // The format is typically: { data: Tensor } where Tensor has shape [num_tokens, hidden_size]
+  let embeddingArray;
+  
+  try {
+    // Extract tensor from result
+    const tensor = result?.data || result;
+    
+    // @xenova/transformers v2.x: tensor has tolist() method that preserves 2D structure
+    if (tensor && typeof tensor.tolist === 'function') {
+      embeddingArray = tensor.tolist();
+    }
+    // If tensor.data exists and is array-like
+    else if (tensor?.data) {
+      // Check if it's already an array
+      if (Array.isArray(tensor.data)) {
+        embeddingArray = tensor.data;
+      }
+      // If it has tolist method
+      else if (typeof tensor.data.tolist === 'function') {
+        embeddingArray = tensor.data.tolist();
+      }
+      // Otherwise try to convert (but this might flatten)
+      else {
+        const flatData = Array.from(tensor.data);
+        // Check shape to reconstruct 2D if needed
+        // all-MiniLM-L6-v2 hidden_size is 384
+        const hiddenSize = 384;
+        if (flatData.length % hiddenSize === 0) {
+          // Reconstruct 2D array
+          const numTokens = flatData.length / hiddenSize;
+          embeddingArray = [];
+          for (let i = 0; i < numTokens; i++) {
+            embeddingArray.push(flatData.slice(i * hiddenSize, (i + 1) * hiddenSize));
+          }
+        } else {
+          embeddingArray = flatData;
+        }
+      }
+    }
+    // If result is already an array
+    else if (Array.isArray(result)) {
+      embeddingArray = result;
+    }
+    else {
+      // Last resort: try to convert, but this will likely flatten
+      const flatData = Array.from(tensor || result);
+      const hiddenSize = 384;
+      if (flatData.length % hiddenSize === 0 && flatData.length > hiddenSize) {
+        // Reconstruct 2D array
+        const numTokens = flatData.length / hiddenSize;
+        embeddingArray = [];
+        for (let i = 0; i < numTokens; i++) {
+          embeddingArray.push(flatData.slice(i * hiddenSize, (i + 1) * hiddenSize));
+        }
+      } else {
+        embeddingArray = flatData;
+      }
+    }
+    
+    
+  } catch (error) {
+    console.error('Error extracting embedding:', error);
+    console.error('Result type:', typeof result, 'Result keys:', Object.keys(result || {}));
+    if (result?.data) {
+      console.error('Tensor type:', typeof result.data, 'Tensor keys:', Object.keys(result.data || {}));
+    }
+    throw error;
+  }
+  
+  // Mean pool and normalize
+  return meanPoolAndNormalize(embeddingArray);
+}
+
+function cosineSimilarity(vecA, vecB) {
+  if (!vecA || !vecB || vecA.length !== vecB.length) {
+    console.warn(`Cosine similarity: mismatched dimensions. vecA: ${vecA?.length}, vecB: ${vecB?.length}`);
+    return 0;
+  }
+  
+  let dot = 0;
+  let hasNaN = false;
+  for (let i = 0; i < vecA.length; i++) {
+    const val = vecA[i] * vecB[i];
+    if (isNaN(val) || !isFinite(val)) {
+      hasNaN = true;
+      break;
+    }
+    dot += val;
+  }
+  
+  if (hasNaN) {
+    console.warn('NaN detected in cosine similarity calculation');
+    return 0;
+  }
+  
+  return dot; // Already normalized, so dot product = cosine similarity
+}
+
+function topNIndices(arr, n) {
+  return arr
+    .map((v, i) => [v, i])
+    .sort((a, b) => b[0] - a[0])
+    .slice(0, n)
+    .map(([, i]) => i);
+}
+
+/**
+ * Get or create the local LLM pipeline
+ * 
+ * @function getLocalLLMPipeline
+ * @description Initializes and returns a text generation pipeline for local LLM
+ * @returns {Promise<Object>} The text generation pipeline instance
+ * @async
+ */
+async function getLocalLLMPipeline() {
+  if (!__localLLMPipeline) {
+    console.log('Loading local LLM model (this may take a moment on first use)...');
+    // Using GPT-2 small model - fast and lightweight for local inference
+    // Alternative models: 'Xenova/gpt2', 'Xenova/distilgpt2' (even smaller)
+    __localLLMPipeline = await pipeline(
+      'text-generation',
+      'Xenova/distilgpt2' // Smaller and faster than GPT-2
+    );
+    console.log('Local LLM model loaded successfully');
+  }
+  return __localLLMPipeline;
+}
+
+/**
+ * Local LLM-based prediction with vector search (offline)
+ * Combines local vector search with local LLM for intelligent predictions
+ * 
+ * @function predictNextTilesLocalLLM
+ * @param {string} contextLines - The conversation context (transcript)
+ * @param {string[]} pressedTiles - Array of tiles that were recently pressed
+ * @param {number} topN - Number of tiles to return (default: 8)
+ * @returns {Promise<string[]>} Array of predicted tile words
+ * @async
+ */
+async function predictNextTilesLocalLLM(contextLines, pressedTiles = [], topN = 8) {
+  const excluded = new Set([
+    'he','she','it','they','we','you','him','her','his','hers','theirs','mine','yours','ours',
+    'and','or','but','because','if','when','where','what','who','how','why',
+    'at','by','for','from','in','of','on','to','with','up','down','over','under','through',
+    'am','is','are','was','were','be','been','being','have','has','had','do','does','did',
+    'will','would','could','should','may','might','can','must',
+    'again','also','still','very','really','maybe','definitely','almost','even','just','only',
+    'bottom','top','side','middle','front','back','left','right','center',
+    'ai','animal','chair','bridge','bring','thing','stuff','place','way','time','day','night','year','month','week','hour','minute','second',
+    'about','around','somewhere','anywhere','everywhere','nowhere','awesome','cool','nice','great','wonderful','amazing','fantastic'
+  ]);
+
+  const labels = __labelList.filter(w => !excluded.has(String(w).toLowerCase()));
+  if (!labels.length) return [];
+
+  // Ensure embeddings are cached
+  if (!__labelEmbeddingsCache || __labelEmbeddingsCache.length !== labels.length) {
+    console.log(`Computing embeddings for ${labels.length} labels (first time only)...`);
+    __labelEmbeddingsCache = [];
+    for (let i = 0; i < labels.length; i++) {
+      const label = labels[i];
+      const emb = await embedText(label);
+      __labelEmbeddingsCache.push(emb);
+    }
+    console.log('Label embeddings cached successfully.');
+  }
+
+  // Create combined context from transcript and pressed tiles
+  const pressedTilesText = pressedTiles && pressedTiles.length > 0 
+    ? `Recently pressed tiles: ${pressedTiles.join(', ')}. ` 
+    : '';
+  const combinedContext = `${pressedTilesText}Transcript: "${contextLines}"`;
+
+  // Embed the combined context for vector search
+  const queryEmb = await embedText(combinedContext);
+  const sims = __labelEmbeddingsCache.map(e => cosineSimilarity(queryEmb, e));
+  
+  // Get a larger set of candidate words from vector search (top 50-80) for LLM to consider
+  // This gives LLM more context without overwhelming it
+  const topK = Math.min(60, labels.length);
+  const topIndices = topNIndices(sims, topK);
+  const candidateWords = topIndices.map(i => labels[i]);
+
+  // Use local LLM to intelligently select best words based on transcript AND pressed tiles
+  try {
+    const llm = await getLocalLLMPipeline();
+    
+    // Create prompt that includes both transcript context and pressed tiles
+    const pressedTilesInfo = pressedTiles && pressedTiles.length > 0 
+      ? `\nRecently pressed tiles: ${pressedTiles.join(', ')}` 
+      : '';
+    
+    const prompt = `Context: "${contextLines}"${pressedTilesInfo}
+
+Based on the transcript and recently pressed tiles, select the ${topN} best next tiles from: ${candidateWords.join(', ')}
+
+Return words only, one per line:
+`;
+
+    // Generate text with the LLM - optimized for speed
+    const result = await llm(prompt, {
+      max_new_tokens: 30, // Enough for 8 words
+      temperature: 0, // Greedy decoding (faster than sampling)
+      do_sample: false, // Greedy decoding is faster
+      return_full_text: false, // Don't return the prompt
+    });
+
+    // Extract generated text
+    let generatedText = '';
+    if (result && Array.isArray(result) && result.length > 0) {
+      generatedText = result[0].generated_text || '';
+    } else if (result && result.generated_text) {
+      generatedText = result.generated_text;
+    } else if (typeof result === 'string') {
+      generatedText = result;
+    }
+
+    // Parse the generated text to extract words
+    const extractedWords = generatedText
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => {
+        if (!line) return false;
+        if (line.match(/^\d+\./)) return false; // Remove numbered lines
+        if (line.toLowerCase().includes('here are')) return false;
+        if (line.toLowerCase().includes('most relevant')) return false;
+        if (line.toLowerCase().includes('based on')) return false;
+        if (line.toLowerCase().includes('conversation context')) return false;
+        if (line.toLowerCase().includes('suggested words')) return false;
+        if (line.toLowerCase().includes('available tiles')) return false;
+        if (line.toLowerCase().includes('recently pressed')) return false;
+        return true;
+      })
+      .map(line => {
+        // Extract just the word from each line
+        const word = line.replace(/^\d+\.\s*/, '').trim().toLowerCase();
+        return word;
+      })
+      .filter(word => {
+        // Basic filters
+        if (word.length <= 1) return false;
+        // Must be in the candidate words list
+        if (!candidateWords.some(cw => cw.toLowerCase() === word)) return false;
+        return true;
+      })
+      .slice(0, topN); // Limit to topN
+
+    // If LLM didn't generate enough valid words, fall back to vector search results
+    if (extractedWords.length < topN) {
+      const vectorSearchResults = topIndices.slice(0, topN).map(i => labels[i]);
+      // Combine and deduplicate
+      const combined = [...extractedWords, ...vectorSearchResults.filter(w => !extractedWords.includes(w.toLowerCase()))];
+      return combined.slice(0, topN);
+    }
+
+    return extractedWords;
+
+  } catch (error) {
+    console.error('Local LLM prediction error:', error);
+    // Fallback to pure vector search if LLM fails
+    const indices = topNIndices(sims, Math.min(topN, labels.length));
+    return indices.map(i => labels[i]);
+  }
+}
+
+app.post('/api/nextTilePredLocal', async (req, res) => {
+  try {
+    const { transcript, pressedTiles, topN = 8 } = req.body || {};
+    if (!transcript || typeof transcript !== 'string') {
+      return res.status(400).json({ error: 'Transcript text is required', status: 'error' });
+    }
+
+    const lines = transcript.trim().split('\n').filter(line => line.trim());
+    const contextLines = lines.slice(-2).join(' ');
+    if (!contextLines.trim()) {
+      return res.status(400).json({ error: 'No valid context found in transcript', status: 'error' });
+    }
+
+    // Validate pressedTiles if provided
+    const validPressedTiles = Array.isArray(pressedTiles) 
+      ? pressedTiles.filter(t => typeof t === 'string' && t.trim().length > 0)
+      : [];
+
+    const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
+
+    return res.json({ 
+      predictedTiles: predicted, 
+      status: 'success', 
+      context: contextLines,
+      pressedTiles: validPressedTiles
+    });
+  } catch (err) {
+    console.error('nextTilePredLocal error:', err);
+    return res.status(500).json({ error: 'Internal server error', status: 'error' });
+  }
+});
+
+/**
  * Cleanup function to remove old temporary files
  * 
  * @function cleanupTempFiles
@@ -666,7 +1256,6 @@ const cleanupTempFiles = () => {
       
       if (stats.mtime.getTime() < oneHourAgo) {
         fs.unlinkSync(filePath);
-        // console.log(`Cleaned up old temp file: ${file}`);
       }
     });
   } catch (error) {
@@ -684,8 +1273,8 @@ const cleanupTempFiles = () => {
 const gracefulShutdown = async () => {
   console.log('Shutting down server...');
   
-  // Clean up vector store if it exists
-  if (vectorStoreId) {
+  // Clean up vector store if it exists and OpenAI is initialized
+  if (vectorStoreId && openai) {
     try {
       await openai.vectorStores.delete(vectorStoreId);
       console.log('Vector store cleaned up');
@@ -700,7 +1289,6 @@ const gracefulShutdown = async () => {
     files.forEach(file => {
       const filePath = path.join(tempDir, file);
       fs.unlinkSync(filePath);
-      // console.log(`Cleaned up temp file: ${file}`);
     });
   } catch (error) {
     console.error('Error cleaning up temp files on shutdown:', error);
@@ -719,6 +1307,8 @@ setInterval(cleanupTempFiles, 10 * 60 * 1000);
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
+
+
 /**
  * Start the HTTP server
  * 
@@ -730,6 +1320,8 @@ process.on('SIGINT', gracefulShutdown);
 server.listen(5000, async () => {
   console.log("Server running on http://localhost:5000");
   console.log("Temp directory:", tempDir);
+  console.log(`[Configuration] Transcription Model: ${USE_TRANSCRIPTION_MODEL === 'local' ? 'Local Whisper' : 'OpenAI Whisper API'}`);
+  console.log(`[Configuration] Prediction Model: ${USE_MODEL === 'openai' ? 'OpenAI API with vector store' : 'Local LLM with vector search'}`);
   
   // Initialize vector store
   await createVectorStore();
@@ -787,12 +1379,28 @@ io.on("connection", (socket) => {
   let silenceCounter = 0;
   
   /**
+   * Last transcribed text to prevent duplicates
+   * 
+   * @type {string}
+   * @description Stores the last transcription to avoid sending duplicates
+   */
+  let lastTranscription = '';
+  
+  /**
+   * Flag to track if first transcription has been logged
+   * 
+   * @type {boolean}
+   * @description Tracks if we've logged the first transcription message
+   */
+  let firstTranscriptionLogged = false;
+  
+  /**
    * Duration in milliseconds between audio processing attempts
    * 
    * @type {number}
-   * @description Defines how frequently the audio buffer is processed (4 seconds)
+   * @description Defines how frequently the audio buffer is processed
    */
-  const CHUNK_DURATION = 4000; 
+  const CHUNK_DURATION = 3000; // 3 seconds for better quality and less repetition 
 
   /**
    * Initializes the FFmpeg process for audio conversion
@@ -825,7 +1433,7 @@ io.on("connection", (socket) => {
      * @param {Buffer} data - The error data from FFmpeg
      */
     ffmpeg.stderr.on("data", (data) => {
-      // console.log("ffmpeg:", data.toString());
+      // FFmpeg stderr output (usually just info, not errors)
     });
 
     /**
@@ -905,6 +1513,66 @@ io.on("connection", (socket) => {
   };
 
   /**
+   * Calculate similarity between two strings using word overlap
+   * 
+   * @function calculateSimilarity
+   * @description Calculates similarity percentage between two text strings
+   * @param {string} text1 - First text
+   * @param {string} text2 - Second text
+   * @returns {number} Similarity score between 0 and 1
+   */
+  const calculateSimilarity = (text1, text2) => {
+    if (!text1 || !text2) return 0;
+    
+    const words1 = new Set(text1.split(/\s+/).filter(w => w.length > 0));
+    const words2 = new Set(text2.split(/\s+/).filter(w => w.length > 0));
+    
+    if (words1.size === 0 && words2.size === 0) return 1;
+    if (words1.size === 0 || words2.size === 0) return 0;
+    
+    let intersection = 0;
+    for (const word of words1) {
+      if (words2.has(word)) intersection++;
+    }
+    
+    const union = words1.size + words2.size - intersection;
+    return intersection / union;
+  };
+
+  /**
+   * Cleans transcription text by removing unwanted markers
+   * 
+   * @function cleanTranscription
+   * @description Removes all square bracket markers (e.g., [BLANK_AUDIO], [INAUDIBLE], [gunshot], [clears throat]) from transcription text
+   * 
+   * @param {string} text - The raw transcription text
+   * @returns {string} Cleaned transcription text without any markers, only spoken words
+   */
+  const cleanTranscription = (text) => {
+    if (!text || typeof text !== 'string') {
+      return '';
+    }
+    
+    // Remove all square bracket markers (e.g., [BLANK_AUDIO], [INAUDIBLE], [gunshot], [clears throat], etc.)
+    // Also remove any dots/spaces before and after these markers
+    let cleaned = text
+      // Remove all text in square brackets with any dots/spaces around them
+      .replace(/\s*\.*\s*\[[^\]]+\]\s*\.*\s*/gi, ' ')
+      // Remove excessive dots (2 or more consecutive dots)
+      .replace(/\.{2,}/g, '')
+      // Remove dots/spaces at the beginning or end of lines
+      .replace(/^[\s\.]+|[\s\.]+$/gm, '')
+      // Clean up multiple spaces
+      .replace(/\s+/g, ' ')
+      // Remove standalone dots with spaces
+      .replace(/\s*\.\s*/g, ' ')
+      // Final trim
+      .trim();
+    
+    return cleaned;
+  };
+
+  /**
    * Processes audio data and sends it for transcription
    * 
    * @function processAudio
@@ -918,9 +1586,11 @@ io.on("connection", (socket) => {
    */
   const processAudio = async () => {
     // Skip processing if already busy or audio buffer is too small
-    if (isProcessing || audioBuffer.length < 32000) { // Need at least 1 second of audio
+    // Reduced to 1 second for lower latency
+    const minAudioSize = 32000; // 1 second = 16000 samples/sec * 2 bytes/sample * 1 sec
+    if (isProcessing || audioBuffer.length < minAudioSize) {
       silenceCounter++;
-      if (silenceCounter > 3) {
+      if (silenceCounter > 5) {
         // Reset buffer if too much silence to prevent memory buildup
         audioBuffer = Buffer.alloc(0);
         silenceCounter = 0;
@@ -931,13 +1601,18 @@ io.on("connection", (socket) => {
     isProcessing = true;
     silenceCounter = 0;
     
-    // Take a chunk of audio (4 seconds worth = 16000 samples/sec * 2 bytes/sample * 4 sec = 128000 bytes)
-    const chunkSize = Math.min(audioBuffer.length, 128000);
-    // new buffer that crops referenced buffer(audio buffer) to only 4 seconds of audio
+    // Take a chunk of audio - larger chunks for better quality and less repetition
+    // 4 seconds = 128000 bytes - better quality, less frequent processing
+    const preferredChunkSize = 128000; // 4 seconds = 16000 samples/sec * 2 bytes/sample * 4 sec
+    const chunkSize = Math.min(audioBuffer.length, preferredChunkSize);
+    
+    // Minimal overlap to reduce repetition - only 0.25 seconds
+    const overlapSize = 8000; // 0.25 seconds overlap (reduced from 0.5s)
     const pcmChunk = audioBuffer.slice(0, chunkSize);
     
-    // Keep the remaining audio for next chunk
-    audioBuffer = audioBuffer.slice(chunkSize);
+    // Remove most of the processed audio, keeping only small overlap
+    const removeSize = chunkSize - overlapSize;
+    audioBuffer = audioBuffer.slice(removeSize);
     
     // Generate a unique filename per chunk
     const filename = `temp_${socket.id}_${Date.now()}_${fileCounter++}.wav`;
@@ -945,22 +1620,65 @@ io.on("connection", (socket) => {
     // try creating the wavefile
     try {
       const wavData = createWavFile(pcmChunk);
-      fs.writeFileSync(filename, wavData);
-      // console.log(`Saved ${wavData.length} bytes → ${filename}`);
-      // call whisper ai 
-      const transcription = await openai.audio.transcriptions.create({
-        model: "whisper-1",
-        file: fs.createReadStream(filename), // upload the wav file via stream
-        language: "en",
-        response_format: "json"
-      });
+      const filePath = path.join(tempDir, filename);
+      fs.writeFileSync(filePath, wavData);
       
-      // console.log("Transcript:", transcription.text);
-      socket.emit("transcript", transcription.text);
+      let transcribedText = '';
+      
+      // Choose transcription method based on configuration
+      if (USE_TRANSCRIPTION_MODEL === 'local') {
+        try {
+          transcribedText = await transcribeAudioLocal(filePath);
+          if (transcribedText && transcribedText.trim() && !firstTranscriptionLogged) {
+            console.log('[Transcription] Using Local Whisper model');
+            console.log('[Transcription] Success - Local Whisper');
+            firstTranscriptionLogged = true;
+          }
+        } catch (transcriptionError) {
+          console.error('[Transcription] Failed - Local Whisper:', transcriptionError.message);
+          throw transcriptionError;
+        }
+      } else {
+        // Use OpenAI Whisper API
+        //console.log('[Transcription] Using OpenAI Whisper API');
+        if (!openai) {
+          throw new Error('OpenAI client not initialized. Check API key configuration.');
+        }
+        const transcription = await openai.audio.transcriptions.create({
+          model: "whisper-1",
+          file: fs.createReadStream(filePath), // upload the wav file via stream
+          language: "en",
+          response_format: "json"
+        });
+        transcribedText = transcription.text;
+        if (transcribedText && transcribedText.trim()) {
+          //console.log('[Transcription] Success - OpenAI Whisper');
+        }
+      }
+      
+      // Clean the transcription to remove unwanted markers
+      if (transcribedText) {
+        transcribedText = cleanTranscription(transcribedText);
+      }
+      
+      // Only emit if transcription is different from last one (prevent duplicates from overlap)
+      if (transcribedText && transcribedText.trim()) {
+        const normalizedText = transcribedText.trim().toLowerCase();
+        const normalizedLast = lastTranscription.trim().toLowerCase();
+        
+        // Calculate similarity - if texts are too similar, it's likely a duplicate from overlap
+        const similarity = calculateSimilarity(normalizedText, normalizedLast);
+        
+        // Only send if significantly different (similarity < 80%) or if last was empty
+        if (!lastTranscription || similarity < 0.8) {
+          socket.emit("transcript", transcribedText);
+          lastTranscription = transcribedText;
+        }
+      }
       // error handling
     } catch (err) {
       console.error("Transcription error:", err);
-      if (err.status === 400) {
+      if (err.status === 400 || err.message?.includes('format')) {
         console.error("Bad request - audio format issue");
         // If there's a format issue, try with a different approach
         if (audioBuffer.length > 128000) {
@@ -972,7 +1690,10 @@ io.on("connection", (socket) => {
       // Clean up temp file
       try {
         //delete temp file
-        fs.unlinkSync(filename);
+        const filePath = path.join(tempDir, filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
       } catch (cleanupErr) {
         console.error("Error cleaning up file:", cleanupErr);
       }

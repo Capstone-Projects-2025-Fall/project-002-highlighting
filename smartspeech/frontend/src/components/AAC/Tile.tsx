@@ -114,7 +114,7 @@ export default function Tile({ image, sound, text, tileColor, hasSubTiles = fals
             data-testid={computeTileContainerName(text)}
         >
             {hasSubTiles && (
-                <div className="absolute top-2 right-2 bg-white bg-opacity-80 rounded-full p-1 shadow-md">
+                <div className="absolute top-2 right-2 bg-white-300 bg-opacity-80 rounded-full p-1 shadow-md">
                     <svg 
                         width="16" 
                         height="16" 
