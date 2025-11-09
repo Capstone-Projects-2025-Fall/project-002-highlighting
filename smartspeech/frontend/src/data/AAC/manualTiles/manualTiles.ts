@@ -2,16 +2,20 @@ import { TileAssets } from "@/components/AAC/TileTypes";
 import colors, { COLOR_TILES_COLOR } from "../colors/colors";
 import shapes from "../shapes/shapes";
 import foods from "../foods/foods";
-import locations, { LOCATION_TILES_COLOR } from "../locations/locations";
+import locations from "../locations/locations";
 import clothes from "../clothes/clothes";
 import feelings from "../feelings/feelings";
 import things from "../things/things";
 import tell from "../tell/tell";
 import these from "../these/these";
+import { TileColor } from "@/components/AAC/Tile";
+import { applyParentColorToTiles, tintTileAssets } from "@/util/AAC/tintTiles";
 
-
-
-const manualTiles: TileAssets = {
+const ACTION_TILE_COLOR: TileColor = "green";
+const actionFoods = tintTileAssets(foods, ACTION_TILE_COLOR);
+const actionLocations = tintTileAssets(locations, ACTION_TILE_COLOR);
+const actionTell = tintTileAssets(tell, ACTION_TILE_COLOR);
+const rawManualTiles: TileAssets = {
     colors: {
         image: "/AAC_assets/img/colors/colorwheel.png",
         text: "Colors",
@@ -47,40 +51,40 @@ const manualTiles: TileAssets = {
         image: "/AAC_assets/img/shapes/shape.png",
         text: "Shape",
         sound: "Shape",
-        tileColor: "yellow",
+        tileColor: "blue",
         subTiles: shapes,
     },
     self: {
         image: "/AAC_assets/img/standard/self.png",
         text: "I",
         sound: "I",
-        tileColor: "blue",
+        tileColor: "yellow",
     },
     you: {
         image: "/AAC_assets/img/standard/you.png",
         text: "You",
         sound: "You",
-        tileColor: "green",
+        tileColor: "yellow",
     },
     eat: {
         image: "/AAC_assets/img/food/eat.png",
         text: "Eat",
         sound: "Eat",
-        tileColor: "green",
-        subTiles: foods,
+        tileColor: ACTION_TILE_COLOR,
+        subTiles: actionFoods,
     },
     go: {
         image: "/AAC_assets/img/locations/go.png",
         text: "Go",
         sound: "Go",
-        tileColor: "yellow",
-        subTiles: locations,
+        tileColor: ACTION_TILE_COLOR,
+        subTiles: actionLocations,
     },
     clothing: {
         image: "/AAC_assets/img/clothes/clothes.png",
         text: "Clothes",
         sound: "Clothes",
-        tileColor: "purple",
+        tileColor: "blue",
         subTiles: clothes,
     },
     feelings: {
@@ -94,15 +98,15 @@ const manualTiles: TileAssets = {
         image: "/AAC_assets/img/things/things.png",
         text: "Things",
         sound: "Things",
-        tileColor: "red",
+        tileColor: "blue",
         subTiles: things,
     },
     tell: {
         image: "/AAC_assets/img/tell/tell.png",
         text: "Tell",
         sound: "Tell",
-        tileColor: "yellow",
-        subTiles: tell,
+        tileColor: ACTION_TILE_COLOR,
+        subTiles: actionTell,
     },
     these: {
         image:"/AAC_assets/img/this/this.png",
@@ -113,5 +117,7 @@ const manualTiles: TileAssets = {
     },
     
 };
+
+const manualTiles = applyParentColorToTiles(rawManualTiles);
 
 export default manualTiles;

@@ -71,7 +71,7 @@ const flatList: FlatTileAssets = {
         image: "/AAC_assets/img/standard/stop.png",
         text: "Stop",
         sound: "Stop",
-        tileColor: "red",
+        tileColor: "green",
     },
     triangle: {
         image: "/AAC_assets/img/shapes/triangle.png",
@@ -101,13 +101,13 @@ const flatList: FlatTileAssets = {
         image: "/AAC_assets/img/standard/self.png",
         text: "I",
         sound: "Eye",
-        tileColor: "blue",
+        tileColor: "yellow",
     },
     you: {
         image: "/AAC_assets/img/standard/you.png",
         text: "You",
         sound: "You",
-        tileColor: "green",
+        tileColor: "yellow",
     },
     eat: {
         image: "/AAC_assets/img/food/eat.png",
@@ -209,7 +209,7 @@ const flatList: FlatTileAssets = {
         image: "/AAC_assets/img/locations/go.png",
         text: "Go",
         sound: "Go",
-        tileColor: "yellow",
+        tileColor: "green",
     },
     home: {
         image: "/AAC_assets/img/locations/home.png",
@@ -1079,7 +1079,7 @@ const flatList: FlatTileAssets = {
         image: "/AAC_assets/img/tell/tell.png",
         text: "Tell",
         sound: "Tell",
-        tileColor: "blue",
+        tileColor: "green",
     },
     yes: {
         image: "/AAC_assets/img/tell/yes.png",

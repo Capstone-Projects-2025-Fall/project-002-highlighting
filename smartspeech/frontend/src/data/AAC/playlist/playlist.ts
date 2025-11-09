@@ -1,6 +1,6 @@
 import { TileAssets } from "@/components/AAC/TileTypes";
 
-export const PLAYLIST_TILES_COLOR = "orange";
+export const PLAYLIST_TILES_COLOR = "blue";
 
 const playlist: TileAssets ={
     playlist: {
