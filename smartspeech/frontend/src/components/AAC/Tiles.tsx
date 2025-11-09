@@ -63,6 +63,7 @@ const ROOT_LAYOUT_COLUMN_KEYS: readonly (readonly string[])[] = [
  */
 export default function Tiles() {
     const { tiles } = useTilesProvider();
+    const { predictedTiles } = usePredictedTiles();
     const [dataLocation, dispatch] = useReducer(stackReducer<string>, []);
     const isRootView = dataLocation.length === 0;
     const [currentFrame, setCurrentFrame] = useState<TileAssets>({});
@@ -90,7 +91,35 @@ export default function Tiles() {
         setCurrentFrame(newFrame);
     }, [tiles, dataLocation, isRootView]);
 
-    const orderedTiles = useMemo(() => {
+    /**
+     * Recursively check if a tile or any of its subtiles are predicted
+     * 
+     * @param tileData - The tile data to check
+     * @param predictedTiles - Array of predicted tile texts
+     * @returns true if the tile or any subtile is predicted
+     */
+    const isTileOrSubtilePredicted = (tileData: TileData, predictedTiles: string[]): boolean => {
+        // Check if the tile itself is predicted
+        const isPredicted = predictedTiles.some(predicted => 
+            predicted.toLowerCase() === tileData.text.toLowerCase()
+        );
+        
+        if (isPredicted) return true;
+        
+        // Recursively check subtiles
+        if (tileData.subTiles) {
+            for (const subtileKey in tileData.subTiles) {
+                const subtile = tileData.subTiles[subtileKey];
+                if (isTileOrSubtilePredicted(subtile, predictedTiles)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    };
+
+    const orderedTiles: [string, TileData][] = useMemo(() => {
         const entries = Object.entries(currentFrame);
 
         if (isRootView) {
@@ -198,7 +227,7 @@ export default function Tiles() {
         ];
     }, [currentFrame, isRootView]);
 
-    const columnMajorTiles = useMemo(() => {
+    const columnMajorTiles: [string, TileData][] = useMemo(() => {
         const totalTiles = orderedTiles.length;
         if (totalTiles === 0) return orderedTiles;
         if (isRootView) return orderedTiles;
