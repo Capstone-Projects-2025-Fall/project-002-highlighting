@@ -18,6 +18,7 @@ import SimilarityProvider from "@/react-state-management/providers/useSimilarity
 import InferenceProvider from "@/react-state-management/providers/InferenceProvider";
 import CaretakerPopupProvider from "@/react-state-management/providers/CaretakerPopupProvider";
 import LoginPopupProvider from "@/react-state-management/providers/LoginPopupProvider";
+import PredictedTilesProvider from "@/react-state-management/providers/PredictedTilesProvider";
 
 import useDisableZoom from "@/react-helpers/hooks/useDisableZoom";
 import CaretakerScreen from "@/components/AAC/CaretakerScreen";
@@ -35,14 +36,15 @@ export default function Home() {
         <section className="font-inter h-screen max-w-[100vw] box-border">
             <HealthCheckProvider>
                 <TileProvider>
-                    <RekognitionProvider>
-                        <SimilarityProvider>
-                            <StrokeProvider>
-                                <InferenceProvider>
-                                    <SuggestedTilesProvider>
-                                        <UtteredTilesProvider>
-                                            <ModalProvider>
-                                                <LoginPopupProvider>
+                    <PredictedTilesProvider>
+                        <RekognitionProvider>
+                            <SimilarityProvider>
+                                <StrokeProvider>
+                                    <InferenceProvider>
+                                        <SuggestedTilesProvider>
+                                            <UtteredTilesProvider>
+                                                <ModalProvider>
+                                                    <LoginPopupProvider>
                                                     <div className="static">
                                                         <CaretakerPopupProvider>
                                                             <CaretakerPopup />
@@ -61,14 +63,19 @@ export default function Home() {
                                                             <CaretakerScreen />
                                                         </div>
                                                     </div>
-                                                </LoginPopupProvider>
-                                            </ModalProvider>
-                                        </UtteredTilesProvider>
-                                    </SuggestedTilesProvider>
-                                </InferenceProvider>
-                            </StrokeProvider>
-                        </SimilarityProvider>
-                    </RekognitionProvider>
+                                                    <div className="fixed bottom-4 right-4 bg-white border shadow-lg p-4 rounded w-[300px] z-50">
+                                                        <p className="font-bold mb-2">Audio Transcription</p>
+                                                        <AudioTranscription />
+                                                    </div>
+                                                    </LoginPopupProvider>
+                                                </ModalProvider>
+                                            </UtteredTilesProvider>
+                                        </SuggestedTilesProvider>
+                                    </InferenceProvider>
+                                </StrokeProvider>
+                            </SimilarityProvider>
+                        </RekognitionProvider>
+                    </PredictedTilesProvider>
                 </TileProvider>
             </HealthCheckProvider>
 

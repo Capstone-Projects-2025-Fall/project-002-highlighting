@@ -109,3 +109,99 @@ img.clear-button {
 .tile-color-gray {
     background-color: #e2e2e2;
 }
+
+/* Fluid pulse highlight animation used by the AAC tiles */
+@keyframes pulse {
+    0% {
+        transform: scale(1.02) translateY(-1px);
+        box-shadow: 0 8px 20px -6px rgba(0,0,0,0.25);
+    }
+    50% {
+        transform: scale(1.08) translateY(-4px);
+        box-shadow: 0 16px 32px -8px rgba(0,0,0,0.38);
+    }
+    100% {
+        transform: scale(1.02) translateY(-1px);
+        box-shadow: 0 8px 20px -6px rgba(0,0,0,0.25);
+    }
+}
+
+.pulse-highlight {
+    /* Smoother, more continuous animation with natural easing */
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    /* Keep a constant minimal elevation for smoothness */
+    transform-origin: center center;
+    backface-visibility: hidden; /* Reduce flickering */
+    will-change: transform, box-shadow; /* Optimize performance */
+}
+
+/* 3D button appearance for highlighted tiles */
+.three-d-button {
+    /* More realistic 3D button: glossy top highlight, beveled rim, and deep drop shadow.
+       Uses layered backgrounds and pseudo-elements so the underlying tile color is preserved. */
+    position: relative;
+    overflow: visible;
+    border-radius: 0.75rem; /* match tile rounding */
+    /* layered subtle gloss + slight darker overlay to give depth while preserving tile color */
+    background-image:
+        linear-gradient(to bottom, rgba(255,255,255,0.18), rgba(255,255,255,0.02)),
+        linear-gradient(to bottom, rgba(0,0,0,0.02), rgba(0,0,0,0.06));
+    background-blend-mode: overlay, normal;
+    /* refined drop shadow to appear raised but not too heavy */
+    box-shadow: 0 12px 24px -10px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.06) inset;
+    transform: translateY(0);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+    border: 1px solid rgba(0,0,0,0.14);
+}
+
+.three-d-button:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px -12px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.06) inset;
+}
+
+.three-d-button:active {
+    /* pressed look */
+    transform: translateY(2px);
+    box-shadow: 0 4px 8px -4px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.06) inset;
+}
+
+/* Pseudo-elements create a glossy top rim and a darker bottom bevel. Children are placed above them. */
+.three-d-button::before,
+.three-d-button::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    border-radius: 0.6rem;
+    pointer-events: none;
+    z-index: 1;
+}
+.three-d-button::before {
+    /* top glossy rim */
+    top: 6px;
+    height: 42%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.75), rgba(255,255,255,0.06));
+    mix-blend-mode: overlay;
+    opacity: 0.95;
+}
+.three-d-button::after {
+    /* thinner bottom ridge to simulate thickness */
+    bottom: 6px;
+    height: 8%;  /* reduced from 18% to make the bevel thinner */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.08), rgba(0,0,0,0.2));  /* slightly reduced opacity */
+    filter: blur(1px);
+}
+
+/* Ensure tile contents (text, image) render above the decorative pseudo-elements */
+.three-d-button > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* Live showcase highlight used by the live-toggle: stronger pulse + glow */
+.live-highlight {
+    animation: pulse 0.9s cubic-bezier(.2,.9,.2,1) infinite;
+    /* add a subtle light rim and extra lift for attention */
+    box-shadow: 0 32px 64px -22px rgba(0,0,0,0.62), 0 0 22px 4px rgba(255,255,255,0.06) inset;
+    transform: translateY(-6px);
+}

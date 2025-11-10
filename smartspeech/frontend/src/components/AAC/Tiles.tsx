@@ -3,6 +3,9 @@ import Tile from "./Tile";
 import { stackReducer } from "@/react-state-management/reducers/stackReducer";
 import { TileAssets, TileData } from "./TileTypes";
 import { useTilesProvider } from "@/react-state-management/providers/tileProvider";
+import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
+import { FaCog } from 'react-icons/fa';
+import type { MouseEvent } from "react";
 
 export const BACK_BTN_TEXT = "Back";
 
@@ -61,12 +64,17 @@ const ROOT_LAYOUT_COLUMN_KEYS: readonly (readonly string[])[] = [
  */
 export default function Tiles() {
     const { tiles } = useTilesProvider();
+    const { predictedTiles } = usePredictedTiles();
     const [dataLocation, dispatch] = useReducer(stackReducer<string>, []);
     const isRootView = dataLocation.length === 0;
     const [currentFrame, setCurrentFrame] = useState<TileAssets>({});
-    const [opacity, setOpacity] = useState<number>(100);
+    const [opacity, setOpacity] = useState<number>(40); // Start with lower opacity as default
     const [tacoModeActive, setTacoModeActive] = useState<boolean>(false);
+    // highlightMode controls how tiles are visually highlighted. Possible values:
+    // 'opacity' (default), 'border', 'pulse', 'darken'
+    const [highlightMode, setHighlightMode] = useState<string>('opacity');
     const [opacityControlsVisible, setOpacityControlsVisible] = useState<boolean>(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
     useEffect(() => {
         if (Object.keys(tiles).length === 0) return;
@@ -83,7 +91,35 @@ export default function Tiles() {
         setCurrentFrame(newFrame);
     }, [tiles, dataLocation, isRootView]);
 
-    const orderedTiles = useMemo(() => {
+    /**
+     * Recursively check if a tile or any of its subtiles are predicted
+     * 
+     * @param tileData - The tile data to check
+     * @param predictedTiles - Array of predicted tile texts
+     * @returns true if the tile or any subtile is predicted
+     */
+    const isTileOrSubtilePredicted = (tileData: TileData, predictedTiles: string[]): boolean => {
+        // Check if the tile itself is predicted
+        const isPredicted = predictedTiles.some(predicted => 
+            predicted.toLowerCase() === tileData.text.toLowerCase()
+        );
+        
+        if (isPredicted) return true;
+        
+        // Recursively check subtiles
+        if (tileData.subTiles) {
+            for (const subtileKey in tileData.subTiles) {
+                const subtile = tileData.subTiles[subtileKey];
+                if (isTileOrSubtilePredicted(subtile, predictedTiles)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    };
+
+    const orderedTiles: [string, TileData][] = useMemo(() => {
         const entries = Object.entries(currentFrame);
 
         if (isRootView) {
@@ -191,7 +227,7 @@ export default function Tiles() {
         ];
     }, [currentFrame, isRootView]);
 
-    const columnMajorTiles = useMemo(() => {
+    const columnMajorTiles: [string, TileData][] = useMemo(() => {
         const totalTiles = orderedTiles.length;
         if (totalTiles === 0) return orderedTiles;
         if (isRootView) return orderedTiles;
@@ -210,14 +246,73 @@ export default function Tiles() {
         return arranged;
     }, [orderedTiles, isRootView]);
 
+    // Note: live showcase toggle currently does not perform any automatic highlighting.
+    // The toggle exists as a no-op state for now and will be wired to transcription-based
+    // suggested tiles in a future change.
+
     const renderTile = (key: string, tileData: TileData): JSX.Element => {
         const { image, text, sound, tileColor, subTiles } = tileData;
         
-        // Calculate tile opacity based on tacoMode and tile text
-        let tileOpacity = opacity;
-        if (tacoModeActive) {
-            tileOpacity = ['Eat', 'Taste', 'Taco'].includes(text) ? 100 : 40;
+        // Check if tile matches any predicted tiles
+        const isPredicted = isTileOrSubtilePredicted(tileData, predictedTiles);
+        
+        // Determine whether this tile should be considered "highlighted"
+        const tacoRelevant = ['Eat', 'Taste', 'Taco'].includes(text);
+
+        // Calculate tile opacity
+        // Default to fully visible. Only dim non-suggested tiles when we're in
+        // 'opacity' highlight mode AND there are predicted/suggested tiles available.
+        let tileOpacity = 100;
+        if (highlightMode === 'opacity' && Array.isArray(predictedTiles) && predictedTiles.length > 0) {
+            const shouldBeHighlighted = tacoModeActive ? tacoRelevant : isPredicted;
+            tileOpacity = shouldBeHighlighted ? 100 : 40;
         }
+
+        // For darken highlight mode, compute an inline background color override for highlighted tiles
+        let overrideBgColor: string | undefined = undefined;
+        if (highlightMode === 'darken') {
+            // base color map matches the CSS variables in globals.css
+            const baseColors: Record<string, string> = {
+                yellow: '#f7e886',
+                green: '#b9fbc0',
+                blue: '#c7d9ff',
+                orange: '#ffd7a3',
+                red: '#f7b0c0',
+                purple: '#e0c3fc',
+                gray: '#e2e2e2',
+            };
+
+            const darkenHex = (hex: string, amount = 0.25) => {
+                // amount is fraction to darken (0.25 => 25% darker)
+                const parsed = hex.replace('#', '');
+                const r = parseInt(parsed.substring(0, 2), 16);
+                const g = parseInt(parsed.substring(2, 4), 16);
+                const b = parseInt(parsed.substring(4, 6), 16);
+                const dr = Math.max(0, Math.floor(r * (1 - amount)));
+                const dg = Math.max(0, Math.floor(g * (1 - amount)));
+                const db = Math.max(0, Math.floor(b * (1 - amount)));
+                const toHex = (v: number) => v.toString(16).padStart(2, '0');
+                return `#${toHex(dr)}${toHex(dg)}${toHex(db)}`;
+            };
+
+            const base = baseColors[tileColor as string];
+            if (base) {
+                // Apply darkening only to predicted tiles (or taco-relevant tiles in taco mode)
+                if (tacoModeActive ? tacoRelevant : isPredicted) {
+                    overrideBgColor = darkenHex(base, 0.25);
+                }
+            }
+        }
+
+    // For border highlighting, determine if this tile should get a border.
+    // Apply border highlighting to predicted tiles (or taco-relevant tiles in taco mode)
+    const tileHasBorder = highlightMode === 'border' && (tacoModeActive ? tacoRelevant : isPredicted);
+
+        // Determine whether this tile should pulse when 'pulse' highlight mode is active.
+        // When tacoModeActive is true, only tacoRelevant tiles should pulse; otherwise all pulse.
+    // Apply special highlighting only to predicted tiles (or taco-relevant tiles in taco mode)
+    const tileIsPulsing = highlightMode === 'pulse' && (tacoModeActive ? tacoRelevant : isPredicted);
+    const tileIs3D = highlightMode === 'threeD' && (tacoModeActive ? tacoRelevant : isPredicted);
 
         const tile = (
             <Tile 
@@ -226,7 +321,11 @@ export default function Tiles() {
                 sound={subTiles ? "" : sound} 
                 tileColor={tileColor} 
                 hasSubTiles={!!subTiles} 
-                opacity={tileOpacity} 
+                opacity={tileOpacity}
+                hasBorder={tileHasBorder}
+                overrideBgColor={overrideBgColor}
+                isPulsing={tileIsPulsing}
+                is3D={tileIs3D}
             />
         );
 
@@ -260,15 +359,55 @@ export default function Tiles() {
 
     return (
         <>
-            {/* Only show the toggle button when controls are hidden */}
+            {/* Settings button and dropdown */}
+            <div className="fixed top-18 left-3.5 z-50">
+                <button
+                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                    className="w-10 h-10 bg-emerald-400 hover:bg-emerald-500 flex items-center justify-center transition-colors duration-200"
+                    title="Settings"
+                >
+                    <FaCog className="w-5 h-5 text-white" />
+                </button>
+                
+                {/* Settings dropdown menu */}
+                {isSettingsOpen && (
+                    <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                        <div className="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-50 border-b">
+                            Highlighting Method
+                        </div>
+                        <div className="py-1">
+                            {[
+                                { key: 'opacity', label: 'Opacity' },
+                                { key: 'border', label: 'Border' },
+                                { key: 'pulse', label: 'Pulse' },
+                                { key: 'darken', label: 'Darken' },
+                            ].map((opt) => (
+                                <button
+                                    key={opt.key}
+                                    onClick={() => {
+                                        // Set the highlight mode but do NOT close the settings dropdown.
+                                        // The dropdown should only close when the user clicks the settings button again.
+                                        setHighlightMode(opt.key);
+                                    }}
+                                    className={`w-full px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900 text-left ${highlightMode === opt.key ? 'font-bold text-black' : 'text-gray-700'}`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Small grey plus button that expands to show controls (taco toggle) */}
             {!opacityControlsVisible && (
-                <div className="fixed top-31 left-0 right-0 z-40 ">
+                <div className="fixed top-31 left-0 right-0 z-40">
                     <div className="max-w-7xl mx-auto px-4 py-2">
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center justify-start">
                             <button
-                                onClick={() => setOpacityControlsVisible(!opacityControlsVisible)}
+                                onClick={() => setOpacityControlsVisible(true)}
                                 className="w-8 h-8 bg-gray-300 hover:bg-gray-400 rounded-full flex items-center justify-center transition-colors duration-200"
-                                title="Show opacity controls"
+                                title="Show controls"
                             >
                                 <span className="text-xs font-bold text-gray-700">+</span>
                             </button>
@@ -276,53 +415,31 @@ export default function Tiles() {
                     </div>
                 </div>
             )}
-            
-            {/* Show full controls when expanded */}
+
             {opacityControlsVisible && (
                 <div className="fixed top-31 left-0 right-0 z-40 bg-white shadow-md">
                     <div className="max-w-7xl mx-auto px-4 py-2">
                         <div className="flex items-center space-x-4">
-                            {/* Toggle Circle Button */}
+                            {/* Toggle Circle Button (collapse) */}
                             <button
-                                onClick={() => setOpacityControlsVisible(!opacityControlsVisible)}
+                                onClick={() => setOpacityControlsVisible(false)}
                                 className="w-8 h-8 bg-gray-300 hover:bg-gray-400 rounded-full flex items-center justify-center transition-colors duration-200"
-                                title="Hide opacity controls"
+                                title="Hide controls"
                             >
                                 <span className="text-xs font-bold text-gray-700">−</span>
                             </button>
-                            
-                            {/* Opacity Controls */}
-                            <div className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2 border">
-                                <label className="flex items-center space-x-2">
-                                    <span className="text-sm font-medium">Opacity:</span>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        value={opacity}
-                                        onChange={(e) => setOpacity(Number(e.target.value))}
-                                        className="w-24"
-                                    />
-                                    <span className="text-sm font-medium w-8">{opacity}%</span>
-                                </label>
-                                <button
-                                    onClick={() => setOpacity(100)}
-                                    className="px-2 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors duration-200"
-                                >
-                                    Reset
-                                </button>
-                            </div>
-                            
-                            {/* Taco Mode Button */}
+
+                            {/* Square-style Taco Mode Toggle Button inside expanded controls */}
                             <button
                                 onClick={() => setTacoModeActive(!tacoModeActive)}
-                                className={`px-4 py-2 ${
+                                className={`h-10 px-3 ${
                                     tacoModeActive
                                         ? 'bg-yellow-500 text-black'
                                         : 'bg-yellow-400 text-black'
-                                } rounded-md hover:bg-yellow-500 transition-colors duration-200`}
+                                } rounded-md flex items-center justify-center transition-colors duration-200`}
+                                title="Toggle Taco example"
                             >
-                                {tacoModeActive ? 'Taco example: On' : 'Taco example: Off'}
+                                <span className="text-sm font-medium">Taco example: {tacoModeActive ? 'On' : 'Off'}</span>
                             </button>
                         </div>
                     </div>
@@ -332,11 +449,12 @@ export default function Tiles() {
                 <div className="grid grid-cols-8 gap-4 2xl-max:grid-cols-7 md-max:gap-2" data-testid={TilesTestIds.mainContainer}>
                     {dataLocation.length > 0 && (
                         <div onClick={() => dispatch({ type: "remove" })}>
+                            {/* Back button should always be fully visible */}
                             <Tile 
                                 image="/AAC_assets/img/standard/back_arrow.png" 
                                 text={BACK_BTN_TEXT} 
                                 tileColor="blue" 
-                                opacity={opacity} 
+                                opacity={100}
                             />
                         </div>
                     )}
