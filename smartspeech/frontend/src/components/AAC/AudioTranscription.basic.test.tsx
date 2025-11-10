@@ -15,6 +15,7 @@ jest.mock('socket.io-client', () => ({
   io: jest.fn(() => mockSocket),
 }));
 
+
 // Mock MediaDevices API to prevent actual microphone access
 const mockGetUserMedia = jest.fn();
 const mockEnumerateDevices = jest.fn();

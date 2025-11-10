@@ -63,10 +63,9 @@ export default function Home() {
                                                             <CaretakerScreen />
                                                         </div>
                                                     </div>
-                                                    <div className="fixed bottom-4 right-4 bg-white border shadow-lg p-4 rounded w-[300px] z-50">
-                                                        <p className="font-bold mb-2">Audio Transcription</p>
-                                                        <AudioTranscription />
-                                                    </div>
+                                                    
+                                                    <AudioTranscription />
+                                                    
                                                     </LoginPopupProvider>
                                                 </ModalProvider>
                                             </UtteredTilesProvider>
@@ -78,7 +77,6 @@ export default function Home() {
                     </PredictedTilesProvider>
                 </TileProvider>
             </HealthCheckProvider>
-
         </section>
     );
 }
