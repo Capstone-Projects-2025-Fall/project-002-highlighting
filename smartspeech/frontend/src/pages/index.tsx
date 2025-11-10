@@ -64,6 +64,8 @@ export default function Home() {
                                                         </div>
                                                     </div>
                                                     
+                                                    <AudioTranscription />
+                                                    
                                                     </LoginPopupProvider>
                                                 </ModalProvider>
                                             </UtteredTilesProvider>
