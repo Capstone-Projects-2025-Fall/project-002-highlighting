@@ -3,6 +3,7 @@ import Tile from "./Tile";
 import { stackReducer } from "@/react-state-management/reducers/stackReducer";
 import { TileAssets, TileData } from "./TileTypes";
 import { useTilesProvider } from "@/react-state-management/providers/tileProvider";
+import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
 import { FaCog } from 'react-icons/fa';
 import type { MouseEvent } from "react";
 
@@ -67,14 +68,13 @@ export default function Tiles() {
     const [dataLocation, dispatch] = useReducer(stackReducer<string>, []);
     const isRootView = dataLocation.length === 0;
     const [currentFrame, setCurrentFrame] = useState<TileAssets>({});
-    const [opacity, setOpacity] = useState<number>(100);
+    const [opacity, setOpacity] = useState<number>(40); // Start with lower opacity as default
     const [tacoModeActive, setTacoModeActive] = useState<boolean>(false);
     // highlightMode controls how tiles are visually highlighted. Possible values:
     // 'opacity' (default), 'border', 'pulse', 'darken'
     const [highlightMode, setHighlightMode] = useState<string>('opacity');
     const [opacityControlsVisible, setOpacityControlsVisible] = useState<boolean>(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-    const [liveShowcaseActive, setLiveShowcaseActive] = useState<boolean>(false);
 
     useEffect(() => {
         if (Object.keys(tiles).length === 0) return;
@@ -253,16 +253,19 @@ export default function Tiles() {
     const renderTile = (key: string, tileData: TileData): JSX.Element => {
         const { image, text, sound, tileColor, subTiles } = tileData;
         
+        // Check if tile matches any predicted tiles
+        const isPredicted = isTileOrSubtilePredicted(tileData, predictedTiles);
+        
         // Determine whether this tile should be considered "highlighted"
         const tacoRelevant = ['Eat', 'Taste', 'Taco'].includes(text);
 
-        // Calculate tile opacity only when opacity highlighting is active
+        // Calculate tile opacity
+        // Default to fully visible. Only dim non-suggested tiles when we're in
+        // 'opacity' highlight mode AND there are predicted/suggested tiles available.
         let tileOpacity = 100;
-        if (highlightMode === 'opacity') {
-            tileOpacity = opacity;
-            if (tacoModeActive) {
-                tileOpacity = tacoRelevant ? 100 : 40;
-            }
+        if (highlightMode === 'opacity' && Array.isArray(predictedTiles) && predictedTiles.length > 0) {
+            const shouldBeHighlighted = tacoModeActive ? tacoRelevant : isPredicted;
+            tileOpacity = shouldBeHighlighted ? 100 : 40;
         }
 
         // For darken highlight mode, compute an inline background color override for highlighted tiles
@@ -294,27 +297,22 @@ export default function Tiles() {
 
             const base = baseColors[tileColor as string];
             if (base) {
-                // Only darken when tacoModeActive controls which tiles are highlighted
-                // (parity with opacity behavior)
-                if (tacoModeActive) {
-                    if (tacoRelevant) {
-                        overrideBgColor = darkenHex(base, 0.25);
-                    }
-                } else {
-                    // If taco mode isn't active, treat all tiles as highlighted for the darken setting
+                // Apply darkening only to predicted tiles (or taco-relevant tiles in taco mode)
+                if (tacoModeActive ? tacoRelevant : isPredicted) {
                     overrideBgColor = darkenHex(base, 0.25);
                 }
             }
         }
 
     // For border highlighting, determine if this tile should get a border.
-    // Apply border highlighting only when taco mode is active and the tile is taco-relevant.
-    const tileHasBorder = highlightMode === 'border' && tacoModeActive && tacoRelevant;
+    // Apply border highlighting to predicted tiles (or taco-relevant tiles in taco mode)
+    const tileHasBorder = highlightMode === 'border' && (tacoModeActive ? tacoRelevant : isPredicted);
 
         // Determine whether this tile should pulse when 'pulse' highlight mode is active.
         // When tacoModeActive is true, only tacoRelevant tiles should pulse; otherwise all pulse.
-    const tileIsPulsing = highlightMode === 'pulse' && (tacoModeActive ? tacoRelevant : true);
-    const tileIs3D = highlightMode === 'threeD' && (tacoModeActive ? tacoRelevant : true);
+    // Apply special highlighting only to predicted tiles (or taco-relevant tiles in taco mode)
+    const tileIsPulsing = highlightMode === 'pulse' && (tacoModeActive ? tacoRelevant : isPredicted);
+    const tileIs3D = highlightMode === 'threeD' && (tacoModeActive ? tacoRelevant : isPredicted);
 
         const tile = (
             <Tile 
@@ -383,13 +381,13 @@ export default function Tiles() {
                                 { key: 'border', label: 'Border' },
                                 { key: 'pulse', label: 'Pulse' },
                                 { key: 'darken', label: 'Darken' },
-                                { key: 'threeD', label: '3D Button' },
                             ].map((opt) => (
                                 <button
                                     key={opt.key}
                                     onClick={() => {
+                                        // Set the highlight mode but do NOT close the settings dropdown.
+                                        // The dropdown should only close when the user clicks the settings button again.
                                         setHighlightMode(opt.key);
-                                        setIsSettingsOpen(false);
                                     }}
                                     className={`w-full px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900 text-left ${highlightMode === opt.key ? 'font-bold text-black' : 'text-gray-700'}`}
                                 >
@@ -443,18 +441,6 @@ export default function Tiles() {
                             >
                                 <span className="text-sm font-medium">Taco example: {tacoModeActive ? 'On' : 'Off'}</span>
                             </button>
-                            {/* Live highlighting showcase toggle button */}
-                            <button
-                                onClick={() => setLiveShowcaseActive(!liveShowcaseActive)}
-                                className={`h-10 px-3 ${
-                                    liveShowcaseActive
-                                        ? 'bg-emerald-500 text-white'
-                                        : 'bg-emerald-300 text-black'
-                                } rounded-md flex items-center justify-center transition-colors duration-200`}
-                                title="Toggle Live Highlight Showcase"
-                            >
-                                <span className="text-sm font-medium">Live showcase: {liveShowcaseActive ? 'On' : 'Off'}</span>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -463,11 +449,12 @@ export default function Tiles() {
                 <div className="grid grid-cols-8 gap-4 2xl-max:grid-cols-7 md-max:gap-2" data-testid={TilesTestIds.mainContainer}>
                     {dataLocation.length > 0 && (
                         <div onClick={() => dispatch({ type: "remove" })}>
+                            {/* Back button should always be fully visible */}
                             <Tile 
                                 image="/AAC_assets/img/standard/back_arrow.png" 
                                 text={BACK_BTN_TEXT} 
                                 tileColor="blue" 
-                                opacity={opacity} 
+                                opacity={100}
                             />
                         </div>
                     )}
