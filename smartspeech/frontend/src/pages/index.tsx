@@ -78,11 +78,6 @@ export default function Home() {
                     </PredictedTilesProvider>
                 </TileProvider>
             </HealthCheckProvider>
-
-            <div className="fixed bottom-4 right-4 bg-white border shadow-lg p-4 rounded w-[300px] z-50">
-                <AudioTranscription />
-            </div>
-
         </section>
     );
 }
