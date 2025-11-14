@@ -279,7 +279,7 @@ export default function Tiles() {
         let tileOpacity = 100;
         if (activeHighlights.has('opacity') && Array.isArray(predictedTiles) && predictedTiles.length > 0) {
             const shouldBeHighlighted = tacoModeActive ? tacoRelevant : isPredicted;
-            tileOpacity = shouldBeHighlighted ? 100 : 40;
+            tileOpacity = shouldBeHighlighted ? 100 : 50;
         }
 
         // For darken highlight mode, compute an inline background color override for highlighted tiles
