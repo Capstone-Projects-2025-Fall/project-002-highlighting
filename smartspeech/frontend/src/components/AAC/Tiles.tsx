@@ -70,11 +70,25 @@ export default function Tiles() {
     const [currentFrame, setCurrentFrame] = useState<TileAssets>({});
     const [opacity, setOpacity] = useState<number>(40); // Start with lower opacity as default
     const [tacoModeActive, setTacoModeActive] = useState<boolean>(false);
-    // highlightMode controls how tiles are visually highlighted. Possible values:
-    // 'opacity' (default), 'border', 'pulse', 'darken'
-    const [highlightMode, setHighlightMode] = useState<string>('opacity');
+    // activeHighlights is a Set of highlight method keys that are currently active.
+    // Multiple methods can be active simultaneously (e.g., 'opacity' and 'border' together).
+    // Possible values: 'opacity', 'border', 'pulse', 'darken'
+    const [activeHighlights, setActiveHighlights] = useState<Set<string>>(new Set(['opacity']));
     const [opacityControlsVisible, setOpacityControlsVisible] = useState<boolean>(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
+    // Helper function to toggle a highlight method on/off
+    const toggleHighlightMethod = (method: string) => {
+        setActiveHighlights((prev) => {
+            const updated = new Set(prev);
+            if (updated.has(method)) {
+                updated.delete(method);
+            } else {
+                updated.add(method);
+            }
+            return updated;
+        });
+    };
 
     useEffect(() => {
         if (Object.keys(tiles).length === 0) return;
@@ -260,17 +274,17 @@ export default function Tiles() {
         const tacoRelevant = ['Eat', 'Taste', 'Taco'].includes(text);
 
         // Calculate tile opacity
-        // Default to fully visible. Only dim non-suggested tiles when we're in
-        // 'opacity' highlight mode AND there are predicted/suggested tiles available.
+        // Default to fully visible. Only dim non-suggested tiles when 'opacity' method is active
+        // AND there are predicted/suggested tiles available.
         let tileOpacity = 100;
-        if (highlightMode === 'opacity' && Array.isArray(predictedTiles) && predictedTiles.length > 0) {
+        if (activeHighlights.has('opacity') && Array.isArray(predictedTiles) && predictedTiles.length > 0) {
             const shouldBeHighlighted = tacoModeActive ? tacoRelevant : isPredicted;
             tileOpacity = shouldBeHighlighted ? 100 : 40;
         }
 
         // For darken highlight mode, compute an inline background color override for highlighted tiles
         let overrideBgColor: string | undefined = undefined;
-        if (highlightMode === 'darken') {
+        if (activeHighlights.has('darken')) {
             // base color map matches the CSS variables in globals.css
             const baseColors: Record<string, string> = {
                 yellow: '#f7e886',
@@ -282,8 +296,8 @@ export default function Tiles() {
                 gray: '#e2e2e2',
             };
 
-            const darkenHex = (hex: string, amount = 0.25) => {
-                // amount is fraction to darken (0.25 => 25% darker)
+            const darkenHex = (hex: string, amount = 0.60) => {
+                // amount is fraction to darken (0.60 => 60% darker, creates rich saturated dark colors)
                 const parsed = hex.replace('#', '');
                 const r = parseInt(parsed.substring(0, 2), 16);
                 const g = parseInt(parsed.substring(2, 4), 16);
@@ -299,20 +313,19 @@ export default function Tiles() {
             if (base) {
                 // Apply darkening only to predicted tiles (or taco-relevant tiles in taco mode)
                 if (tacoModeActive ? tacoRelevant : isPredicted) {
-                    overrideBgColor = darkenHex(base, 0.25);
+                    overrideBgColor = darkenHex(base, 0.60);
                 }
             }
         }
 
-    // For border highlighting, determine if this tile should get a border.
-    // Apply border highlighting to predicted tiles (or taco-relevant tiles in taco mode)
-    const tileHasBorder = highlightMode === 'border' && (tacoModeActive ? tacoRelevant : isPredicted);
+    // For border highlighting, apply if 'border' method is active.
+    // Applied to predicted tiles (or taco-relevant tiles in taco mode)
+    const tileHasBorder = activeHighlights.has('border') && (tacoModeActive ? tacoRelevant : isPredicted);
 
-        // Determine whether this tile should pulse when 'pulse' highlight mode is active.
-        // When tacoModeActive is true, only tacoRelevant tiles should pulse; otherwise all pulse.
-    // Apply special highlighting only to predicted tiles (or taco-relevant tiles in taco mode)
-    const tileIsPulsing = highlightMode === 'pulse' && (tacoModeActive ? tacoRelevant : isPredicted);
-    const tileIs3D = highlightMode === 'threeD' && (tacoModeActive ? tacoRelevant : isPredicted);
+    // For pulse highlighting, apply if 'pulse' method is active.
+    // Applied to predicted tiles (or taco-relevant tiles in taco mode)
+    const tileIsPulsing = activeHighlights.has('pulse') && (tacoModeActive ? tacoRelevant : isPredicted);
+    const tileIs3D = activeHighlights.has('threeD') && (tacoModeActive ? tacoRelevant : isPredicted);
 
         const tile = (
             <Tile 
@@ -373,25 +386,29 @@ export default function Tiles() {
                 {isSettingsOpen && (
                     <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
                         <div className="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-50 border-b">
-                            Highlighting Method
+                            Highlighting Methods
                         </div>
                         <div className="py-1">
                             {[
                                 { key: 'opacity', label: 'Opacity' },
                                 { key: 'border', label: 'Border' },
                                 { key: 'pulse', label: 'Pulse' },
-                                { key: 'darken', label: 'Darken' },
                             ].map((opt) => (
                                 <button
                                     key={opt.key}
                                     onClick={() => {
-                                        // Set the highlight mode but do NOT close the settings dropdown.
-                                        // The dropdown should only close when the user clicks the settings button again.
-                                        setHighlightMode(opt.key);
+                                        toggleHighlightMethod(opt.key);
                                     }}
-                                    className={`w-full px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900 text-left ${highlightMode === opt.key ? 'font-bold text-black' : 'text-gray-700'}`}
+                                    className={`w-full px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900 text-left flex items-center gap-2 ${activeHighlights.has(opt.key) ? 'font-bold text-black' : 'text-gray-700'}`}
                                 >
-                                    {opt.label}
+                                    {/* Checkbox indicator */}
+                                    <input
+                                        type="checkbox"
+                                        checked={activeHighlights.has(opt.key)}
+                                        onChange={() => {}}
+                                        className="cursor-pointer"
+                                    />
+                                    <span>{opt.label}</span>
                                 </button>
                             ))}
                         </div>
