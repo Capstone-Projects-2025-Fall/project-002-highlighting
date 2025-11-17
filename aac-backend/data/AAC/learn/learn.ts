@@ -1,9 +1,8 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
 import classroom from "../classroom/classroom";
 
 export const LEARN_TILES_COLOR = "blue";
 
-const learn: TileAssets ={
+const learn = {
     learn: {
         image: "/AAC_assets/img/tell/learn.png",
         text: "Learn",

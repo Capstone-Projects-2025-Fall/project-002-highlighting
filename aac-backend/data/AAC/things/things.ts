@@ -1,10 +1,9 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
 import materials from "../materials/materials";
 import tools from "../tools/tools";
 
 export const THINGS_TILES_COLOR = "red";
 
-const things: TileAssets = {
+const things = {
     things: {
         image: "/AAC_assets/img/things/things.png",
         text: "Things",

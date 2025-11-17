@@ -1,8 +1,6 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
-
 export const FOODS_TILES_COLOR = "green";
 
-const foods: TileAssets = {
+const foods = {
     eat: {
         image: "/AAC_assets/img/food/eat.png",
         text: "Eat",

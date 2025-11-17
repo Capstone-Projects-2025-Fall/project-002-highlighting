@@ -1,9 +1,8 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
-import playlist from "@/data/AAC/playlist/playlist";
+import playlist from "data/AAC/playlist/playlist";
 
 export const SOUND_TILES_COLOR = "orange";
 
-const sound: TileAssets ={
+const sound = {
     sound: {
         image: "/AAC_assets/img/tell/sound.png",
         text: "Sound",

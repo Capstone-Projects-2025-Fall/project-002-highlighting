@@ -1,10 +1,9 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
 import office from "../office/office";
 import employee from "../employee/employee";
 
 export const JOB_TILES_COLOR = "yellow";
 
-const job: TileAssets ={
+const job = {
     job: {
         image: "/AAC_assets/img/this/job.png",
         text: "Job",

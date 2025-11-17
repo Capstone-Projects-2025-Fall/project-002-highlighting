@@ -1,4 +1,3 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
 import colors, { COLOR_TILES_COLOR } from "../colors/colors";
 import shapes from "../shapes/shapes";
 import foods from "../foods/foods";
@@ -11,7 +10,7 @@ import these from "../these/these";
 
 
 
-const manualTiles: TileAssets = {
+const manualTiles = {
     colors: {
         image: "/AAC_assets/img/colors/colorwheel.png",
         text: "Colors",

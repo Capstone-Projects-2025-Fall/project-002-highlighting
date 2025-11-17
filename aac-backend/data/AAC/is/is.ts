@@ -1,9 +1,8 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
 
 export const IS_ADJECTIVE_TILES_COLOR = "blue";
 export const IS_VERB_TILES_COLOR = "green";
 
-const is: TileAssets = {
+const is = {
   am: {
     image: "/AAC_assets/img/is/am.png",
     text: "Am",

@@ -1,8 +1,6 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
-
 export const SKY_TILES_COLOR = "orange";
 
-const sky: TileAssets ={
+const sky = {
     sky: {
         image: "/AAC_assets/img/this/sky.png",
         text: "Sky",

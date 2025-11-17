@@ -1,6 +1,4 @@
-
 export const THINGS_TILES_COLOR = "green";
-
 const animals={
     animal: {
         image: "/AAC_assets/img/animals/animal.png",

@@ -1,0 +1,3265 @@
+{
+  "animals": {
+    "name": "Animals",
+    "color": "green",
+    "tiles": [
+      {
+        "key": "animal",
+        "text": "Animal",
+        "image": "/AAC_assets/img/animals/animal.png",
+        "sound": "Animal",
+        "tileColor": "green"
+      },
+      {
+        "key": "bug",
+        "text": "Bug",
+        "image": "/AAC_assets/img/animals/bug.png",
+        "sound": "Bug",
+        "tileColor": "green"
+      },
+      {
+        "key": "cat",
+        "text": "Cat",
+        "image": "/AAC_assets/img/animals/cat.png",
+        "sound": "Cat",
+        "tileColor": "green"
+      },
+      {
+        "key": "dog",
+        "text": "Dog",
+        "image": "/AAC_assets/img/animals/dog.png",
+        "sound": "Dog",
+        "tileColor": "green"
+      },
+      {
+        "key": "pet",
+        "text": "Pet",
+        "image": "/AAC_assets/img/animals/pet.png",
+        "sound": "Pet",
+        "tileColor": "green"
+      },
+      {
+        "key": "fish",
+        "text": "Fish",
+        "image": "/AAC_assets/img/animals/fish.png",
+        "sound": "Fish",
+        "tileColor": "green"
+      },
+      {
+        "key": "butterfly",
+        "text": "Butterfly",
+        "image": "/AAC_assets/img/animals/butterfly.png",
+        "sound": "Butterfly",
+        "tileColor": "green"
+      }
+    ]
+  },
+  "at": {
+    "name": "At",
+    "color": "blue",
+    "tiles": [
+      {
+        "key": "at",
+        "text": "At",
+        "image": "/AAC_assets/img/locations/at.png",
+        "sound": "At",
+        "tileColor": "blue"
+      },
+      {
+        "key": "around",
+        "text": "Around",
+        "image": "/AAC_assets/img/actions/around.png",
+        "sound": "Around",
+        "tileColor": "red"
+      },
+      {
+        "key": "sit",
+        "text": "Sit",
+        "image": "/AAC_assets/img/actions/sit.png",
+        "sound": "Sit",
+        "tileColor": "orange"
+      },
+      {
+        "key": "stand",
+        "text": "Stand",
+        "image": "/AAC_assets/img/actions/stand.png",
+        "sound": "Stand",
+        "tileColor": "orange"
+      },
+      {
+        "key": "stay",
+        "text": "Stay",
+        "image": "/AAC_assets/img/actions/stay.png",
+        "sound": "Stay",
+        "tileColor": "orange"
+      },
+      {
+        "key": "walk",
+        "text": "Walk",
+        "image": "/AAC_assets/img/actions/walk.png",
+        "sound": "Walk",
+        "tileColor": "orange"
+      },
+      {
+        "key": "run",
+        "text": "Run",
+        "image": "/AAC_assets/img/actions/run.png",
+        "sound": "Run",
+        "tileColor": "orange"
+      },
+      {
+        "key": "ride",
+        "text": "Ride",
+        "image": "/AAC_assets/img/actions/ride.png",
+        "sound": "Ride",
+        "tileColor": "orange"
+      },
+      {
+        "key": "drive",
+        "text": "Drive",
+        "image": "/AAC_assets/img/actions/drive.png",
+        "sound": "Drive",
+        "tileColor": "orange"
+      },
+      {
+        "key": "fly",
+        "text": "Fly",
+        "image": "/AAC_assets/img/actions/fly.png",
+        "sound": "Fly",
+        "tileColor": "orange"
+      },
+      {
+        "key": "through",
+        "text": "Through",
+        "image": "/AAC_assets/img/actions/through.png",
+        "sound": "Through",
+        "tileColor": "red"
+      },
+      {
+        "key": "give",
+        "text": "Give",
+        "image": "/AAC_assets/img/actions/Give.png",
+        "sound": "Give",
+        "tileColor": "orange"
+      },
+      {
+        "key": "bring",
+        "text": "Bring",
+        "image": "/AAC_assets/img/actions/bring.png",
+        "sound": "Bring",
+        "tileColor": "orange"
+      },
+      {
+        "key": "take",
+        "text": "Take",
+        "image": "/AAC_assets/img/actions/take.png",
+        "sound": "Take",
+        "tileColor": "orange"
+      },
+      {
+        "key": "push",
+        "text": "Push",
+        "image": "/AAC_assets/img/actions/push.png",
+        "sound": "Push",
+        "tileColor": "orange"
+      },
+      {
+        "key": "start",
+        "text": "Start",
+        "image": "/AAC_assets/img/actions/start.png",
+        "sound": "Start",
+        "tileColor": "orange"
+      },
+      {
+        "key": "city",
+        "text": "City",
+        "image": "/AAC_assets/img/locations/city.png",
+        "sound": "City",
+        "tileColor": "blue"
+      },
+      {
+        "key": "town",
+        "text": "Town",
+        "image": "/AAC_assets/img/locations/town.png",
+        "sound": "Town",
+        "tileColor": "blue"
+      },
+      {
+        "key": "farm",
+        "text": "Farm",
+        "image": "/AAC_assets/img/locations/farm.png",
+        "sound": "Farm",
+        "tileColor": "blue"
+      },
+      {
+        "key": "shop",
+        "text": "Shop",
+        "image": "/AAC_assets/img/locations/shop.png",
+        "sound": "Shop",
+        "tileColor": "blue"
+      }
+    ]
+  },
+  "because": {
+    "name": "Because",
+    "color": "purple",
+    "tiles": [
+      {
+        "key": "because",
+        "text": "Because",
+        "image": "/AAC_assets/img/tell/because.png",
+        "sound": "Because",
+        "tileColor": "purple"
+      },
+      {
+        "key": "if",
+        "text": "If",
+        "image": "/AAC_assets/img/smallWords/if.png",
+        "sound": "If",
+        "tileColor": "purple"
+      },
+      {
+        "key": "for",
+        "text": "for",
+        "image": "/AAC_assets/img/smallWords/for.png",
+        "sound": "for",
+        "tileColor": "purple"
+      },
+      {
+        "key": "by",
+        "text": "by",
+        "image": "/AAC_assets/img/smallWords/by.png",
+        "sound": "by",
+        "tileColor": "purple"
+      },
+      {
+        "key": "from",
+        "text": "From",
+        "image": "/AAC_assets/img/smallWords/from.png",
+        "sound": "From",
+        "tileColor": "purple"
+      },
+      {
+        "key": "but",
+        "text": "But",
+        "image": "/AAC_assets/img/smallWords/but.png",
+        "sound": "But",
+        "tileColor": "purple"
+      },
+      {
+        "key": "and",
+        "text": "And",
+        "image": "/AAC_assets/img/smallWords/and.png",
+        "sound": "And",
+        "tileColor": "purple"
+      },
+      {
+        "key": "with",
+        "text": "With",
+        "image": "/AAC_assets/img/smallWords/with.png",
+        "sound": "With",
+        "tileColor": "purple"
+      },
+      {
+        "key": "of",
+        "text": "Of",
+        "image": "/AAC_assets/img/smallWords/of.png",
+        "sound": "Of",
+        "tileColor": "purple"
+      }
+    ]
+  },
+  "body": {
+    "name": "Body",
+    "color": "orange",
+    "tiles": [
+      {
+        "key": "arm",
+        "text": "Arm",
+        "image": "/AAC_assets/img/body/arm.png",
+        "sound": "Arm",
+        "tileColor": "orange"
+      },
+      {
+        "key": "back",
+        "text": "Back",
+        "image": "/AAC_assets/img/body/back.png",
+        "sound": "back",
+        "tileColor": "orange"
+      },
+      {
+        "key": "body",
+        "text": "Body",
+        "image": "/AAC_assets/img/body/body.png",
+        "sound": "body",
+        "tileColor": "orange"
+      },
+      {
+        "key": "bottom",
+        "text": "Bottom",
+        "image": "/AAC_assets/img/body/bottom.png",
+        "sound": "bottom",
+        "tileColor": "orange"
+      },
+      {
+        "key": "chest",
+        "text": "Chest",
+        "image": "/AAC_assets/img/body/chest.png",
+        "sound": "chest",
+        "tileColor": "orange"
+      },
+      {
+        "key": "face",
+        "text": "Face",
+        "image": "/AAC_assets/img/body/face.png",
+        "sound": "face",
+        "tileColor": "orange"
+      },
+      {
+        "key": "finger",
+        "text": "Finger",
+        "image": "/AAC_assets/img/body/finger.png",
+        "sound": "finger",
+        "tileColor": "orange"
+      },
+      {
+        "key": "foot",
+        "text": "Foot",
+        "image": "/AAC_assets/img/body/foot.png",
+        "sound": "foot",
+        "tileColor": "orange"
+      },
+      {
+        "key": "hair",
+        "text": "Hair",
+        "image": "/AAC_assets/img/body/hair.png",
+        "sound": "hair",
+        "tileColor": "orange"
+      },
+      {
+        "key": "hand",
+        "text": "Hand",
+        "image": "/AAC_assets/img/body/hand.png",
+        "sound": "hand",
+        "tileColor": "orange"
+      },
+      {
+        "key": "head",
+        "text": "Head",
+        "image": "/AAC_assets/img/body/head.png",
+        "sound": "head",
+        "tileColor": "orange"
+      },
+      {
+        "key": "leg",
+        "text": "Leg",
+        "image": "/AAC_assets/img/body/leg.png",
+        "sound": "leg",
+        "tileColor": "orange"
+      },
+      {
+        "key": "mouth",
+        "text": "Mouth",
+        "image": "/AAC_assets/img/body/mouth.png",
+        "sound": "mouth",
+        "tileColor": "orange"
+      },
+      {
+        "key": "privateparts",
+        "text": "Privates",
+        "image": "/AAC_assets/img/body/privateparts.png",
+        "sound": "private parts",
+        "tileColor": "orange"
+      },
+      {
+        "key": "stomach",
+        "text": "Stomach",
+        "image": "/AAC_assets/img/body/stomach.png",
+        "sound": "stomach",
+        "tileColor": "orange"
+      },
+      {
+        "key": "teeth",
+        "text": "Teeth",
+        "image": "/AAC_assets/img/body/teeth.png",
+        "sound": "teeth",
+        "tileColor": "orange"
+      },
+      {
+        "key": "tongue",
+        "text": "Tongue",
+        "image": "/AAC_assets/img/body/tongue.png",
+        "sound": "tongue",
+        "tileColor": "orange"
+      },
+      {
+        "key": "bandage",
+        "text": "Bandage",
+        "image": "/AAC_assets/img/body/bandage.png",
+        "sound": "Bandage",
+        "tileColor": "orange"
+      },
+      {
+        "key": "eye",
+        "text": "Eye",
+        "image": "/AAC_assets/img/body/eye.png",
+        "sound": "Eye",
+        "tileColor": "orange"
+      }
+    ]
+  },
+  "classroom": {
+    "name": "Classroom",
+    "color": "blue",
+    "tiles": [
+      {
+        "key": "classroom",
+        "text": "Classroom",
+        "image": "/AAC_assets/img/learn/classroom.png",
+        "sound": "Classroom",
+        "tileColor": "orange"
+      },
+      {
+        "key": "schoolPeople",
+        "text": "School People",
+        "image": "/AAC_assets/img/learn/schoolPeople.png",
+        "sound": "School People",
+        "tileColor": "blue"
+      }
+    ]
+  },
+  "clothes": {
+    "name": "Clothes",
+    "color": "orange",
+    "tiles": [
+      {
+        "key": "clothes",
+        "text": "Clothes",
+        "image": "/AAC_assets/img/clothes/clothes.png",
+        "sound": "Clothes",
+        "tileColor": "orange"
+      },
+      {
+        "key": "shirt",
+        "text": "Shirt",
+        "image": "/AAC_assets/img/clothes/shirt.png",
+        "sound": "Shirt",
+        "tileColor": "orange"
+      },
+      {
+        "key": "pants",
+        "text": "Pants",
+        "image": "/AAC_assets/img/clothes/pants.png",
+        "sound": "Pants",
+        "tileColor": "orange"
+      },
+      {
+        "key": "underwear",
+        "text": "Underwear",
+        "image": "/AAC_assets/img/clothes/underwear.png",
+        "sound": "Underwear",
+        "tileColor": "orange"
+      },
+      {
+        "key": "hat",
+        "text": "Hat",
+        "image": "/AAC_assets/img/clothes/hat.png",
+        "sound": "Hat",
+        "tileColor": "orange"
+      },
+      {
+        "key": "shoes",
+        "text": "Shoes",
+        "image": "/AAC_assets/img/clothes/shoes.png",
+        "sound": "Shoes",
+        "tileColor": "orange"
+      },
+      {
+        "key": "coat",
+        "text": "Coat",
+        "image": "/AAC_assets/img/clothes/coat.png",
+        "sound": "Coat",
+        "tileColor": "orange"
+      },
+      {
+        "key": "glasses",
+        "text": "Glasses",
+        "image": "/AAC_assets/img/clothes/glasses.png",
+        "sound": "Glasses",
+        "tileColor": "orange"
+      },
+      {
+        "key": "dress",
+        "text": "Dress",
+        "image": "/AAC_assets/img/clothes/dress.png",
+        "sound": "Dress",
+        "tileColor": "orange"
+      },
+      {
+        "key": "getdressed",
+        "text": "Get Dressed",
+        "image": "/AAC_assets/img/clothes/getdressed.png",
+        "sound": "Get Dressed",
+        "tileColor": "CLOTHES_VERB_TILES_COLOR"
+      },
+      {
+        "key": "handsome",
+        "text": "Handsome",
+        "image": "/AAC_assets/img/clothes/handsome.png",
+        "sound": "Handsome",
+        "tileColor": "CLOTHES_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "pajamas",
+        "text": "Pajamas",
+        "image": "/AAC_assets/img/clothes/pajamas.png",
+        "sound": "Pajamas",
+        "tileColor": "orange"
+      },
+      {
+        "key": "pretty",
+        "text": "Pretty",
+        "image": "/AAC_assets/img/clothes/pretty.png",
+        "sound": "Pretty",
+        "tileColor": "CLOTHES_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "puton",
+        "text": "Put On",
+        "image": "/AAC_assets/img/clothes/puton.png",
+        "sound": "Put On",
+        "tileColor": "CLOTHES_VERB_TILES_COLOR"
+      },
+      {
+        "key": "socks",
+        "text": "Socks",
+        "image": "/AAC_assets/img/clothes/socks.png",
+        "sound": "Socks",
+        "tileColor": "orange"
+      },
+      {
+        "key": "takeoff",
+        "text": "Take Off",
+        "image": "/AAC_assets/img/clothes/takeoff.png",
+        "sound": "Take Off",
+        "tileColor": "CLOTHES_VERB_TILES_COLOR"
+      },
+      {
+        "key": "ugly",
+        "text": "Ugly",
+        "image": "/AAC_assets/img/clothes/ugly.png",
+        "sound": "Ugly",
+        "tileColor": "CLOTHES_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "undress",
+        "text": "Undress",
+        "image": "/AAC_assets/img/clothes/undress.png",
+        "sound": "Undress",
+        "tileColor": "CLOTHES_VERB_TILES_COLOR"
+      }
+    ]
+  },
+  "colors": {
+    "name": "Colors",
+    "color": "orange",
+    "tiles": [
+      {
+        "key": "colors",
+        "text": "Colors",
+        "image": "/AAC_assets/img/colors/blue.png",
+        "sound": "Colors",
+        "tileColor": "orange"
+      },
+      {
+        "key": "blue",
+        "text": "Blue",
+        "image": "/AAC_assets/img/colors/blue.png",
+        "sound": "Blue",
+        "tileColor": "orange"
+      },
+      {
+        "key": "brown",
+        "text": "Brown",
+        "image": "/AAC_assets/img/colors/brown.png",
+        "sound": "Brown",
+        "tileColor": "orange"
+      },
+      {
+        "key": "green",
+        "text": "Green",
+        "image": "/AAC_assets/img/colors/green.png",
+        "sound": "Green",
+        "tileColor": "orange"
+      },
+      {
+        "key": "orange",
+        "text": "Orange",
+        "image": "/AAC_assets/img/colors/orange.png",
+        "sound": "Orange",
+        "tileColor": "orange"
+      },
+      {
+        "key": "pink",
+        "text": "Pink",
+        "image": "/AAC_assets/img/colors/pink.png",
+        "sound": "Pink",
+        "tileColor": "orange"
+      },
+      {
+        "key": "purple",
+        "text": "Purple",
+        "image": "/AAC_assets/img/colors/purple.png",
+        "sound": "Purple",
+        "tileColor": "orange"
+      },
+      {
+        "key": "red",
+        "text": "Red",
+        "image": "/AAC_assets/img/colors/red.png",
+        "sound": "Red",
+        "tileColor": "orange"
+      },
+      {
+        "key": "gray",
+        "text": "Gray",
+        "image": "/AAC_assets/img/colors/gray.png",
+        "sound": "Gray",
+        "tileColor": "orange"
+      }
+    ]
+  },
+  "directions": {
+    "name": "Directions",
+    "color": "orange",
+    "tiles": [
+      {
+        "key": "direction",
+        "text": "Direction",
+        "image": "/AAC_assets/img/locations/directions.png",
+        "sound": "Direction",
+        "tileColor": "purple"
+      },
+      {
+        "key": "high",
+        "text": "High",
+        "image": "/AAC_assets/img/directions/high.png",
+        "sound": "High",
+        "tileColor": "orange"
+      },
+      {
+        "key": "middle",
+        "text": "Middle",
+        "image": "/AAC_assets/img/directions/middle.png",
+        "sound": "Middle",
+        "tileColor": "orange"
+      },
+      {
+        "key": "low",
+        "text": "low",
+        "image": "/AAC_assets/img/directions/low.png",
+        "sound": "low",
+        "tileColor": "orange"
+      },
+      {
+        "key": "up",
+        "text": "Up",
+        "image": "/AAC_assets/img/directions/up.png",
+        "sound": "Up",
+        "tileColor": "orange"
+      },
+      {
+        "key": "down",
+        "text": "Down",
+        "image": "/AAC_assets/img/directions/down.png",
+        "sound": "Down",
+        "tileColor": "orange"
+      },
+      {
+        "key": "top",
+        "text": "Top",
+        "image": "/AAC_assets/img/directions/top.png",
+        "sound": "Top",
+        "tileColor": "orange"
+      },
+      {
+        "key": "Bottom",
+        "text": "Bottom",
+        "image": "/AAC_assets/img/directions/bottom.png",
+        "sound": "Bottom",
+        "tileColor": "orange"
+      },
+      {
+        "key": "side",
+        "text": "Side",
+        "image": "/AAC_assets/img/directions/side.png",
+        "sound": "Side",
+        "tileColor": "orange"
+      },
+      {
+        "key": "over",
+        "text": "Over",
+        "image": "/AAC_assets/img/directions/over.png",
+        "sound": "Over",
+        "tileColor": "orange"
+      },
+      {
+        "key": "bottom",
+        "text": "Bottom",
+        "image": "/AAC_assets/img/directions/bottom.png",
+        "sound": "Bottom",
+        "tileColor": "orange"
+      },
+      {
+        "key": "front",
+        "text": "Front",
+        "image": "/AAC_assets/img/directions/front.png",
+        "sound": "Front",
+        "tileColor": "orange"
+      },
+      {
+        "key": "under",
+        "text": "Under",
+        "image": "/AAC_assets/img/directions/under.png",
+        "sound": "Under",
+        "tileColor": "orange"
+      }
+    ]
+  },
+  "electronics": {
+    "name": "Electronics",
+    "color": null,
+    "tiles": [
+      {
+        "key": "electronics",
+        "text": "Electronics",
+        "image": "/AAC_assets/img/electronics/technology.png",
+        "sound": "Electronics",
+        "tileColor": null
+      },
+      {
+        "key": "technology",
+        "text": "Technology",
+        "image": "/AAC_assets/img/electronics/technology.png",
+        "sound": "Technology",
+        "tileColor": "ELECTRONICS_TILE_COLOR"
+      },
+      {
+        "key": "tv",
+        "text": "Tv",
+        "image": "/AAC_assets/img/electronics/tv.png",
+        "sound": "Tv",
+        "tileColor": "ELECTRONICS_TILE_COLOR"
+      },
+      {
+        "key": "computer",
+        "text": "Computer",
+        "image": "/AAC_assets/img/electronics/computer.png",
+        "sound": "Computer",
+        "tileColor": "ELECTRONICS_TILE_COLOR"
+      },
+      {
+        "key": "clock",
+        "text": "Clock",
+        "image": "/AAC_assets/img/electronics/clock.png",
+        "sound": "Clock",
+        "tileColor": "ELECTRONICS_TILE_COLOR"
+      },
+      {
+        "key": "phone",
+        "text": "Phone",
+        "image": "/AAC_assets/img/electronics/mobile.png",
+        "sound": "Phone",
+        "tileColor": "ELECTRONICS_TILE_COLOR"
+      },
+      {
+        "key": "camera",
+        "text": "Camera",
+        "image": "/AAC_assets/img/electronics/camera.png",
+        "sound": "Camera",
+        "tileColor": "ELECTRONICS_TILE_COLOR"
+      },
+      {
+        "key": "tablet",
+        "text": "Tablet",
+        "image": "/AAC_assets/img/electronics/tablet.png",
+        "sound": "Tablet",
+        "tileColor": "ELECTRONICS_TILE_COLOR"
+      }
+    ]
+  },
+  "employee": {
+    "name": "Employee",
+    "color": "yellow",
+    "tiles": [
+      {
+        "key": "employee",
+        "text": "employee",
+        "image": "/AAC_assets/img/job/employee.png",
+        "sound": "Employee",
+        "tileColor": "blue"
+      },
+      {
+        "key": "workWords",
+        "text": "Work People",
+        "image": "/AAC_assets/img/job/workPeople.png",
+        "sound": "Work People",
+        "tileColor": "yellow"
+      }
+    ]
+  },
+  "feelings": {
+    "name": "Feelings",
+    "color": "blue",
+    "tiles": [
+      {
+        "key": "feelings",
+        "text": "Feelings",
+        "image": "/AAC_assets/img/feelings/feelings.png",
+        "sound": "Feelings",
+        "tileColor": "blue"
+      },
+      {
+        "key": "love",
+        "text": "Love",
+        "image": "/AAC_assets/img/feelings/love.png",
+        "sound": "Love",
+        "tileColor": "blue"
+      },
+      {
+        "key": "smart",
+        "text": "Smart",
+        "image": "/AAC_assets/img/feelings/smart.png",
+        "sound": "Smart",
+        "tileColor": "blue"
+      },
+      {
+        "key": "silly",
+        "text": "Silly",
+        "image": "/AAC_assets/img/feelings/silly.png",
+        "sound": "Silly",
+        "tileColor": "blue"
+      },
+      {
+        "key": "change",
+        "text": "Change",
+        "image": "/AAC_assets/img/feelings/change.png",
+        "sound": "Change",
+        "tileColor": "blue"
+      },
+      {
+        "key": "nice",
+        "text": "Nice",
+        "image": "/AAC_assets/img/feelings/nice.png",
+        "sound": "Nice",
+        "tileColor": "blue"
+      },
+      {
+        "key": "ready",
+        "text": "Ready",
+        "image": "/AAC_assets/img/feelings/ready.png",
+        "sound": "Ready",
+        "tileColor": "blue"
+      },
+      {
+        "key": "tired",
+        "text": "Tired",
+        "image": "/AAC_assets/img/feelings/tired.png",
+        "sound": "Tired",
+        "tileColor": "blue"
+      },
+      {
+        "key": "hurt",
+        "text": "Hurt",
+        "image": "/AAC_assets/img/feelings/hurt.png",
+        "sound": "Hurt",
+        "tileColor": "blue"
+      },
+      {
+        "key": "scared",
+        "text": "Scared",
+        "image": "/AAC_assets/img/feelings/scared.png",
+        "sound": "Scared",
+        "tileColor": "blue"
+      },
+      {
+        "key": "angry",
+        "text": "Angry",
+        "image": "/AAC_assets/img/feelings/angry.png",
+        "sound": "Angry",
+        "tileColor": "blue"
+      },
+      {
+        "key": "nervous",
+        "text": "Nervous",
+        "image": "/AAC_assets/img/feelings/nervous.png",
+        "sound": "Nervous",
+        "tileColor": "blue"
+      },
+      {
+        "key": "shy",
+        "text": "Shy",
+        "image": "/AAC_assets/img/feelings/shy.png",
+        "sound": "Shy",
+        "tileColor": "blue"
+      },
+      {
+        "key": "sick",
+        "text": "Sick",
+        "image": "/AAC_assets/img/feelings/sick.png",
+        "sound": "Sick",
+        "tileColor": "blue"
+      },
+      {
+        "key": "confused",
+        "text": "Confused",
+        "image": "/AAC_assets/img/feelings/confused.png",
+        "sound": "Confused",
+        "tileColor": "blue"
+      },
+      {
+        "key": "excited",
+        "text": "Excited",
+        "image": "/AAC_assets/img/feelings/excited.png",
+        "sound": "Excited",
+        "tileColor": "blue"
+      },
+      {
+        "key": "happy",
+        "text": "Happy",
+        "image": "/AAC_assets/img/feelings/happy.png",
+        "sound": "Happy",
+        "tileColor": "blue"
+      },
+      {
+        "key": "sad",
+        "text": "Sad",
+        "image": "/AAC_assets/img/feelings/sad.png",
+        "sound": "Sad",
+        "tileColor": "blue"
+      }
+    ]
+  },
+  "foods": {
+    "name": "Foods",
+    "color": "green",
+    "tiles": [
+      {
+        "key": "foods",
+        "text": "Foods",
+        "image": "/AAC_assets/img/food/eat.png",
+        "sound": "Foods",
+        "tileColor": "green"
+      },
+      {
+        "key": "eat",
+        "text": "Eat",
+        "image": "/AAC_assets/img/food/eat.png",
+        "sound": "Eat",
+        "tileColor": "green"
+      },
+      {
+        "key": "taste",
+        "text": "Taste",
+        "image": "/AAC_assets/img/food/taste.svg",
+        "sound": "Taste",
+        "tileColor": "green"
+      },
+      {
+        "key": "water",
+        "text": "Water",
+        "image": "/AAC_assets/img/food/water.png",
+        "sound": "Water",
+        "tileColor": "green"
+      },
+      {
+        "key": "drink",
+        "text": "Drink",
+        "image": "/AAC_assets/img/food/drink.png",
+        "sound": "Drink",
+        "tileColor": "green"
+      },
+      {
+        "key": "blueberry",
+        "text": "Blueberry",
+        "image": "/AAC_assets/img/food/blueberry.png",
+        "sound": "Blueberry",
+        "tileColor": "green"
+      },
+      {
+        "key": "bread",
+        "text": "Bread",
+        "image": "/AAC_assets/img/food/bread.png",
+        "sound": "Bread",
+        "tileColor": "green"
+      },
+      {
+        "key": "carrot",
+        "text": "Carrot",
+        "image": "/AAC_assets/img/food/carrot.png",
+        "sound": "Carrot",
+        "tileColor": "green"
+      },
+      {
+        "key": "cheese",
+        "text": "Cheese",
+        "image": "/AAC_assets/img/food/cheese.png",
+        "sound": "Cheese",
+        "tileColor": "green"
+      },
+      {
+        "key": "hamburger",
+        "text": "Hamburger",
+        "image": "/AAC_assets/img/food/hamburger.png",
+        "sound": "Hamburger",
+        "tileColor": "green"
+      },
+      {
+        "key": "meat",
+        "text": "Meat",
+        "image": "/AAC_assets/img/food/meat.png",
+        "sound": "Meat",
+        "tileColor": "green"
+      },
+      {
+        "key": "milk",
+        "text": "Milk",
+        "image": "/AAC_assets/img/food/milk.png",
+        "sound": "Milk",
+        "tileColor": "green"
+      },
+      {
+        "key": "pizza",
+        "text": "Pizza",
+        "image": "/AAC_assets/img/food/pizza.png",
+        "sound": "Pizza",
+        "tileColor": "green"
+      },
+      {
+        "key": "rice",
+        "text": "Rice",
+        "image": "/AAC_assets/img/food/rice.png",
+        "sound": "Rice",
+        "tileColor": "green"
+      },
+      {
+        "key": "strawberry",
+        "text": "Strawberry",
+        "image": "/AAC_assets/img/food/strawberry.png",
+        "sound": "Strawberry",
+        "tileColor": "green"
+      },
+      {
+        "key": "taco",
+        "text": "Taco",
+        "image": "/AAC_assets/img/food/taco.png",
+        "sound": "Taco",
+        "tileColor": "green"
+      },
+      {
+        "key": "hotdog",
+        "text": "Hotdog",
+        "image": "/AAC_assets/img/food/hotdog.png",
+        "sound": "Hotdog",
+        "tileColor": "green"
+      },
+      {
+        "key": "sweets",
+        "text": "Sweets",
+        "image": "/AAC_assets/img/food/sweets.png",
+        "sound": "Sweets",
+        "tileColor": "green"
+      },
+      {
+        "key": "biscuit",
+        "text": "Biscuit",
+        "image": "/AAC_assets/img/food/biscuit.png",
+        "sound": "Biscuit",
+        "tileColor": "green"
+      },
+      {
+        "key": "vegetable",
+        "text": "Vegetable",
+        "image": "/AAC_assets/img/food/vegetable.png",
+        "sound": "Vegetable",
+        "tileColor": "green"
+      },
+      {
+        "key": "bottle",
+        "text": "Bottle",
+        "image": "/AAC_assets/img/food/bottle.png",
+        "sound": "Bottle",
+        "tileColor": "green"
+      }
+    ]
+  },
+  "game": {
+    "name": "Game",
+    "color": "yellow",
+    "tiles": [
+      {
+        "key": "game",
+        "text": "Game",
+        "image": "/AAC_assets/img/this/game.png",
+        "sound": "Game",
+        "tileColor": "orange"
+      },
+      {
+        "key": "play",
+        "text": "Play",
+        "image": "/AAC_assets/img/games/play.png",
+        "sound": "Play",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "toy",
+        "text": "Toy",
+        "image": "/AAC_assets/img/games/toy.png",
+        "sound": "Toy",
+        "tileColor": "orange"
+      },
+      {
+        "key": "party",
+        "text": "Party",
+        "image": "/AAC_assets/img/games/party.png",
+        "sound": "Party",
+        "tileColor": "orange"
+      },
+      {
+        "key": "hide",
+        "text": "Hide",
+        "image": "/AAC_assets/img/games/hide.png",
+        "sound": "Hide",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "jump",
+        "text": "Jump",
+        "image": "/AAC_assets/img/games/jump.png",
+        "sound": "Jump",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "practice",
+        "text": "Practice",
+        "image": "/AAC_assets/img/games/practice.png",
+        "sound": "Practice",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "win",
+        "text": "Win",
+        "image": "/AAC_assets/img/games/win.png",
+        "sound": "Win",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "lose",
+        "text": "Lose",
+        "image": "/AAC_assets/img/games/lose.png",
+        "sound": "Lose",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "myGame",
+        "text": "My Games",
+        "image": "/AAC_assets/img/games/myGames.png",
+        "sound": "My Games",
+        "tileColor": "red"
+      },
+      {
+        "key": "myToy",
+        "text": "My Toys",
+        "image": "/AAC_assets/img/games/myToys.png",
+        "sound": "My Toys",
+        "tileColor": "red"
+      },
+      {
+        "key": "bicycle",
+        "text": "Bicycle",
+        "image": "/AAC_assets/img/games/bicycle.png",
+        "sound": "Bicycle",
+        "tileColor": "yellow"
+      }
+    ]
+  },
+  "house": {
+    "name": "House",
+    "color": "blue",
+    "tiles": [
+      {
+        "key": "house",
+        "text": "House",
+        "image": "/AAC_assets/img/locations/house.png",
+        "sound": "House",
+        "tileColor": "blue"
+      },
+      {
+        "key": "street",
+        "text": "Street",
+        "image": "/AAC_assets/img/locations/street.png",
+        "sound": "Street",
+        "tileColor": "blue"
+      },
+      {
+        "key": "kitchen",
+        "text": "Kitchen",
+        "image": "/AAC_assets/img/house/kitchen.png",
+        "sound": "Kitchen",
+        "tileColor": "blue"
+      },
+      {
+        "key": "address",
+        "text": "Address",
+        "image": "/AAC_assets/img/house/address.png",
+        "sound": "Address",
+        "tileColor": "blue"
+      },
+      {
+        "key": "window",
+        "text": "Window",
+        "image": "/AAC_assets/img/house/window.png",
+        "sound": "Window",
+        "tileColor": "blue"
+      },
+      {
+        "key": "door",
+        "text": "Door",
+        "image": "/AAC_assets/img/house/door.png",
+        "sound": "Door",
+        "tileColor": "blue"
+      },
+      {
+        "key": "room",
+        "text": "Room",
+        "image": "/AAC_assets/img/house/room.png",
+        "sound": "Room",
+        "tileColor": "blue"
+      },
+      {
+        "key": "table",
+        "text": "Table",
+        "image": "/AAC_assets/img/house/table.png",
+        "sound": "Table",
+        "tileColor": "blue"
+      },
+      {
+        "key": "chair",
+        "text": "Chair",
+        "image": "/AAC_assets/img/house/chair.png",
+        "sound": "Chair",
+        "tileColor": "blue"
+      },
+      {
+        "key": "lighting",
+        "text": "Lighting",
+        "image": "/AAC_assets/img/house/lighting.png",
+        "sound": "Lighting",
+        "tileColor": "blue"
+      },
+      {
+        "key": "wall",
+        "text": "Wall",
+        "image": "/AAC_assets/img/house/wall.png",
+        "sound": "Wall",
+        "tileColor": "blue"
+      },
+      {
+        "key": "bed",
+        "text": "Bed",
+        "image": "/AAC_assets/img/house/bed.png",
+        "sound": "Bed",
+        "tileColor": "blue"
+      },
+      {
+        "key": "toothbrush",
+        "text": "Tooth Brush",
+        "image": "/AAC_assets/img/house/brush.png",
+        "sound": "Tooth Brush",
+        "tileColor": "blue"
+      }
+    ]
+  },
+  "is": {
+    "name": "Is",
+    "color": "blue",
+    "tiles": [
+      {
+        "key": "am",
+        "text": "Am",
+        "image": "/AAC_assets/img/is/am.png",
+        "sound": "am",
+        "tileColor": "IS_VERB_TILES_COLOR"
+      },
+      {
+        "key": "are",
+        "text": "Are",
+        "image": "/AAC_assets/img/is/are.png",
+        "sound": "are",
+        "tileColor": "IS_VERB_TILES_COLOR"
+      },
+      {
+        "key": "be",
+        "text": "Be",
+        "image": "/AAC_assets/img/is/be.png",
+        "sound": "be",
+        "tileColor": "IS_VERB_TILES_COLOR"
+      },
+      {
+        "key": "busy",
+        "text": "Busy",
+        "image": "/AAC_assets/img/is/busy.svg",
+        "sound": "busy",
+        "tileColor": "blue"
+      },
+      {
+        "key": "change",
+        "text": "Change",
+        "image": "/AAC_assets/img/is/change.png",
+        "sound": "change",
+        "tileColor": "IS_VERB_TILES_COLOR"
+      },
+      {
+        "key": "confused",
+        "text": "Confused",
+        "image": "/AAC_assets/img/is/confused.png",
+        "sound": "confused",
+        "tileColor": "blue"
+      },
+      {
+        "key": "excited",
+        "text": "Excited",
+        "image": "/AAC_assets/img/is/excited.png",
+        "sound": "excited",
+        "tileColor": "blue"
+      },
+      {
+        "key": "frustrated",
+        "text": "Frustrated",
+        "image": "/AAC_assets/img/is/frustrated.png",
+        "sound": "frustrated",
+        "tileColor": "blue"
+      },
+      {
+        "key": "grow",
+        "text": "Grow",
+        "image": "/AAC_assets/img/is/grow.png",
+        "sound": "grow",
+        "tileColor": "IS_VERB_TILES_COLOR"
+      },
+      {
+        "key": "happy",
+        "text": "Happy",
+        "image": "/AAC_assets/img/is/happy.png",
+        "sound": "happy",
+        "tileColor": "blue"
+      },
+      {
+        "key": "hurt",
+        "text": "Hurt",
+        "image": "/AAC_assets/img/is/hurt.png",
+        "sound": "hurt",
+        "tileColor": "blue"
+      },
+      {
+        "key": "is",
+        "text": "Is",
+        "image": "/AAC_assets/img/is/is.png",
+        "sound": "is",
+        "tileColor": "IS_VERB_TILES_COLOR"
+      },
+      {
+        "key": "live",
+        "text": "Live",
+        "image": "/AAC_assets/img/is/live.png",
+        "sound": "live",
+        "tileColor": "IS_VERB_TILES_COLOR"
+      },
+      {
+        "key": "nervous",
+        "text": "Nervous",
+        "image": "/AAC_assets/img/is/nervous.png",
+        "sound": "nervous",
+        "tileColor": "blue"
+      },
+      {
+        "key": "nice",
+        "text": "Nice",
+        "image": "/AAC_assets/img/is/nice.png",
+        "sound": "nice",
+        "tileColor": "blue"
+      },
+      {
+        "key": "ready",
+        "text": "Ready",
+        "image": "/AAC_assets/img/is/ready.png",
+        "sound": "ready",
+        "tileColor": "blue"
+      },
+      {
+        "key": "sad",
+        "text": "Sad",
+        "image": "/AAC_assets/img/is/sad.png",
+        "sound": "sad",
+        "tileColor": "blue"
+      },
+      {
+        "key": "scared",
+        "text": "Scared",
+        "image": "/AAC_assets/img/is/scared.png",
+        "sound": "scared",
+        "tileColor": "blue"
+      },
+      {
+        "key": "shy",
+        "text": "Shy",
+        "image": "/AAC_assets/img/is/shy.png",
+        "sound": "shy",
+        "tileColor": "blue"
+      },
+      {
+        "key": "sick",
+        "text": "Sick",
+        "image": "/AAC_assets/img/is/sick.png",
+        "sound": "sick",
+        "tileColor": "blue"
+      },
+      {
+        "key": "silly",
+        "text": "Silly",
+        "image": "/AAC_assets/img/is/silly.png",
+        "sound": "silly",
+        "tileColor": "blue"
+      },
+      {
+        "key": "smart",
+        "text": "Smart",
+        "image": "/AAC_assets/img/is/smart.svg",
+        "sound": "smart",
+        "tileColor": "blue"
+      },
+      {
+        "key": "tired",
+        "text": "Tired",
+        "image": "/AAC_assets/img/is/tired.png",
+        "sound": "tired",
+        "tileColor": "blue"
+      },
+      {
+        "key": "was",
+        "text": "Was",
+        "image": "/AAC_assets/img/is/was.svg",
+        "sound": "was",
+        "tileColor": "IS_VERB_TILES_COLOR"
+      }
+    ]
+  },
+  "job": {
+    "name": "Job",
+    "color": "yellow",
+    "tiles": [
+      {
+        "key": "job",
+        "text": "Job",
+        "image": "/AAC_assets/img/this/job.png",
+        "sound": "Job",
+        "tileColor": "orange"
+      },
+      {
+        "key": "money",
+        "text": "Money",
+        "image": "/AAC_assets/img/job/money.png",
+        "sound": "Money",
+        "tileColor": "orange"
+      },
+      {
+        "key": "office",
+        "text": "Office",
+        "image": "/AAC_assets/img/job/office.png",
+        "sound": "Office",
+        "tileColor": "blue"
+      },
+      {
+        "key": "employee",
+        "text": "Employee",
+        "image": "/AAC_assets/img/job/employee.png",
+        "sound": "Employee",
+        "tileColor": "blue"
+      },
+      {
+        "key": "work",
+        "text": "Work",
+        "image": "/AAC_assets/img/job/work.png",
+        "sound": "Work",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "trade",
+        "text": "Trade",
+        "image": "/AAC_assets/img/job/trade.png",
+        "sound": "Trade",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "sell",
+        "text": "Sell",
+        "image": "/AAC_assets/img/job/sell.png",
+        "sound": "Sell",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "buy",
+        "text": "Buy",
+        "image": "/AAC_assets/img/job/buy.png",
+        "sound": "Buy",
+        "tileColor": "yellow"
+      }
+    ]
+  },
+  "learn": {
+    "name": "Learn",
+    "color": "blue",
+    "tiles": [
+      {
+        "key": "learn",
+        "text": "Learn",
+        "image": "/AAC_assets/img/tell/learn.png",
+        "sound": "Learn",
+        "tileColor": "blue"
+      },
+      {
+        "key": "share",
+        "text": "Share",
+        "image": "/AAC_assets/img/learn/_share.png",
+        "sound": "Share",
+        "tileColor": "blue"
+      },
+      {
+        "key": "mean",
+        "text": "Mean",
+        "image": "/AAC_assets/img/learn/mean.png",
+        "sound": "Mean",
+        "tileColor": "blue"
+      },
+      {
+        "key": "understand",
+        "text": "Understand",
+        "image": "/AAC_assets/img/learn/understand.png",
+        "sound": "Understand",
+        "tileColor": "blue"
+      },
+      {
+        "key": "trouble",
+        "text": "Trouble",
+        "image": "/AAC_assets/img/learn/trouble.png",
+        "sound": "Trouble",
+        "tileColor": "red"
+      },
+      {
+        "key": "success",
+        "text": "Success",
+        "image": "/AAC_assets/img/learn/success.png",
+        "sound": "Success",
+        "tileColor": "red"
+      },
+      {
+        "key": "problem",
+        "text": "Problem",
+        "image": "/AAC_assets/img/learn/problem.png",
+        "sound": "Problem",
+        "tileColor": "red"
+      },
+      {
+        "key": "idea",
+        "text": "Idea",
+        "image": "/AAC_assets/img/learn/idea.png",
+        "sound": "Idea",
+        "tileColor": "red"
+      },
+      {
+        "key": "question",
+        "text": "Question",
+        "image": "/AAC_assets/img/learn/question.png",
+        "sound": "Question",
+        "tileColor": "red"
+      },
+      {
+        "key": "classroom",
+        "text": "Classroom",
+        "image": "/AAC_assets/img/learn/classroom.png",
+        "sound": "Classroom",
+        "tileColor": "orange"
+      },
+      {
+        "key": "simple",
+        "text": "Simple",
+        "image": "/AAC_assets/img/learn/simple.png",
+        "sound": "Simple",
+        "tileColor": "purple"
+      },
+      {
+        "key": "hard",
+        "text": "Hard",
+        "image": "/AAC_assets/img/learn/Hard.png",
+        "sound": "Hard",
+        "tileColor": "purple"
+      },
+      {
+        "key": "right",
+        "text": "Right",
+        "image": "/AAC_assets/img/learn/right.png",
+        "sound": "Right",
+        "tileColor": "purple"
+      },
+      {
+        "key": "wrong",
+        "text": "Wrong",
+        "image": "/AAC_assets/img/learn/wrong.png",
+        "sound": "Wrong",
+        "tileColor": "purple"
+      }
+    ]
+  },
+  "locations": {
+    "name": "Locations",
+    "color": "blue",
+    "tiles": [
+      {
+        "key": "locations",
+        "text": "Locations",
+        "image": "/AAC_assets/img/locations/go.png",
+        "sound": "Locations",
+        "tileColor": "blue"
+      },
+      {
+        "key": "go",
+        "text": "Go",
+        "image": "/AAC_assets/img/locations/go.png",
+        "sound": "Go",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "home",
+        "text": "Home",
+        "image": "/AAC_assets/img/locations/home.png",
+        "sound": "Home",
+        "tileColor": "blue"
+      },
+      {
+        "key": "myRoom",
+        "text": "My Room",
+        "image": "/AAC_assets/img/locations/myRoom.png",
+        "sound": "My Room",
+        "tileColor": "blue"
+      },
+      {
+        "key": "way",
+        "text": "Way",
+        "image": "/AAC_assets/img/locations/milkyWay.png",
+        "sound": "Way",
+        "tileColor": "blue"
+      },
+      {
+        "key": "inside",
+        "text": "Inside",
+        "image": "/AAC_assets/img/go/inside.png",
+        "sound": "Inside",
+        "tileColor": "green"
+      },
+      {
+        "key": "outside",
+        "text": "Outside",
+        "image": "/AAC_assets/img/go/outside.png",
+        "sound": "Outside",
+        "tileColor": "green"
+      },
+      {
+        "key": "at",
+        "text": "At",
+        "image": "/AAC_assets/img/locations/at.png",
+        "sound": "At",
+        "tileColor": "AT_TILES_COLOR"
+      },
+      {
+        "key": "where",
+        "text": "Where",
+        "image": "/AAC_assets/img/locations/where.png",
+        "sound": "Where",
+        "tileColor": "red"
+      },
+      {
+        "key": "place",
+        "text": "Place",
+        "image": "/AAC_assets/img/locations/place.png",
+        "sound": "Place",
+        "tileColor": "blue"
+      },
+      {
+        "key": "upstairs",
+        "text": "Upstairs",
+        "image": "/AAC_assets/img/go/upstairs.png",
+        "sound": "Upstairs",
+        "tileColor": "green"
+      },
+      {
+        "key": "downstairs",
+        "text": "downstairs",
+        "image": "/AAC_assets/img/go/downstairs.png",
+        "sound": "downstairs",
+        "tileColor": "green"
+      },
+      {
+        "key": "bathroom",
+        "text": "Bathroom",
+        "image": "/AAC_assets/img/locations/bathroom.png",
+        "sound": "Bathroom",
+        "tileColor": "blue"
+      },
+      {
+        "key": "hospital",
+        "text": "Hospital",
+        "image": "/AAC_assets/img/locations/hospital.png",
+        "sound": "Hospital",
+        "tileColor": "blue"
+      },
+      {
+        "key": "school",
+        "text": "School",
+        "image": "/AAC_assets/img/locations/school.png",
+        "sound": "School",
+        "tileColor": "blue"
+      },
+      {
+        "key": "church",
+        "text": "Church",
+        "image": "/AAC_assets/img/locations/church.png",
+        "sound": "Church",
+        "tileColor": "blue"
+      },
+      {
+        "key": "restaurant",
+        "text": "Restaurant",
+        "image": "/AAC_assets/img/locations/restaurant.png",
+        "sound": "Restaurant",
+        "tileColor": "blue"
+      },
+      {
+        "key": "house",
+        "text": "House",
+        "image": "/AAC_assets/img/locations/house.png",
+        "sound": "House",
+        "tileColor": "HOUSE_TILES_COLOR"
+      },
+      {
+        "key": "library",
+        "text": "Library",
+        "image": "/AAC_assets/img/locations/library.png",
+        "sound": "Library",
+        "tileColor": "blue"
+      },
+      {
+        "key": "here",
+        "text": "Here",
+        "image": "/AAC_assets/img/go/here.png",
+        "sound": "Here",
+        "tileColor": "green"
+      },
+      {
+        "key": "there",
+        "text": "There",
+        "image": "/AAC_assets/img/go/there.png",
+        "sound": "There",
+        "tileColor": "green"
+      },
+      {
+        "key": "away",
+        "text": "Away",
+        "image": "/AAC_assets/img/locations/away.png",
+        "sound": "Away",
+        "tileColor": "blue"
+      },
+      {
+        "key": "store",
+        "text": "Store",
+        "image": "/AAC_assets/img/locations/store.png",
+        "sound": "Store",
+        "tileColor": "blue"
+      },
+      {
+        "key": "direction",
+        "text": "Direction",
+        "image": "/AAC_assets/img/locations/directions.png",
+        "sound": "Direction",
+        "tileColor": "purple"
+      },
+      {
+        "key": "somewhereElse",
+        "text": "Somewhere Else",
+        "image": "/AAC_assets/img/go/somewhereElse.png",
+        "sound": "Somewhere Else",
+        "tileColor": "purple"
+      }
+    ]
+  },
+  "materials": {
+    "name": "Materials",
+    "color": "purple",
+    "tiles": [
+      {
+        "key": "diamond",
+        "text": "Diamond",
+        "image": "/AAC_assets/img/materials/diamond.png",
+        "sound": "Diamong",
+        "tileColor": "purple"
+      },
+      {
+        "key": "ruby",
+        "text": "Ruby",
+        "image": "/AAC_assets/img/materials/ruby.png",
+        "sound": "Ruby",
+        "tileColor": "purple"
+      },
+      {
+        "key": "glass",
+        "text": "Glass",
+        "image": "/AAC_assets/img/materials/glass.png",
+        "sound": "Glass",
+        "tileColor": "purple"
+      },
+      {
+        "key": "stone",
+        "text": "Stone",
+        "image": "/AAC_assets/img/materials/stone.png",
+        "sound": "Stone",
+        "tileColor": "purple"
+      },
+      {
+        "key": "paper",
+        "text": "Paper",
+        "image": "/AAC_assets/img/materials/paper.png",
+        "sound": "Paper",
+        "tileColor": "purple"
+      },
+      {
+        "key": "stickers",
+        "text": "Stickers",
+        "image": "/AAC_assets/img/materials/stickers.png",
+        "sound": "Stickers",
+        "tileColor": "purple"
+      },
+      {
+        "key": "tape",
+        "text": "Tape",
+        "image": "/AAC_assets/img/materials/tape.png",
+        "sound": "Tape",
+        "tileColor": "purple"
+      },
+      {
+        "key": "scissors",
+        "text": "Scissors",
+        "image": "/AAC_assets/img/materials/scissors.png",
+        "sound": "Scissors",
+        "tileColor": "purple"
+      },
+      {
+        "key": "paintbrush",
+        "text": "Paintbrush",
+        "image": "/AAC_assets/img/materials/paintbrush.png",
+        "sound": "Paintbrush",
+        "tileColor": "purple"
+      },
+      {
+        "key": "paint",
+        "text": "Paint",
+        "image": "/AAC_assets/img/materials/paint.png",
+        "sound": "Paint",
+        "tileColor": "purple"
+      },
+      {
+        "key": "glue",
+        "text": "Glue",
+        "image": "/AAC_assets/img/materials/glue.png",
+        "sound": "Glue",
+        "tileColor": "purple"
+      },
+      {
+        "key": "sponge",
+        "text": "Sponge",
+        "image": "/AAC_assets/img/materials/sponge.png",
+        "sound": "Sponge",
+        "tileColor": "purple"
+      },
+      {
+        "key": "fire",
+        "text": "Fire",
+        "image": "/AAC_assets/img/materials/fire.png",
+        "sound": "Fire",
+        "tileColor": "purple"
+      },
+      {
+        "key": "wood",
+        "text": "Wood",
+        "image": "/AAC_assets/img/materials/wood.png",
+        "sound": "Wood",
+        "tileColor": "purple"
+      },
+      {
+        "key": "material",
+        "text": "Material",
+        "image": "/AAC_assets/img/materials/material.png",
+        "sound": "Material",
+        "tileColor": "purple"
+      }
+    ]
+  },
+  "office": {
+    "name": "Office",
+    "color": "yellow",
+    "tiles": [
+      {
+        "key": "office",
+        "text": "Office",
+        "image": "/AAC_assets/img/job/office.png",
+        "sound": "Office",
+        "tileColor": "blue"
+      },
+      {
+        "key": "workWords",
+        "text": "Work Words",
+        "image": "/AAC_assets/img/job/workWord.png",
+        "sound": "Work Words",
+        "tileColor": "yellow"
+      }
+    ]
+  },
+  "okay": {
+    "name": "Okay",
+    "color": "yellow",
+    "tiles": [
+      {
+        "key": "okay",
+        "text": "Okay",
+        "image": "/AAC_assets/img/tell/okay.png",
+        "sound": "Okay",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "name",
+        "text": "Name",
+        "image": "/AAC_assets/img/okay/name.png",
+        "sound": "Name",
+        "tileColor": "orange"
+      },
+      {
+        "key": "great",
+        "text": "Great",
+        "image": "/AAC_assets/img/okay/great.png",
+        "sound": "Great",
+        "tileColor": "red"
+      },
+      {
+        "key": "cool",
+        "text": "Cool",
+        "image": "/AAC_assets/img/okay/cool.png",
+        "sound": "Cool",
+        "tileColor": "red"
+      },
+      {
+        "key": "wonderful",
+        "text": "Wonderful",
+        "image": "/AAC_assets/img/okay/wonderful.png",
+        "sound": "Wonderful",
+        "tileColor": "red"
+      },
+      {
+        "key": "awesome",
+        "text": "Awesome",
+        "image": "/AAC_assets/img/okay/awesome.png",
+        "sound": "Awesome",
+        "tileColor": "red"
+      },
+      {
+        "key": "real",
+        "text": "Real",
+        "image": "/AAC_assets/img/okay/real.png",
+        "sound": "Real",
+        "tileColor": "red"
+      },
+      {
+        "key": "about",
+        "text": "About",
+        "image": "/AAC_assets/img/okay/about.png",
+        "sound": "About",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "lets",
+        "text": "Let",
+        "image": "/AAC_assets/img/okay/lets.png",
+        "sound": "Let",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "excuseMe",
+        "text": "Excuse Me",
+        "image": "/AAC_assets/img/okay/excuseMe.png",
+        "sound": "Excuse Me",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "maybe",
+        "text": "maybe",
+        "image": "/AAC_assets/img/okay/maybe.png",
+        "sound": "maybe",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "myPhrase",
+        "text": "My Phrase",
+        "image": "/AAC_assets/img/okay/myPhrase.png",
+        "sound": "My Phrase",
+        "tileColor": "blue"
+      }
+    ]
+  },
+  "playlist": {
+    "name": "Playlist",
+    "color": "orange",
+    "tiles": [
+      {
+        "key": "playlist",
+        "text": "Playlist",
+        "image": "/AAC_assets/img/sound/playlist.png",
+        "sound": "Playlist",
+        "tileColor": "purple"
+      },
+      {
+        "key": "mySong",
+        "text": "My Song",
+        "image": "/AAC_assets/img/sound/mySong.png",
+        "sound": "My Song",
+        "tileColor": "orange"
+      },
+      {
+        "key": "myArtist",
+        "text": "My Artist",
+        "image": "/AAC_assets/img/sound/my.png",
+        "sound": "My Artist",
+        "tileColor": "orange"
+      }
+    ]
+  },
+  "shapes": {
+    "name": "Shapes",
+    "color": "blue",
+    "tiles": [
+      {
+        "key": "shapes",
+        "text": "Shapes",
+        "image": "/AAC_assets/img/shapes/triangle.png",
+        "sound": "Shapes",
+        "tileColor": "blue"
+      },
+      {
+        "key": "triangle",
+        "text": "Triangle",
+        "image": "/AAC_assets/img/shapes/triangle.png",
+        "sound": "Triangle",
+        "tileColor": "blue"
+      },
+      {
+        "key": "square",
+        "text": "Square",
+        "image": "/AAC_assets/img/shapes/square.png",
+        "sound": "Square",
+        "tileColor": "blue"
+      },
+      {
+        "key": "circle",
+        "text": "Circle",
+        "image": "/AAC_assets/img/shapes/circle.png",
+        "sound": "Circle",
+        "tileColor": "blue"
+      },
+      {
+        "key": "rectangle",
+        "text": "Rectangle",
+        "image": "/AAC_assets/img/shapes/rectangle.png",
+        "sound": "Rectangle",
+        "tileColor": "blue"
+      }
+    ]
+  },
+  "sky": {
+    "name": "Sky",
+    "color": "orange",
+    "tiles": [
+      {
+        "key": "sky",
+        "text": "Sky",
+        "image": "/AAC_assets/img/this/sky.png",
+        "sound": "Sky",
+        "tileColor": "orange"
+      },
+      {
+        "key": "planet",
+        "text": "Planet",
+        "image": "/AAC_assets/img/sky/planet.png",
+        "sound": "Planet",
+        "tileColor": "orange"
+      },
+      {
+        "key": "space",
+        "text": "Space",
+        "image": "/AAC_assets/img/sky/space.png",
+        "sound": "Space",
+        "tileColor": "orange"
+      },
+      {
+        "key": "moon",
+        "text": "Moon",
+        "image": "/AAC_assets/img/sky/moon.png",
+        "sound": "Moon",
+        "tileColor": "orange"
+      },
+      {
+        "key": "sun",
+        "text": "Sun",
+        "image": "/AAC_assets/img/sky/sun.png",
+        "sound": "Sun",
+        "tileColor": "orange"
+      },
+      {
+        "key": "lightning",
+        "text": "Lightning",
+        "image": "/AAC_assets/img/sky/lightning.png",
+        "sound": "lightning",
+        "tileColor": "orange"
+      },
+      {
+        "key": "thunder",
+        "text": "Thunder",
+        "image": "/AAC_assets/img/sky/thunder.png",
+        "sound": "Thunder",
+        "tileColor": "orange"
+      },
+      {
+        "key": "wind",
+        "text": "Wind",
+        "image": "/AAC_assets/img/sky/wind.png",
+        "sound": "Wind",
+        "tileColor": "orange"
+      },
+      {
+        "key": "snow",
+        "text": "Snow",
+        "image": "/AAC_assets/img/sky/snow.png",
+        "sound": "Snow",
+        "tileColor": "orange"
+      },
+      {
+        "key": "rain",
+        "text": "Rain",
+        "image": "/AAC_assets/img/sky/rain.png",
+        "sound": "Rain",
+        "tileColor": "orange"
+      },
+      {
+        "key": "storm",
+        "text": "Storm",
+        "image": "/AAC_assets/img/sky/storm.png",
+        "sound": "Storm",
+        "tileColor": "orange"
+      },
+      {
+        "key": "weather",
+        "text": "Weather",
+        "image": "/AAC_assets/img/sky/weather.png",
+        "sound": "Weather",
+        "tileColor": "orange"
+      }
+    ]
+  },
+  "somewhereElse": {
+    "name": "SomewhereElse",
+    "color": "yellow",
+    "tiles": [
+      {
+        "key": "somewhereElse",
+        "text": "Somewhere Else",
+        "image": "/AAC_assets/img/go/somewhereElse.png",
+        "sound": "Somewhere Else",
+        "tileColor": "purple"
+      },
+      {
+        "key": "myPlace",
+        "text": "My Place",
+        "image": "/AAC_assets/img/locations/myPlace.png",
+        "sound": "My Place",
+        "tileColor": "yellow"
+      }
+    ]
+  },
+  "sound": {
+    "name": "Sound",
+    "color": "orange",
+    "tiles": [
+      {
+        "key": "sound",
+        "text": "Sound",
+        "image": "/AAC_assets/img/tell/sound.png",
+        "sound": "Sound",
+        "tileColor": "orange"
+      },
+      {
+        "key": "loud",
+        "text": "Loud",
+        "image": "/AAC_assets/img/sound/loud.png",
+        "sound": "Loud",
+        "tileColor": "blue"
+      },
+      {
+        "key": "quiet",
+        "text": "Quiet",
+        "image": "/AAC_assets/img/sound/quiet.png",
+        "sound": "Quiet",
+        "tileColor": "blue"
+      },
+      {
+        "key": "soft",
+        "text": "Soft",
+        "image": "/AAC_assets/img/sound/soft.png",
+        "sound": "Soft",
+        "tileColor": "blue"
+      },
+      {
+        "key": "noisy",
+        "text": "Noisy",
+        "image": "/AAC_assets/img/sound/noisy.png",
+        "sound": "Noisy",
+        "tileColor": "blue"
+      },
+      {
+        "key": "sing",
+        "text": "Sing",
+        "image": "/AAC_assets/img/sound/sing.png",
+        "sound": "Sing",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "music",
+        "text": "Music",
+        "image": "/AAC_assets/img/sound/music.png",
+        "sound": "Music",
+        "tileColor": "orange"
+      },
+      {
+        "key": "song",
+        "text": "Song",
+        "image": "/AAC_assets/img/sound/song.png",
+        "sound": "Song",
+        "tileColor": "orange"
+      },
+      {
+        "key": "playlist",
+        "text": "Playlist",
+        "image": "/AAC_assets/img/sound/playlist.png",
+        "sound": "Playlist",
+        "tileColor": "purple"
+      },
+      {
+        "key": "story",
+        "text": "Loud",
+        "image": "/AAC_assets/img/sound/loud.png",
+        "sound": "Sound",
+        "tileColor": "orange"
+      },
+      {
+        "key": "book",
+        "text": "Loud",
+        "image": "/AAC_assets/img/sound/loud.png",
+        "sound": "Sound",
+        "tileColor": "orange"
+      }
+    ]
+  },
+  "tell": {
+    "name": "Tell",
+    "color": "blue",
+    "tiles": [
+      {
+        "key": "tell",
+        "text": "Tell",
+        "image": "/AAC_assets/img/tell/tell.png",
+        "sound": "Tell",
+        "tileColor": "blue"
+      },
+      {
+        "key": "yes",
+        "text": "Yes",
+        "image": "/AAC_assets/img/tell/yes.png",
+        "sound": "Yes",
+        "tileColor": "green"
+      },
+      {
+        "key": "learn",
+        "text": "Learn",
+        "image": "/AAC_assets/img/tell/learn.png",
+        "sound": "Learn",
+        "tileColor": "LEARN_TILES_COLOR"
+      },
+      {
+        "key": "okay",
+        "text": "Okay",
+        "image": "/AAC_assets/img/tell/okay.png",
+        "sound": "Okay",
+        "tileColor": "OKAY_TILES_COLOR"
+      },
+      {
+        "key": "sound",
+        "text": "Sound",
+        "image": "/AAC_assets/img/tell/sound.png",
+        "sound": "Sound",
+        "tileColor": "SOUND_TILES_COLOR"
+      },
+      {
+        "key": "sorry",
+        "text": "Sorry",
+        "image": "/AAC_assets/img/tell/sorry.png",
+        "sound": "Sorry",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "ask",
+        "text": "Ask",
+        "image": "/AAC_assets/img/tell/ask.png",
+        "sound": "Ask",
+        "tileColor": "blue"
+      },
+      {
+        "key": "write",
+        "text": "Write",
+        "image": "/AAC_assets/img/tell/write.png",
+        "sound": "Write",
+        "tileColor": "blue"
+      },
+      {
+        "key": "call",
+        "text": "Call",
+        "image": "/AAC_assets/img/tell/call.png",
+        "sound": "Call",
+        "tileColor": "blue"
+      },
+      {
+        "key": "no",
+        "text": "No",
+        "image": "/AAC_assets/img/tell/no.png",
+        "sound": "No",
+        "tileColor": "red"
+      },
+      {
+        "key": "talk",
+        "text": "Talk",
+        "image": "/AAC_assets/img/tell/talk.png",
+        "sound": "Talk",
+        "tileColor": "blue"
+      },
+      {
+        "key": "speak",
+        "text": "Speak",
+        "image": "/AAC_assets/img/tell/speak.png",
+        "sound": "Speak",
+        "tileColor": "blue"
+      },
+      {
+        "key": "say",
+        "text": "Say",
+        "image": "/AAC_assets/img/tell/say.png",
+        "sound": "Say",
+        "tileColor": "blue"
+      },
+      {
+        "key": "guess",
+        "text": "Guess",
+        "image": "/AAC_assets/img/tell/guess.png",
+        "sound": "Guess",
+        "tileColor": "blue"
+      },
+      {
+        "key": "hello",
+        "text": "Hello",
+        "image": "/AAC_assets/img/tell/hello.png",
+        "sound": "Hello",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "listen",
+        "text": "Listen",
+        "image": "/AAC_assets/img/tell/listen.png",
+        "sound": "Listen",
+        "tileColor": "blue"
+      },
+      {
+        "key": "hear",
+        "text": "Hear",
+        "image": "/AAC_assets/img/tell/hear.png",
+        "sound": "Hear",
+        "tileColor": "blue"
+      },
+      {
+        "key": "because",
+        "text": "Because",
+        "image": "/AAC_assets/img/tell/because.png",
+        "sound": "Because",
+        "tileColor": "BECAUSE_TILES_COLOR"
+      },
+      {
+        "key": "goodbye",
+        "text": "Goodbye",
+        "image": "/AAC_assets/img/tell/goodbye.png",
+        "sound": "Goodbye",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "please",
+        "text": "Please",
+        "image": "/AAC_assets/img/tell/please.png",
+        "sound": "Please",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "thankyou",
+        "text": "Thank You",
+        "image": "/AAC_assets/img/tell/thankyou.png",
+        "sound": "Thank You",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "myturn",
+        "text": "My Turn",
+        "image": "/AAC_assets/img/tell/myturn.png",
+        "sound": "My turn",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "yourturn",
+        "text": "Your Turn",
+        "image": "/AAC_assets/img/tell/yourTurn.png",
+        "sound": "Your turn",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "think",
+        "text": "Think",
+        "image": "/AAC_assets/img/tell/think.png",
+        "sound": "Think",
+        "tileColor": "blue"
+      },
+      {
+        "key": "remember",
+        "text": "Remember",
+        "image": "/AAC_assets/img/tell/remember.png",
+        "sound": "Remember",
+        "tileColor": "blue"
+      }
+    ]
+  },
+  "these": {
+    "name": "These",
+    "color": "blue",
+    "tiles": [
+      {
+        "key": "these",
+        "text": "These",
+        "image": "/AAC_assets/img/this/this.png",
+        "sound": "These",
+        "tileColor": "blue"
+      },
+      {
+        "key": "this",
+        "text": "This",
+        "image": "/AAC_assets/img/this/this.png",
+        "sound": "This",
+        "tileColor": "green"
+      },
+      {
+        "key": "could",
+        "text": "Could",
+        "image": "/AAC_assets/img/this/could.png",
+        "sound": "Could",
+        "tileColor": "blue"
+      },
+      {
+        "key": "would",
+        "text": "Would",
+        "image": "/AAC_assets/img/this/would.png",
+        "sound": "Would",
+        "tileColor": "blue"
+      },
+      {
+        "key": "still",
+        "text": "Still",
+        "image": "/AAC_assets/img/this/still.png",
+        "sound": "Still",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "also",
+        "text": "Also",
+        "image": "/AAC_assets/img/this/also.png",
+        "sound": "Also",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "instead",
+        "text": "Instead",
+        "image": "/AAC_assets/img/this/instead.png",
+        "sound": "Instead",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "almost",
+        "text": "Almost",
+        "image": "/AAC_assets/img/this/almost.png",
+        "sound": "Almost",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "again",
+        "text": "Again",
+        "image": "/AAC_assets/img/this/again.png",
+        "sound": "Again",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "that",
+        "text": "That",
+        "image": "/AAC_assets/img/this/that.png",
+        "sound": "That",
+        "tileColor": "green"
+      },
+      {
+        "key": "even",
+        "text": "Even",
+        "image": "/AAC_assets/img/this/even.png",
+        "sound": "Even",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "definitely",
+        "text": "Definitely",
+        "image": "/AAC_assets/img/this/definitely.png",
+        "sound": "Definitely",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "may",
+        "text": "May",
+        "image": "/AAC_assets/img/this/may.png",
+        "sound": "May",
+        "tileColor": "blue"
+      },
+      {
+        "key": "should",
+        "text": "Should",
+        "image": "/AAC_assets/img/this/should.png",
+        "sound": "Should",
+        "tileColor": "blue"
+      },
+      {
+        "key": "must",
+        "text": "Must",
+        "image": "/AAC_assets/img/this/must.png",
+        "sound": "Must",
+        "tileColor": "blue"
+      },
+      {
+        "key": "very",
+        "text": "Very",
+        "image": "/AAC_assets/img/this/very.png",
+        "sound": "Very",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "sky",
+        "text": "Sky",
+        "image": "/AAC_assets/img/this/sky.png",
+        "sound": "Sky",
+        "tileColor": "SKY_TILES_COLOR"
+      },
+      {
+        "key": "job",
+        "text": "Job",
+        "image": "/AAC_assets/img/this/job.png",
+        "sound": "Job",
+        "tileColor": "orange"
+      },
+      {
+        "key": "game",
+        "text": "Game",
+        "image": "/AAC_assets/img/this/game.png",
+        "sound": "Game",
+        "tileColor": "orange"
+      }
+    ]
+  },
+  "they": {
+    "name": "They",
+    "color": "orange",
+    "tiles": [
+      {
+        "key": "he",
+        "text": "He",
+        "image": "/AAC_assets/img/they/he.png",
+        "sound": "He",
+        "tileColor": "THEY_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "she",
+        "text": "She",
+        "image": "/AAC_assets/img/they/she.png",
+        "sound": "She",
+        "tileColor": "THEY_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "we",
+        "text": "We",
+        "image": "/AAC_assets/img/they/we.png",
+        "sound": "We",
+        "tileColor": "THEY_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "they",
+        "text": "They",
+        "image": "/AAC_assets/img/they/they.png",
+        "sound": "They",
+        "tileColor": "THEY_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "who",
+        "text": "Who",
+        "image": "/AAC_assets/img/who/who.png",
+        "sound": "Who",
+        "tileColor": "WHO_TILES_COLOR"
+      },
+      {
+        "key": "grandma",
+        "text": "Grandma",
+        "image": "/AAC_assets/img/they/grandma.png",
+        "sound": "Grandma",
+        "tileColor": "orange"
+      },
+      {
+        "key": "grandpa",
+        "text": "Grandpa",
+        "image": "/AAC_assets/img/they/grandpa.png",
+        "sound": "Grandpa",
+        "tileColor": "orange"
+      },
+      {
+        "key": "teacher",
+        "text": "Teacher",
+        "image": "/AAC_assets/img/they/teacher.png",
+        "sound": "Teacher",
+        "tileColor": "orange"
+      },
+      {
+        "key": "cook",
+        "text": "Cook",
+        "image": "/AAC_assets/img/they/cook.png",
+        "sound": "Cook",
+        "tileColor": "orange"
+      },
+      {
+        "key": "sister",
+        "text": "Sister",
+        "image": "/AAC_assets/img/they/sister.png",
+        "sound": "Sister",
+        "tileColor": "orange"
+      },
+      {
+        "key": "brother",
+        "text": "Brother",
+        "image": "/AAC_assets/img/they/brother.png",
+        "sound": "Brother",
+        "tileColor": "orange"
+      },
+      {
+        "key": "policeofficer",
+        "text": "Police Officer",
+        "image": "/AAC_assets/img/they/policeofficer.png",
+        "sound": "Police Officer",
+        "tileColor": "orange"
+      },
+      {
+        "key": "mother",
+        "text": "Mother",
+        "image": "/AAC_assets/img/they/mother.png",
+        "sound": "Mother",
+        "tileColor": "orange"
+      },
+      {
+        "key": "father",
+        "text": "Father",
+        "image": "/AAC_assets/img/they/father.png",
+        "sound": "Father",
+        "tileColor": "orange"
+      },
+      {
+        "key": "doctor",
+        "text": "Doctor",
+        "image": "/AAC_assets/img/they/doctor.png",
+        "sound": "Doctor",
+        "tileColor": "orange"
+      },
+      {
+        "key": "fireman",
+        "text": "Fireman",
+        "image": "/AAC_assets/img/they/fireman.png",
+        "sound": "Fireman",
+        "tileColor": "orange"
+      },
+      {
+        "key": "boy",
+        "text": "Boy",
+        "image": "/AAC_assets/img/they/boy.png",
+        "sound": "Boy",
+        "tileColor": "orange"
+      },
+      {
+        "key": "girl",
+        "text": "Girl",
+        "image": "/AAC_assets/img/they/girl.png",
+        "sound": "Girl",
+        "tileColor": "orange"
+      },
+      {
+        "key": "baby",
+        "text": "Baby",
+        "image": "/AAC_assets/img/they/baby.png",
+        "sound": "Baby",
+        "tileColor": "orange"
+      },
+      {
+        "key": "friend",
+        "text": "Friend",
+        "image": "/AAC_assets/img/they/friend.png",
+        "sound": "Friend",
+        "tileColor": "orange"
+      }
+    ]
+  },
+  "things": {
+    "name": "Things",
+    "color": "red",
+    "tiles": [
+      {
+        "key": "things",
+        "text": "Things",
+        "image": "/AAC_assets/img/things/things.png",
+        "sound": "Things",
+        "tileColor": "red"
+      },
+      {
+        "key": "boat",
+        "text": "Boat",
+        "image": "/AAC_assets/img/things/boat.png",
+        "sound": "Boat",
+        "tileColor": "red"
+      },
+      {
+        "key": "bridge",
+        "text": "Bridge",
+        "image": "/AAC_assets/img/things/bridge.png",
+        "sound": "Bridge",
+        "tileColor": "red"
+      },
+      {
+        "key": "bus",
+        "text": "Bus",
+        "image": "/AAC_assets/img/things/bus.png",
+        "sound": "Bus",
+        "tileColor": "red"
+      },
+      {
+        "key": "car",
+        "text": "Car",
+        "image": "/AAC_assets/img/things/car.png",
+        "sound": "Car",
+        "tileColor": "red"
+      },
+      {
+        "key": "plane",
+        "text": "Plane",
+        "image": "/AAC_assets/img/things/plane.png",
+        "sound": "Plane",
+        "tileColor": "red"
+      },
+      {
+        "key": "flower",
+        "text": "Flower",
+        "image": "/AAC_assets/img/things/flower.png",
+        "sound": "Flower",
+        "tileColor": "red"
+      },
+      {
+        "key": "forest",
+        "text": "Forest",
+        "image": "/AAC_assets/img/things/forest.png",
+        "sound": "Forest",
+        "tileColor": "red"
+      },
+      {
+        "key": "it",
+        "text": "It",
+        "image": "/AAC_assets/img/things/it.png",
+        "sound": "It",
+        "tileColor": "red"
+      },
+      {
+        "key": "lake",
+        "text": "Lake",
+        "image": "/AAC_assets/img/things/lake.png",
+        "sound": "Lake",
+        "tileColor": "red"
+      },
+      {
+        "key": "materials",
+        "text": "Materials",
+        "image": "/AAC_assets/img/things/materials.png",
+        "sound": "Materials",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "mountain",
+        "text": "Mountain",
+        "image": "/AAC_assets/img/things/mountain.png",
+        "sound": "Mountain",
+        "tileColor": "red"
+      },
+      {
+        "key": "ocean",
+        "text": "Ocean",
+        "image": "/AAC_assets/img/things/ocean.png",
+        "sound": "Ocean",
+        "tileColor": "red"
+      },
+      {
+        "key": "road",
+        "text": "Road",
+        "image": "/AAC_assets/img/things/road.png",
+        "sound": "Road",
+        "tileColor": "red"
+      },
+      {
+        "key": "tool",
+        "text": "Tool",
+        "image": "/AAC_assets/img/things/tool.png",
+        "sound": "Tool",
+        "tileColor": "yellow"
+      },
+      {
+        "key": "tree",
+        "text": "Tree",
+        "image": "/AAC_assets/img/things/tree.png",
+        "sound": "Tree",
+        "tileColor": "red"
+      },
+      {
+        "key": "accessory",
+        "text": "Accessory",
+        "image": "/AAC_assets/img/things/accessory.png",
+        "sound": "Accessory",
+        "tileColor": "red"
+      },
+      {
+        "key": "wallet",
+        "text": "Wallet",
+        "image": "/AAC_assets/img/things/wallet.png",
+        "sound": "Wallet",
+        "tileColor": "red"
+      },
+      {
+        "key": "rifle",
+        "text": "Rifle",
+        "image": "/AAC_assets/img/things/rifle.png",
+        "sound": "Rifle",
+        "tileColor": "red"
+      }
+    ]
+  },
+  "this": {
+    "name": "This",
+    "color": null,
+    "tiles": [
+      {
+        "key": "this",
+        "text": "This",
+        "image": "",
+        "sound": "This",
+        "tileColor": null
+      }
+    ]
+  },
+  "tools": {
+    "name": "Tools",
+    "color": "red",
+    "tiles": [
+      {
+        "key": "tools",
+        "text": "Tools",
+        "image": "/AAC_assets/img/things/tool.png",
+        "sound": "Tools",
+        "tileColor": "red"
+      },
+      {
+        "key": "fork",
+        "text": "Fork",
+        "image": "/AAC_assets/img/tools/fork.png",
+        "sound": "Fork",
+        "tileColor": "red"
+      },
+      {
+        "key": "spoon",
+        "text": "Spoon",
+        "image": "/AAC_assets/img/tools/spoon.png",
+        "sound": "Spoon",
+        "tileColor": "red"
+      },
+      {
+        "key": "knife",
+        "text": "Knife",
+        "image": "/AAC_assets/img/tools/knife.png",
+        "sound": "Knife",
+        "tileColor": "red"
+      },
+      {
+        "key": "plate",
+        "text": "Plate",
+        "image": "/AAC_assets/img/tools/plate.png",
+        "sound": "Plate",
+        "tileColor": "red"
+      },
+      {
+        "key": "bowl",
+        "text": "Bowl",
+        "image": "/AAC_assets/img/tools/bowl.png",
+        "sound": "Bowl",
+        "tileColor": "red"
+      },
+      {
+        "key": "cup",
+        "text": "Cup",
+        "image": "/AAC_assets/img/tools/cup.png",
+        "sound": "Cup",
+        "tileColor": "red"
+      },
+      {
+        "key": "pen",
+        "text": "Pen",
+        "image": "/AAC_assets/img/tools/pen.png",
+        "sound": "Pen",
+        "tileColor": "red"
+      },
+      {
+        "key": "pencil",
+        "text": "Pencil",
+        "image": "/AAC_assets/img/tools/pencil.png",
+        "sound": "Pencil",
+        "tileColor": "red"
+      },
+      {
+        "key": "paper",
+        "text": "Paper",
+        "image": "/AAC_assets/img/tools/paper.png",
+        "sound": "Paper",
+        "tileColor": "red"
+      },
+      {
+        "key": "screwdriver",
+        "text": "ScrewDriver",
+        "image": "/AAC_assets/img/tools/screwdriver.png",
+        "sound": "ScrewDriver",
+        "tileColor": "red"
+      },
+      {
+        "key": "hammer",
+        "text": "Hammer",
+        "image": "/AAC_assets/img/tools/hammer.png",
+        "sound": "Hammer",
+        "tileColor": "red"
+      },
+      {
+        "key": "ladder",
+        "text": "Ladder",
+        "image": "/AAC_assets/img/tools/ladder.png",
+        "sound": "Ladder",
+        "tileColor": "red"
+      },
+      {
+        "key": "paperclip",
+        "text": "Paperclip",
+        "image": "/AAC_assets/img/tools/paperclip.png",
+        "sound": "Paperclip",
+        "tileColor": "red"
+      },
+      {
+        "key": "umbrella",
+        "text": "Umbrella",
+        "image": "/AAC_assets/img/tools/umbrella.png",
+        "sound": "Umbrella",
+        "tileColor": "red"
+      }
+    ]
+  },
+  "touch": {
+    "name": "Touch",
+    "color": "green",
+    "tiles": [
+      {
+        "key": "break",
+        "text": "Break",
+        "image": "/AAC_assets/img/touch/break.png",
+        "sound": "break",
+        "tileColor": "green"
+      },
+      {
+        "key": "clean",
+        "text": "Clean",
+        "image": "/AAC_assets/img/touch/clean.png",
+        "sound": "clean",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "close",
+        "text": "Close",
+        "image": "/AAC_assets/img/touch/close.png",
+        "sound": "close",
+        "tileColor": "green"
+      },
+      {
+        "key": "crooked",
+        "text": "Crooked",
+        "image": "/AAC_assets/img/touch/crooked.png",
+        "sound": "crooked",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "cut",
+        "text": "Cut",
+        "image": "/AAC_assets/img/touch/cut.png",
+        "sound": "cut",
+        "tileColor": "green"
+      },
+      {
+        "key": "dirty",
+        "text": "Dirty",
+        "image": "/AAC_assets/img/touch/dirty.png",
+        "sound": "dirty",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "dull",
+        "text": "Dull",
+        "image": "/AAC_assets/img/touch/dull.png",
+        "sound": "dull",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "finish",
+        "text": "Finish",
+        "image": "/AAC_assets/img/touch/finish.png",
+        "sound": "finish",
+        "tileColor": "green"
+      },
+      {
+        "key": "fix",
+        "text": "Fix",
+        "image": "/AAC_assets/img/touch/fix.png",
+        "sound": "fix",
+        "tileColor": "green"
+      },
+      {
+        "key": "new",
+        "text": "New",
+        "image": "/AAC_assets/img/touch/new.png",
+        "sound": "new",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "old",
+        "text": "Old",
+        "image": "/AAC_assets/img/touch/old.png",
+        "sound": "old",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "open",
+        "text": "Open",
+        "image": "/AAC_assets/img/touch/open.png",
+        "sound": "open",
+        "tileColor": "green"
+      },
+      {
+        "key": "sharp",
+        "text": "Sharp",
+        "image": "/AAC_assets/img/touch/sharp.png",
+        "sound": "sharp",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "short",
+        "text": "Short",
+        "image": "/AAC_assets/img/touch/short.png",
+        "sound": "short",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "show",
+        "text": "Show",
+        "image": "/AAC_assets/img/touch/show.png",
+        "sound": "show",
+        "tileColor": "green"
+      },
+      {
+        "key": "soft",
+        "text": "Soft",
+        "image": "/AAC_assets/img/touch/soft.png",
+        "sound": "soft",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "straight",
+        "text": "Straight",
+        "image": "/AAC_assets/img/touch/straight.png",
+        "sound": "straight",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "tall",
+        "text": "Tall",
+        "image": "/AAC_assets/img/touch/tall.png",
+        "sound": "tall",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "touch",
+        "text": "Touch",
+        "image": "/AAC_assets/img/touch/touch.png",
+        "sound": "touch",
+        "tileColor": "green"
+      },
+      {
+        "key": "wash",
+        "text": "Wash",
+        "image": "/AAC_assets/img/touch/wash.png",
+        "sound": "wash",
+        "tileColor": "green"
+      },
+      {
+        "key": "wet",
+        "text": "Wet",
+        "image": "/AAC_assets/img/touch/wet.png",
+        "sound": "wet",
+        "tileColor": "TOUCH_ADJECTIVE_TILES_COLOR"
+      },
+      {
+        "key": "made",
+        "text": "Made",
+        "image": "/AAC_assets/img/materials/material.png",
+        "sound": "made",
+        "tileColor": "green"
+      }
+    ]
+  },
+  "who": {
+    "name": "Who",
+    "color": "purple",
+    "tiles": [
+      {
+        "key": "who",
+        "text": "Who",
+        "image": "/AAC_assets/img/who/who.png",
+        "sound": "Who",
+        "tileColor": "purple"
+      },
+      {
+        "key": "him",
+        "text": "Him",
+        "image": "/AAC_assets/img/they/boy.png",
+        "sound": "Him",
+        "tileColor": "WHO_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "his",
+        "text": "His",
+        "image": "/AAC_assets/img/they/he.png",
+        "sound": "His",
+        "tileColor": "WHO_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "her",
+        "text": "Her",
+        "image": "/AAC_assets/img/they/girl.png",
+        "sound": "Her",
+        "tileColor": "WHO_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "hers",
+        "text": "Hers",
+        "image": "/AAC_assets/img/they/she.png",
+        "sound": "Hers",
+        "tileColor": "WHO_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "us",
+        "text": "Us",
+        "image": "/AAC_assets/img/who/us.png",
+        "sound": "Us",
+        "tileColor": "WHO_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "theirs",
+        "text": "Theirs",
+        "image": "/AAC_assets/img/who/theirs.png",
+        "sound": "Theirs",
+        "tileColor": "WHO_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "myself",
+        "text": "Myself",
+        "image": "/AAC_assets/img/who/myself.png",
+        "sound": "Myself",
+        "tileColor": "WHO_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "mine",
+        "text": "Mine",
+        "image": "/AAC_assets/img/who/mine.png",
+        "sound": "Mine",
+        "tileColor": "WHO_PRONOUN_TILES_COLOR"
+      },
+      {
+        "key": "people",
+        "text": "People",
+        "image": "/AAC_assets/img/who/people.png",
+        "sound": "People",
+        "tileColor": "WHO_NOUN_TILES_COLOR"
+      },
+      {
+        "key": "man",
+        "text": "Man",
+        "image": "/AAC_assets/img/who/man.png",
+        "sound": "Man",
+        "tileColor": "WHO_NOUN_TILES_COLOR"
+      },
+      {
+        "key": "woman",
+        "text": "Woman",
+        "image": "/AAC_assets/img/who/woman.png",
+        "sound": "Woman",
+        "tileColor": "WHO_NOUN_TILES_COLOR"
+      }
+    ]
+  }
+}

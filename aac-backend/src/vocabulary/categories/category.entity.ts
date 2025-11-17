@@ -12,6 +12,9 @@ export class Category {
   @Column({ nullable: true })
   description: string;
 
+  @Column({ nullable: true })
+  tileColor: string;
+
   // Many-to-many with words
   @ManyToMany(() => Word, (word) => word.categories)
   words: Word[];

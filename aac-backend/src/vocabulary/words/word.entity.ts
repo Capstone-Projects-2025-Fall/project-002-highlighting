@@ -20,6 +20,9 @@ export class Word {
   @Column({ nullable: true })
   symbol: string; // image path for AAC board tile
 
+  @Column({ nullable: true })
+  tileColor: string;
+
   // Many-to-many with categories
   @ManyToMany(() => Category, (category) => category.words, { cascade: true })
   @JoinTable()

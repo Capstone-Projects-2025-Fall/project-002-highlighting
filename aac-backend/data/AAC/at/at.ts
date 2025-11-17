@@ -59,8 +59,8 @@ const at={
         text: "Fly",
         sound: "Fly",
         tileColor: "orange",
-    }
-    , through: {
+    },
+    through: {
         image: "/AAC_assets/img/actions/through.png",
         text: "Through",
         sound: "Through",

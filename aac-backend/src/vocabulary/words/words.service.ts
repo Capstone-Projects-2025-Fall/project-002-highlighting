@@ -11,7 +11,17 @@ export class WordsService {
     private readonly wordRepo: Repository<Word>,
   ) {}
 
-  findAll() {
+  findAll(categoryId?: number) {
+    if (categoryId) {
+      return this.wordRepo.find({
+        where: {
+          categories: {
+            id: categoryId
+          }
+        },
+        relations: ['categories', 'user']
+      });
+    }
     return this.wordRepo.find({ relations: ['categories', 'user'] });
   }
 

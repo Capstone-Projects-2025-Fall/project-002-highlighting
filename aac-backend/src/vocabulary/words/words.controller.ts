@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Delete, Query } from '@nestjs/common';
 import { WordsService } from './words.service';
 import { CreateWordDto } from './dto/create-word.dto';
 
@@ -7,8 +7,8 @@ export class WordsController {
   constructor(private readonly wordsService: WordsService) {}
 
   @Get()
-  getAll() {
-    return this.wordsService.findAll();
+  getAll(@Query('categoryId') categoryId?: string) {
+    return this.wordsService.findAll(categoryId ? parseInt(categoryId, 10) : undefined);
   }
 
   @Get(':id')

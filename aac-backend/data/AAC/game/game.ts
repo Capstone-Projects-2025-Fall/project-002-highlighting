@@ -1,8 +1,6 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
-
 export const GAME_TILES_COLOR = "yellow";
 
-const game: TileAssets ={
+const game = {
     game: {
         image: "/AAC_assets/img/this/game.png",
         text: "Game",

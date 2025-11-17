@@ -1,10 +1,9 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
 export const WHO_TILES_COLOR = "purple";
 
 export const WHO_NOUN_TILES_COLOR = "orange";
 export const WHO_PRONOUN_TILES_COLOR = "yellow";
 
-const who: TileAssets = {
+const who = {
   who: {
     image: "/AAC_assets/img/who/who.png",
     text: "Who",

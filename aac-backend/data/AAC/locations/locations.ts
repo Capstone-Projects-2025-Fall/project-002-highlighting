@@ -1,14 +1,13 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
-import at from "@/data/AAC/at/at";
-import { AT_TILES_COLOR } from "@/data/AAC/at/at";
-import house from "@/data/AAC/house/house";
-import { HOUSE_TILES_COLOR } from "@/data/AAC/house/house";
-import directions from "@/data/AAC/directions/directions";
-import somewhereElse from "@/data/AAC/somewhereElse/somewhereElse";
+import at from "data/AAC/at/at";
+import { AT_TILES_COLOR } from "data/AAC/at/at";
+import house from "data/AAC/house/house";
+import { HOUSE_TILES_COLOR } from "data/AAC/house/house";
+import directions from "data/AAC/directions/directions";
+import somewhereElse from "data/AAC/somewhereElse/somewhereElse";
 
 export const LOCATION_TILES_COLOR = "blue";
 
-const locations: TileAssets = {
+const locations = {
     go: {
         image: "/AAC_assets/img/locations/go.png",
         text: "Go",

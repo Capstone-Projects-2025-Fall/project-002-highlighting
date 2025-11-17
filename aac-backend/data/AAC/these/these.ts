@@ -1,4 +1,3 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
 import materials from "../materials/materials";
 import tools from "../tools/tools";
 import sky, { SKY_TILES_COLOR } from "../sky/sky";
@@ -7,7 +6,7 @@ import game from "../game/game";
 
 export const THIS_TILES_COLOR = "blue";
 
-const these: TileAssets = {
+const these = {
     this: {
         image: "/AAC_assets/img/this/this.png",
         text: "This",

@@ -1,8 +1,6 @@
-import { TileAssets } from "@/components/AAC/TileTypes";
-
 export const SOMEWHERE_ELSE_TILES_COLOR = "yellow";
 
-const somewhereElse: TileAssets ={
+const somewhereElse = {
     somewhereElse: {
         image: "/AAC_assets/img/go/somewhereElse.png",
         text: "Somewhere Else",
