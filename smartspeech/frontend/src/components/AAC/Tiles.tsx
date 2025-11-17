@@ -373,7 +373,7 @@ export default function Tiles() {
     return (
         <>
             {/* Settings button and dropdown */}
-            <div className="fixed top-18 left-3.5 z-50">
+            <div className="fixed top-15 left-3.5 z-50">
                 <button
                     onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                     className="w-10 h-10 bg-emerald-400 hover:bg-emerald-500 flex items-center justify-center transition-colors duration-200"
@@ -419,7 +419,7 @@ export default function Tiles() {
             {/* Controls collapsed by default (removed small plus opener) */}
 
             {opacityControlsVisible && (
-                <div className="fixed top-31 left-0 right-0 z-40 bg-white shadow-md">
+                <div className="fixed top-12 left-0 right-0 z-40 bg-white shadow-md">
                     <div className="max-w-7xl mx-auto px-4 py-2">
                         <div className="flex items-center space-x-4">
                             {/* Toggle Circle Button (collapse) */}
@@ -436,7 +436,7 @@ export default function Tiles() {
                     </div>
                 </div>
             )}
-            <section className="w-full flex flex-col items-center gap-4 pt-28">
+            <section className="w-full flex flex-col items-center gap-4 pt-12">
                 <div className="grid grid-cols-8 gap-4 2xl-max:grid-cols-7 md-max:gap-2" data-testid={TilesTestIds.mainContainer}>
                     {dataLocation.length > 0 && (
                         <div onClick={() => dispatch({ type: "remove" })}>
