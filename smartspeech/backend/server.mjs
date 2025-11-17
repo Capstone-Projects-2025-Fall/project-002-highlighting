@@ -838,7 +838,7 @@ async function transcribeAudioLocal(audioFilePath) {
     }
     
     // Skip if completely silent (very low threshold to avoid missing quiet speech)
-    if (maxAmplitude < 0.0005) {
+    if (maxAmplitude < 0.0003) {
       return '';
     }
     
@@ -1587,10 +1587,10 @@ io.on("connection", (socket) => {
   const processAudio = async () => {
     // Skip processing if already busy or audio buffer is too small
     // Reduced to 1 second for lower latency
-    const minAudioSize = 32000; // 1 second = 16000 samples/sec * 2 bytes/sample * 1 sec
+    const minAudioSize = 16000; // 1 second = 16000 samples/sec * 2 bytes/sample * 1 sec
     if (isProcessing || audioBuffer.length < minAudioSize) {
       silenceCounter++;
-      if (silenceCounter > 5) {
+      if (silenceCounter > 10) {
         // Reset buffer if too much silence to prevent memory buildup
         audioBuffer = Buffer.alloc(0);
         silenceCounter = 0;
