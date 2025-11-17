@@ -416,22 +416,7 @@ export default function Tiles() {
                 )}
             </div>
 
-            {/* Small grey plus button that expands to show controls (taco toggle) */}
-            {!opacityControlsVisible && (
-                <div className="fixed top-31 left-0 right-0 z-40">
-                    <div className="max-w-7xl mx-auto px-4 py-2">
-                        <div className="flex items-center justify-start">
-                            <button
-                                onClick={() => setOpacityControlsVisible(true)}
-                                className="w-8 h-8 bg-gray-300 hover:bg-gray-400 rounded-full flex items-center justify-center transition-colors duration-200"
-                                title="Show controls"
-                            >
-                                <span className="text-xs font-bold text-gray-700">+</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Controls collapsed by default (removed small plus opener) */}
 
             {opacityControlsVisible && (
                 <div className="fixed top-31 left-0 right-0 z-40 bg-white shadow-md">
@@ -446,18 +431,7 @@ export default function Tiles() {
                                 <span className="text-xs font-bold text-gray-700">−</span>
                             </button>
 
-                            {/* Square-style Taco Mode Toggle Button inside expanded controls */}
-                            <button
-                                onClick={() => setTacoModeActive(!tacoModeActive)}
-                                className={`h-10 px-3 ${
-                                    tacoModeActive
-                                        ? 'bg-yellow-500 text-black'
-                                        : 'bg-yellow-400 text-black'
-                                } rounded-md flex items-center justify-center transition-colors duration-200`}
-                                title="Toggle Taco example"
-                            >
-                                <span className="text-sm font-medium">Taco example: {tacoModeActive ? 'On' : 'Off'}</span>
-                            </button>
+                            {/* Taco example control removed */}
                         </div>
                     </div>
                 </div>
