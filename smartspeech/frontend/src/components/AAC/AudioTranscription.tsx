@@ -2,6 +2,7 @@ import React from "react";
 import { io, Socket } from "socket.io-client";
 import styles from "./AudioTranscription.module.css";
 import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
+import { useUtteredTiles } from "@/react-state-management/providers/useUtteredTiles";
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -71,6 +72,11 @@ const AudioTranscription = () => {
     const { predictedTiles, setPredictedTiles } = usePredictedTiles();
     
     /**
+     * Uttered tiles (pressed tiles) from context
+     */
+    const { tiles: utteredTiles } = useUtteredTiles();
+    
+    /**
      * State to track if prediction is loading
      * 
      * @type {boolean}
@@ -93,6 +99,30 @@ const AudioTranscription = () => {
      * @description Stores the timeout ID for auto-prediction to allow cancellation
      */
     const autoPredictionTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    /**
+     * Reference to store the 15-second interval for automatic predictions
+     * 
+     * @type {React.MutableRefObject<NodeJS.Timeout | null>}
+     * @description Stores the interval ID for periodic predictions
+     */
+    const periodicPredictionIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    /**
+     * Reference to store the latest transcript value for use in intervals
+     * This prevents the interval from being recreated when transcript changes
+     */
+    const transcriptRef = React.useRef<string>("");
+    
+    /**
+     * Reference to store the latest uttered tiles for use in intervals
+     */
+    const utteredTilesRef = React.useRef(utteredTiles);
+
+    /**
+     * Reference to track previous uttered tiles length to detect actual tile clicks
+     */
+    const previousUtteredTilesLengthRef = React.useRef(0);
 
     /**
      * State to track when predictions were last updated
@@ -194,11 +224,39 @@ const AudioTranscription = () => {
                     setaudioURL(URL.createObjectURL(blob));
                 };
 
+                // Auto-start will be handled by a separate effect after startRecording is defined
+                console.log("MediaRecorder initialized and ready");
+
             }).catch((err) => {
                 console.error("The following error occured: ", err);
             }
             );
         }
+    }, []);
+
+    /**
+     * Effect to set up Socket.io event listener for transcription results
+     * 
+     * @method useEffect
+     * @description Listens for 'transcript' events from the server and updates the transcript state
+     * 
+     * @precondition Socket connection must be established
+     * @postcondition Component will receive and display transcription updates
+     */
+    const transcriptHandler = React.useCallback((text: string) => {
+        console.log("Received transcript from server:", text);
+        setTranscript((prev) => {
+            const newTranscript = prev + " " + text;
+
+            console.log("Updated transcript:", newTranscript);
+            
+            // Automatic prediction is handled by:
+            // 1. Periodic 10-second interval
+            // 2. Tile click events
+            // No need to trigger on every transcript update to avoid too many requests
+
+            return newTranscript;
+        });
     }, []);
 
     /**
@@ -212,7 +270,10 @@ const AudioTranscription = () => {
      * 
      * @throws {Error} If MediaRecorder is not initialized or microphone permissions are denied
      */
-    const startRecording = () => {
+    const startRecording = React.useCallback(() => {
+        if (!mediaRecorderRef.current || isRecordingRef.current) {
+            return; // Already recording or not ready
+        }
         setRecording(true);
         isRecordingRef.current = true;
         if (socketRef.current) {
@@ -228,11 +289,11 @@ const AudioTranscription = () => {
         });
 
         // start recorder
-        mediaRecorderRef.current!.start(3000);
+        mediaRecorderRef.current.start(3000);
         // print mediaRecorder state
-        console.log("recorder state", mediaRecorderRef.current!.state);
+        console.log("recorder state", mediaRecorderRef.current.state);
         console.log("recorder started");
-    };
+    }, [transcriptHandler]);
 
     /**
      * Stops the audio recording process
@@ -335,24 +396,46 @@ const AudioTranscription = () => {
     };
 
     /**
-     * Predicts next tiles based on current transcript
+     * Predicts next tiles based on current transcript and/or pressed tiles
      * 
      * @method predictNextTiles
-     * @description Calls the backend API to get suggested next tiles with throttling
+     * @description Calls the backend API to get suggested next tiles
+     * Can work with transcript only, pressed tiles only, or both
      * 
      * @async
      * @throws {Error} If the API request fails
      */
     const predictNextTiles = React.useCallback(async () => {
-        if (!transcript.trim()) {
-            setPredictedTiles([]);
+        // Get recent pressed tiles (last 5 tiles for context)
+        const recentPressedTiles = utteredTiles
+            .slice(-5)
+            .map(tile => tile.text)
+            .filter(text => text && text.trim());
+
+        // At least one of transcript or pressed tiles must be available
+        if (!transcript.trim() && recentPressedTiles.length === 0) {
+            // Don't clear tiles if we have no context - just skip prediction
             return;
         }
 
-        // Always allow manual prediction (no throttling for manual requests)
+        // Throttle predictions to avoid too many rapid requests
+        // This prevents duplicate requests if user clicks multiple tiles quickly
         const now = Date.now();
+        const timeSinceLastPrediction = now - lastPredictionRef.current;
+        const minTimeBetweenPredictions = 500; // 500ms minimum between predictions (prevents rapid duplicate requests)
+
+        if (timeSinceLastPrediction < minTimeBetweenPredictions) {
+            // Skip this prediction if too soon after last one (prevents rapid duplicate requests)
+            console.log(`[Prediction] Skipped - only ${Math.round(timeSinceLastPrediction)}ms since last prediction`);
+            return;
+        }
+
         lastPredictionRef.current = now;
         setIsPredicting(true);
+        console.log(`[Prediction] Starting prediction at ${new Date().toLocaleTimeString()}`);
+
+        // Keep existing predicted tiles visible while loading new ones
+        // Don't clear them here - only update when new data arrives
 
         try {
             const response = await fetch('http://localhost:5000/api/nextTilePred', {
@@ -360,7 +443,10 @@ const AudioTranscription = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ transcript }),
+                body: JSON.stringify({ 
+                    transcript: transcript.trim() || undefined,
+                    pressedTiles: recentPressedTiles.length > 0 ? recentPressedTiles : undefined
+                }),
             });
 
             if (!response.ok) {
@@ -370,48 +456,22 @@ const AudioTranscription = () => {
             const data = await response.json();
 
             if (data.status === 'success') {
+                // Only update if we got valid predictions
                 setPredictedTiles(data.predictedTiles || []);
                 setPredictionTimestamp(Date.now());
             } else {
                 console.error('Prediction error:', data.error);
-                setPredictedTiles([]);
+                // Only clear on actual error, not on loading
+                // Keep existing tiles if there's an error
             }
         } catch (error) {
             console.error('Error predicting next tiles:', error);
-            setPredictedTiles([]);
+            // Don't clear tiles on error - keep the previous predictions visible
+            // This prevents the flash/clear effect
         } finally {
             setIsPredicting(false);
         }
-    }, [transcript]);
-
-
-
-    /**
-     * Effect to set up Socket.io event listener for transcription results
-     * 
-     * @method useEffect
-     * @description Listens for 'transcript' events from the server and updates the transcript state
-     * 
-     * @precondition Socket connection must be established
-     * @postcondition Component will receive and display transcription updates
-     */
-    const transcriptHandler = React.useCallback((text: string) => {
-        console.log("Received transcript from server:", text);
-        setTranscript((prev) => {
-            const newTranscript = prev + " " + text;
-
-            console.log("Updated transcript:", newTranscript);
-            
-            // No automatic prediction - only manual via search button
-            // Cancel any existing auto-prediction timeout if it exists
-            if (autoPredictionTimeoutRef.current) {
-                clearTimeout(autoPredictionTimeoutRef.current);
-                autoPredictionTimeoutRef.current = null;
-            }
-
-            return newTranscript;
-        });
-    }, []);
+    }, [transcript, utteredTiles]);
 
     React.useEffect(() => {
         // establish socket once
@@ -420,6 +480,14 @@ const AudioTranscription = () => {
         // Add connection logging
         socketRef.current.on("connect", () => {
             console.log("Socket connected:", socketRef.current?.id);
+            // Auto-start recording if MediaRecorder is ready
+            // Use a small delay to ensure everything is initialized
+            setTimeout(() => {
+                if (mediaRecorderRef.current && socketRef.current?.connected && !isRecordingRef.current) {
+                    console.log("Auto-starting recording after socket connection...");
+                    startRecording();
+                }
+            }, 500);
         });
         
         socketRef.current.on("disconnect", () => {
@@ -439,8 +507,160 @@ const AudioTranscription = () => {
             if (autoPredictionTimeoutRef.current) {
                 clearTimeout(autoPredictionTimeoutRef.current);
             }
+            // Clean up periodic prediction interval
+            if (periodicPredictionIntervalRef.current) {
+                clearInterval(periodicPredictionIntervalRef.current);
+            }
         };
-    }, []);
+    }, [startRecording]);
+
+    /**
+     * Effect to auto-start recording when both MediaRecorder and Socket are ready
+     * This ensures recording starts regardless of which initializes first
+     */
+    React.useEffect(() => {
+        const tryAutoStart = () => {
+            if (
+                mediaRecorderRef.current && 
+                socketRef.current?.connected && 
+                !isRecordingRef.current
+            ) {
+                console.log("Both MediaRecorder and Socket ready - auto-starting recording...");
+                startRecording();
+                return true; // Successfully started
+            }
+            return false; // Not ready yet
+        };
+
+        // Try to start immediately if both are already ready
+        if (tryAutoStart()) {
+            return; // Already started, no need for interval
+        }
+
+        // Also set up a periodic check in case initialization is delayed
+        const checkInterval = setInterval(() => {
+            if (tryAutoStart()) {
+                clearInterval(checkInterval);
+            }
+        }, 1000); // Check every second
+
+        // Stop checking after 10 seconds to avoid infinite checking
+        const timeout = setTimeout(() => {
+            clearInterval(checkInterval);
+        }, 10000);
+
+        return () => {
+            clearInterval(checkInterval);
+            clearTimeout(timeout);
+        };
+    }, [startRecording]);
+
+    /**
+     * Effect to set up automatic prediction on tile clicks
+     * Triggers prediction whenever user clicks a tile
+     * Tile clicks always trigger predictions (no throttling)
+     */
+    React.useEffect(() => {
+        // Only trigger if tiles actually changed (length increased, meaning a new tile was clicked)
+        if (utteredTiles.length > previousUtteredTilesLengthRef.current && utteredTiles.length > 0) {
+            previousUtteredTilesLengthRef.current = utteredTiles.length;
+            
+            console.log(`[Prediction] Triggered by tile click (${utteredTiles.length} tiles)`);
+            // Small delay to ensure state is updated
+            const timeoutId = setTimeout(() => {
+                predictNextTiles();
+            }, 100);
+            return () => clearTimeout(timeoutId);
+        } else if (utteredTiles.length !== previousUtteredTilesLengthRef.current) {
+            // Update ref even if length decreased (tiles cleared)
+            previousUtteredTilesLengthRef.current = utteredTiles.length;
+        }
+        
+    }, [utteredTiles.length]);
+
+    /**
+     * Update refs when transcript or utteredTiles change
+     */
+    React.useEffect(() => {
+        transcriptRef.current = transcript;
+    }, [transcript]);
+
+    React.useEffect(() => {
+        utteredTilesRef.current = utteredTiles;
+    }, [utteredTiles]);
+
+    /**
+     * Effect to set up periodic prediction every 15 seconds
+     * Uses refs to avoid recreating the interval when transcript changes
+     */
+    React.useEffect(() => {
+        // Set up interval for automatic predictions every 15 seconds
+        periodicPredictionIntervalRef.current = setInterval(() => {
+            // Use refs to get latest values without causing effect to re-run
+            const currentTranscript = transcriptRef.current;
+            const currentUtteredTiles = utteredTilesRef.current;
+            
+            // Only predict if we have transcript or pressed tiles
+            if (currentTranscript.trim() || currentUtteredTiles.length > 0) {
+                // Get recent pressed tiles (last 5 tiles for context)
+                const recentPressedTiles = currentUtteredTiles
+                    .slice(-5)
+                    .map(tile => tile.text)
+                    .filter(text => text && text.trim());
+
+                // Throttle predictions to avoid too many requests
+                const now = Date.now();
+                const timeSinceLastPrediction = now - lastPredictionRef.current;
+                const minTimeBetweenPredictions = 13000; // 13 seconds minimum between predictions (to prevent overlap with 15-second interval)
+
+                if (timeSinceLastPrediction < minTimeBetweenPredictions) {
+                    console.log(`[Periodic Prediction] Skipped - only ${Math.round(timeSinceLastPrediction / 1000)}s since last prediction`);
+                    return; // Skip if too soon after last one
+                }
+
+                lastPredictionRef.current = now;
+                setIsPredicting(true);
+                console.log(`[Periodic Prediction] Starting prediction at ${new Date().toLocaleTimeString()}`);
+
+                // Call the prediction API
+                fetch('http://localhost:5000/api/nextTilePred', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        transcript: currentTranscript.trim() || undefined,
+                        pressedTiles: recentPressedTiles.length > 0 ? recentPressedTiles : undefined
+                    }),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        setPredictedTiles(data.predictedTiles || []);
+                        setPredictionTimestamp(Date.now());
+                    }
+                })
+                .catch(error => {
+                    console.error('Error predicting next tiles:', error);
+                })
+                .finally(() => {
+                    setIsPredicting(false);
+                });
+            }
+        }, 15000); // 15 seconds
+
+        return () => {
+            if (periodicPredictionIntervalRef.current) {
+                clearInterval(periodicPredictionIntervalRef.current);
+                periodicPredictionIntervalRef.current = null;
+            }
+        };
+    }, []); // Empty dependency array - interval is set up once and uses refs
 
     /**
      * Renders the AudioTranscription component
@@ -480,7 +700,7 @@ const AudioTranscription = () => {
                 <button
                     className={styles.searchButton}
                     onClick={predictNextTiles}
-                    disabled={isPredicting || !transcript.trim()}
+                    disabled={isPredicting || (!transcript.trim() && utteredTiles.length === 0)}
                     title="Get next tile suggestions"
                 >
                     {isPredicting ? "🔍..." : "🔍"}

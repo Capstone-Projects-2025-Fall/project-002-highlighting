@@ -2,20 +2,20 @@
  * Audio Transcription Server
  * 
  * @module server
- * @description A Node.js server that handles real-time audio transcription using Socket.io and OpenAI's Whisper API.
- * The server receives audio chunks from clients, processes them using FFmpeg, and sends them to OpenAI for transcription.
+ * @description A Node.js server that handles real-time audio transcription using Socket.io and local Whisper model.
+ * The server receives audio chunks from clients, processes them using FFmpeg, and transcribes them using local Whisper.
  */
 
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
-import { spawn } from "child_process";
-import OpenAI from "openai";
+import { spawn, exec } from "child_process";
 import fs from "fs";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import ffmpegPath from "ffmpeg-static";
+import os from "os";
 import { pipeline } from "@xenova/transformers";
 // loads variable from .env file into process.env
 dotenv.config();
@@ -114,48 +114,11 @@ app.use((req, res, next) => {
 });
 
 /**
- * Configuration: Switch between OpenAI API and Local LLM
- * 
- * Options:
- * - 'openai': Use OpenAI API with vector store (requires API key)
- * - 'openai-local': Use local LLM with local vector search (offline)
+ * Server runs in local mode only
+ * - Uses local LLM with local vector search for tile prediction
+ * - Uses local Whisper model for audio transcription
  */
-//const USE_MODEL = 'openai'; // ← Uncomment to use OpenAI API
-const USE_MODEL = 'openai-local'; // ← Use local LLM with vector search
-
-/**
- * Configuration: Switch between Local and OpenAI Transcription
- * 
- * To switch transcription models, simply comment out one line and uncomment the other:
- * 
- * Use Local Whisper Model (offline): const USE_TRANSCRIPTION_MODEL = 'local';
- * Use OpenAI Whisper API (requires API key): const USE_TRANSCRIPTION_MODEL = 'openai';
- */
-const USE_TRANSCRIPTION_MODEL = 'local'; // ← Comment this out to use OpenAI
-//const USE_TRANSCRIPTION_MODEL = 'openai'; // ← Uncomment this to use OpenAI
-
-/**
- * OpenAI API client
- * 
- * @type {OpenAI}
- * @description Initialized OpenAI client with API key from environment variables
- * @throws {Error} If OPENAI_API_KEY is not defined in environment variables and OpenAI is being used
- */
-let openai = null;
-if (USE_MODEL === 'openai' || USE_TRANSCRIPTION_MODEL === 'openai') {
-  if (!process.env.OPENAI_API_KEY) {
-    console.error("Missing OPENAI_API_KEY in environment");
-    process.exit(1);
-  }
-  console.log("API key loaded? Yes");
-  openai = new OpenAI({ 
-    apiKey: process.env.OPENAI_API_KEY,
-    // Enable beta features for assistants API
-    defaultQuery: { 'api-version': '2024-02-15-preview' }
-  });
-} else {
-  console.log(`Running in local mode (USE_MODEL=${USE_MODEL}) - OpenAI API key not required`);
-}
+console.log('Running in local mode - using local LLM and local Whisper transcription');
 
 /**
  * Load words from words.json file
@@ -164,7 +127,6 @@ if (USE_MODEL === 'openai' || USE_TRANSCRIPTION_MODEL === 'openai') {
  * @description Contains the list of all available tiles/words
  */
 let wordsData = null;
-let vectorStoreId = null;
 
 try {
   const wordsPath = path.join(__dirname, 'resources', 'words.json');
@@ -176,394 +138,68 @@ try {
   process.exit(1);
 }
 
-/**
- * Create vector store with words data
- * 
- * @function createVectorStore
- * @description Creates a vector store and uploads words.json for semantic search
- * @async
- */
-const createVectorStore = async () => {
-  // Skip vector store creation if OpenAI is not initialized (local mode)
-  if (!openai) {
-    console.log('Skipping vector store creation (running in local mode)');
-    return;
-  }
-  
-  try {
-    console.log('Creating vector store...');
-    
-    // Create vector store using the correct API
-    const vectorStore = await openai.vectorStores.create({
-      name: "AAC Words Vector Store",
-      description: "Vector store containing AAC communication tiles/words for searching."
-    });
-    
-    vectorStoreId = vectorStore.id;
-    console.log('Vector store created with ID:', vectorStoreId);
-    
-    // Create a file with words data
-    const wordsFilePath = path.join(tempDir, 'words_for_vector_store.json');
-    const wordsForVectorStore = {
-      words: wordsData.tiles.map((word, index) => ({
-        id: index,
-        word: word,
-        category: categorizeWord(word),
-        description: getWordDescription(word)
-      }))
-    };
-    
-    fs.writeFileSync(wordsFilePath, JSON.stringify(wordsForVectorStore, null, 2));
-    
-    // First upload the file
-    const file = await openai.files.create({
-      file: fs.createReadStream(wordsFilePath),
-      purpose: 'assistants'
-    });
-    
-    // Then add it to the vector store
-    await openai.vectorStores.files.create(vectorStore.id, {
-      file_id: file.id
-    });
-    
-    // Clean up temp file
-    fs.unlinkSync(wordsFilePath);
-    
-    console.log('Words uploaded to vector store successfully');
-    
-  } catch (error) {
-    console.error('Error creating vector store:', error);
-    console.error('Error details:', error.message);
-    console.error('Error stack:', error.stack);
-    // Fallback to simple text matching if vector store fails
-    console.log('Falling back to simple text matching');
-    vectorStoreId = null;
-  }
-};
-
-/**
- * Categorize word for better semantic understanding
- * 
- * @function categorizeWord
- * @param {string} word - The word to categorize
- * @returns {string} Category of the word
- */
-const categorizeWord = (word) => {
-  const categories = {
-    greeting: ['hello', 'goodbye', 'hi', 'bye'],
-    emotion: ['happy', 'sad', 'angry', 'excited', 'nervous', 'scared', 'tired'],
-    action: ['go', 'come', 'stop', 'start', 'play', 'eat', 'drink', 'sleep'],
-    question: ['what', 'where', 'when', 'why', 'how', 'who'],
-    response: ['yes', 'no', 'maybe', 'okay', 'sure', 'definitely'],
-    family: ['mother', 'father', 'sister', 'brother', 'grandma', 'grandpa'],
-    body: ['head', 'hand', 'foot', 'eye', 'mouth', 'arm', 'leg'],
-    color: ['red', 'blue', 'green', 'yellow', 'black', 'white', 'pink', 'purple'],
-    time: ['today', 'tomorrow', 'yesterday', 'morning', 'afternoon', 'evening'],
-    place: ['home', 'school', 'hospital', 'store', 'park', 'restaurant']
-  };
-  
-  for (const [category, words] of Object.entries(categories)) {
-    if (words.includes(word.toLowerCase())) {
-      return category;
-    }
-  }
-  return 'general';
-};
-
-/**
- * Get description for word to improve semantic search
- * 
- * @function getWordDescription
- * @param {string} word - The word to describe
- * @returns {string} Description of the word
- */
-const getWordDescription = (word) => {
-  const descriptions = {
-    'hello': 'greeting used to say hi or start a conversation',
-    'goodbye': 'farewell greeting used when leaving',
-    'yes': 'positive response or agreement',
-    'no': 'negative response or disagreement',
-    'please': 'polite request word',
-    'thankyou': 'expression of gratitude',
-    'sorry': 'apology or expression of regret',
-    'help': 'request for assistance or support',
-    'more': 'request for additional quantity',
-    'again': 'request to repeat or do something once more',
-    'stop': 'command to halt or cease an action',
-    'go': 'command to move or proceed',
-    'come': 'command to approach or move closer',
-    'eat': 'action of consuming food',
-    'drink': 'action of consuming liquid',
-    'sleep': 'rest state for the body',
-    'play': 'engaging in fun activities',
-    'work': 'engaging in productive activities',
-    'home': 'place where one lives',
-    'school': 'educational institution',
-    'hospital': 'medical facility for treatment',
-    'store': 'place to buy goods',
-    'happy': 'feeling of joy or contentment',
-    'sad': 'feeling of sorrow or unhappiness',
-    'angry': 'feeling of strong displeasure',
-    'tired': 'feeling of exhaustion or fatigue',
-    'hungry': 'feeling of need for food',
-    'thirsty': 'feeling of need for liquid'
-  };
-  
-  return descriptions[word.toLowerCase()] || `AAC communication tile for the word "${word}"`;
-};
 
 /**
  * Next Tile Prediction endpoint
  * 
  * @route POST /api/nextTilePred
- * @description Uses vector search and local LLM to predict next tiles based on transcript context and pressed tiles
+ * @description Uses vector search and local LLM to predict next tiles based on:
+ *   - Tiles pressed (even if there is no transcript)
+ *   - The transcript (if available)
+ *   - Both tiles pressed and transcript (if both are available)
  * 
  * @param {Object} req - Express request object
- * @param {Object} req.body - Request body containing transcript text and optionally pressed tiles
- * @param {string} req.body.transcript - The transcript text to analyze
+ * @param {Object} req.body - Request body containing optional transcript text and/or pressed tiles
+ * @param {string} [req.body.transcript] - Optional transcript text to analyze
  * @param {string[]} [req.body.pressedTiles] - Optional array of recently pressed tiles to consider
  * @param {Object} res - Express response object
  * 
  * @returns {Object} JSON response with predicted tiles
- * @returns {string[]} predictedTiles - Array of suggested next tiles
+ * @returns {string[]} predictedTiles - Array of suggested next tiles (up to 10)
  * @returns {string} status - Success or error status
  * @returns {string[]} pressedTiles - Array of pressed tiles that were considered
+ * @returns {string} context - The context used for prediction (transcript or empty string)
  */
 app.post('/api/nextTilePred', async (req, res) => {
   try {
     const { transcript, pressedTiles } = req.body;
     
-    if (!transcript || typeof transcript !== 'string') {
-      return res.status(400).json({ 
-        error: 'Transcript text is required',
-        status: 'error'
-      });
-    }
-
-    // Get the last few lines of the transcript for context
-    const lines = transcript.trim().split('\n').filter(line => line.trim());
-    const contextLines = lines.slice(-2).join(' '); // Last 2 lines as context
-    
-    if (!contextLines.trim()) {
-      return res.status(400).json({ 
-        error: 'No valid context found in transcript',
-        status: 'error'
-      });
-    }
-
     // Validate pressedTiles if provided
     const validPressedTiles = Array.isArray(pressedTiles) 
       ? pressedTiles.filter(t => typeof t === 'string' && t.trim().length > 0)
       : [];
 
-    // Route based on configuration flag
-    if (USE_MODEL === 'openai-local') {
-      console.log('[Prediction] Using Local LLM with vector search');
-      const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 8);
-      return res.json({
-        predictedTiles: predicted,
-        status: 'success',
-        context: contextLines,
-        pressedTiles: validPressedTiles
+    // Process transcript if provided
+    let contextLines = '';
+    if (transcript && typeof transcript === 'string' && transcript.trim()) {
+      // Get the last few lines of the transcript for context
+      const lines = transcript.trim().split('\n').filter(line => line.trim());
+      contextLines = lines.slice(-2).join(' '); // Last 2 lines as context
+    }
+
+    // At least one of transcript or pressedTiles must be provided
+    if (!contextLines.trim() && validPressedTiles.length === 0) {
+      return res.status(400).json({ 
+        error: 'Either transcript or pressedTiles (or both) must be provided',
+        status: 'error'
       });
     }
 
-    // OpenAI API path
-    if (USE_MODEL === 'openai') {
-      console.log('[Prediction] Using OpenAI API with vector store');
-      if (!openai) {
-        console.error('OpenAI client not initialized. Falling back to local LLM prediction.');
-        const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 8);
-        return res.json({
-          predictedTiles: predicted,
-          status: 'success',
-          context: contextLines,
-          pressedTiles: validPressedTiles
-        });
-      }
-      
-      try {
-        let relevantWords = [];
-        
-        if (vectorStoreId) {
-          // Use vector store for semantic search
-          try {
-            // Create a response with vector store using correct Responses API structure
-            const pressedTilesInfo = validPressedTiles.length > 0 
-              ? `Recently pressed tiles: ${validPressedTiles.join(', ')}. ` 
-              : '';
-            
-            const response = await openai.responses.create({
-              input: `Based on this conversation context: "${contextLines}"
-
-${pressedTilesInfo}Find the most relevant words that would be good next tiles to suggest for an AAC user. Use the file search to find contextually relevant words from the available tiles.
-
-CRITICAL: Return ONLY a simple list of 5-8 words, one per line, with no explanations, numbers, or formatting. Example:
-eat
-taco
-happy
-please
-thankyou
-
-PRIORITIZE: Action words (eat, drink, sleep, walk, play, work, help), emotional words (happy, sad, tired, sick), essential communication (yes, no, please, thank you), contextually relevant nouns (home, school, work, food, family), and descriptive words (good, bad, new, old).
-
-AVOID: Pronouns, prepositions, conjunctions, generic words like 'bottom', 'top', 'side', 'ai', 'animal', 'chair', 'bridge', 'thing', 'stuff', 'place', 'way', 'time', and auxiliary verbs.
-
-Return ONLY the words, nothing else.`,
-            model: "gpt-4o-mini",
-            tools: [{
-              "type": "file_search",
-              "vector_store_ids": [vectorStoreId]
-            }]
-          });
-
-          if (response.output_text) {
-            const responseText = response.output_text;
-            
-            // Extract words from the response - improved parsing
-            const words = responseText
-              .split('\n')  // Split by lines first
-              .map(line => line.trim())  // Remove whitespace
-              .filter(line => {
-                // Remove empty lines and lines that look like explanations
-                if (!line) return false;
-                if (line.match(/^\d+\./)) return false;  // Remove numbered lines like "1. taco"
-                if (line.toLowerCase().includes('here are')) return false;
-                if (line.toLowerCase().includes('most relevant')) return false;
-                if (line.toLowerCase().includes('based on')) return false;
-                if (line.toLowerCase().includes('conversation context')) return false;
-                if (line.toLowerCase().includes('suggested words')) return false;
-                if (line.toLowerCase().includes('available tiles')) return false;
-                if (line.toLowerCase().includes('all the')) return false;
-                return true;
-              })
-              .map(line => {
-                // Extract just the word from each line
-                const word = line.replace(/^\d+\.\s*/, '').trim().toLowerCase();
-                return word;
-              })
-              .filter(word => {
-                // Basic filters
-                if (word.length <= 1) return false;
-                
-                // Exclude pronouns and prepositions
-                const excludedWords = [
-                  'and', 'or', 'but', 'because', 'if', 'when', 'where', 'what', 'who', 'how',
-                  'at', 'by', 'for', 'from', 'in', 'of', 'on', 'to', 'with', 'up', 'down',
-                  'he', 'she', 'it', 'they', 'we', 'you', 'him', 'her', 'his', 'hers', 'theirs',
-                  'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
-                  'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might',
-                  'again', 'also', 'still', 'very', 'really', 'maybe', 'definitely',
-                  'here', 'the', 'a', 'an', 'this', 'that', 'these', 'those'
-                ];
-                
-                if (excludedWords.includes(word)) return false;
-                
-                // Exclude words that are too generic
-                const lowValueWords = [
-                  'bottom', 'top', 'side', 'middle', 'front', 'back', 'left', 'right',
-                  'ai', 'animal', 'chair', 'bad', 'bridge', 'bring', 'thing', 'stuff',
-                  'place', 'way', 'time', 'day', 'night', 'year', 'month', 'week'
-                ];
-                
-                if (lowValueWords.includes(word)) return false;
-                
-                // Check if word exists in tiles (handle variations like "thank you" vs "thankyou")
-                const wordExists = wordsData.tiles.includes(word) || 
-                                 wordsData.tiles.includes(word.replace(/\s+/g, '')) ||
-                                 wordsData.tiles.some(tile => tile.toLowerCase().includes(word));
-                
-                if (!wordExists) {
-                  return false;
-                }
-                
-                return true;
-              });
-            
-            // Score words by relevance to context
-            const contextLower = contextLines.toLowerCase();
-            const contextWords = contextLower.split(/\s+/);
-            
-            const scoredWords = words.map(word => {
-              let score = 0;
-              
-              // Higher score for words that appear in context
-              if (contextWords.includes(word)) score += 10;
-              
-              // Higher score for common follow-up words
-              const commonFollowUps = [
-                'yes', 'no', 'please', 'thankyou', 'hello', 'goodbye', 'okay',
-                'more', 'new', 'good', 'bad', 'happy', 'sad', 'tired', 'sick',
-                'home', 'school', 'work', 'play', 'eat', 'drink', 'sleep', 'walk',
-                'help', 'stop', 'start', 'finish', 'ready', 'sorry', 'excuseMe'
-              ];
-              
-              if (commonFollowUps.includes(word)) score += 5;
-              
-              // Higher score for action words
-              const actionWords = [
-                'eat', 'drink', 'sleep', 'walk', 'run', 'jump', 'sit', 'stand',
-                'help', 'stop', 'start', 'finish', 'play', 'work', 'learn', 'teach',
-                'give', 'take', 'buy', 'sell', 'cook', 'clean', 'wash', 'fix'
-              ];
-              
-              if (actionWords.includes(word)) score += 3;
-              
-              return { word, score };
-            });
-            
-            // Sort by score and take top words
-            const sortedWords = scoredWords
-              .sort((a, b) => b.score - a.score)
-              .slice(0, 8)
-              .map(item => item.word);
-            
-            relevantWords = sortedWords;
-          }
-          
-        } catch (responseError) {
-          console.error('Responses API error:', responseError);
-          console.log('Falling back to text matching due to Responses API error');
-          relevantWords = findRelevantWords(contextLines, wordsData.tiles);
-        }
-        
-      } else {
-        // Fallback to simple text matching
-        console.log('Using fallback text matching...');
-        relevantWords = findRelevantWords(contextLines, wordsData.tiles);
-      }
-      
-        res.json({
-          predictedTiles: relevantWords,
-          status: 'success',
-          context: contextLines,
-          pressedTiles: validPressedTiles
-        });
-
-      } catch (error) {
-        console.error('Vector store search error:', error);
-        
-        // Fallback to simple text matching
-        const relevantWords = findRelevantWords(contextLines, wordsData.tiles);
-        
-        res.json({
-          predictedTiles: relevantWords,
-          status: 'success',
-          context: contextLines,
-          pressedTiles: validPressedTiles
-        });
-      }
-    } else {
-      // Fallback for unsupported USE_MODEL value
-      console.error('Unsupported USE_MODEL value. Falling back to local LLM prediction.');
-      const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 8);
-      return res.json({
-        predictedTiles: predicted,
-        status: 'success',
-        context: contextLines,
-        pressedTiles: validPressedTiles
-      });
-    }
+    // Use Local LLM with vector search
+    const predictionMode = contextLines.trim() && validPressedTiles.length > 0 
+      ? 'transcript and tiles'
+      : contextLines.trim() 
+        ? 'transcript only'
+        : 'tiles only';
+    console.log(`[Prediction] Using Local LLM with vector search (mode: ${predictionMode})`);
+    
+    const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 10);
+    return res.json({
+      predictedTiles: predicted,
+      status: 'success',
+      context: contextLines || '',
+      pressedTiles: validPressedTiles
+    });
 
   } catch (error) {
     console.error('NextTilePred error:', error);
@@ -585,7 +221,7 @@ Return ONLY the words, nothing else.`,
  * 
  * @param {string} context - The conversation context
  * @param {string[]} words - Array of available words
- * @returns {string[]} Array of relevant words (max 8)
+ * @returns {string[]} Array of relevant words (max 10)
  */
 function findRelevantWords(context, words) {
   const contextLower = context.toLowerCase();
@@ -689,7 +325,7 @@ function findRelevantWords(context, words) {
   const relevantWords = scoredWords
     .filter(item => item.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 8)
+    .slice(0, 10)
     .map(item => item.word);
   
   // If we don't have enough words, add some fallback words
@@ -705,10 +341,10 @@ function findRelevantWords(context, words) {
       !excludedWords.includes(word)
     );
     
-    relevantWords.push(...additionalWords.slice(0, 8 - relevantWords.length));
+    relevantWords.push(...additionalWords.slice(0, 10 - relevantWords.length));
   }
   
-  return relevantWords.slice(0, 8);
+  return relevantWords.slice(0, 10);
 }
 
 
@@ -748,12 +384,12 @@ let __localWhisperPipeline = null;
 async function getLocalWhisperPipeline() {
   if (!__localWhisperPipeline) {
     console.log('Loading local Whisper model (this may take a moment on first use)...');
-    // Using whisper-tiny.en for faster processing and lower latency
+    
     // whisper-tiny.en is smaller (~39MB) and faster, good for real-time transcription
     // For better accuracy but slower, use 'Xenova/whisper-small.en' (~244MB)
     __localWhisperPipeline = await pipeline(
       'automatic-speech-recognition',
-      'Xenova/whisper-tiny.en'
+      'Xenova/whisper-small.en'
     );
     console.log('Local Whisper model loaded successfully');
   }
@@ -1073,15 +709,19 @@ async function getLocalLLMPipeline() {
 /**
  * Local LLM-based prediction with vector search (offline)
  * Combines local vector search with local LLM for intelligent predictions
+ * Can work with:
+ *   - Only pressed tiles (contextLines empty)
+ *   - Only transcript (pressedTiles empty)
+ *   - Both pressed tiles and transcript
  * 
  * @function predictNextTilesLocalLLM
- * @param {string} contextLines - The conversation context (transcript)
- * @param {string[]} pressedTiles - Array of tiles that were recently pressed
- * @param {number} topN - Number of tiles to return (default: 8)
+ * @param {string} contextLines - The conversation context (transcript), can be empty string
+ * @param {string[]} pressedTiles - Array of tiles that were recently pressed, can be empty array
+ * @param {number} topN - Number of tiles to return (default: 10)
  * @returns {Promise<string[]>} Array of predicted tile words
  * @async
  */
-async function predictNextTilesLocalLLM(contextLines, pressedTiles = [], topN = 8) {
+async function predictNextTilesLocalLLM(contextLines = '', pressedTiles = [], topN = 10) {
   const excluded = new Set([
     'he','she','it','they','we','you','him','her','his','hers','theirs','mine','yours','ours',
     'and','or','but','because','if','when','where','what','who','how','why',
@@ -1109,42 +749,69 @@ async function predictNextTilesLocalLLM(contextLines, pressedTiles = [], topN = 
     console.log('Label embeddings cached successfully.');
   }
 
-  // Create combined context from transcript and pressed tiles
-  const pressedTilesText = pressedTiles && pressedTiles.length > 0 
-    ? `Recently pressed tiles: ${pressedTiles.join(', ')}. ` 
-    : '';
-  const combinedContext = `${pressedTilesText}Transcript: "${contextLines}"`;
+  // Create combined context from transcript and/or pressed tiles
+  let combinedContext = '';
+  if (contextLines.trim() && pressedTiles.length > 0) {
+    combinedContext = `Recently pressed tiles: ${pressedTiles.join(', ')}. Transcript: "${contextLines}"`;
+  } else if (contextLines.trim()) {
+    combinedContext = `Transcript: "${contextLines}"`;
+  } else if (pressedTiles.length > 0) {
+    combinedContext = `Recently pressed tiles: ${pressedTiles.join(', ')}`;
+  } else {
+    // Fallback: use empty context (shouldn't happen due to validation, but handle gracefully)
+    combinedContext = '';
+  }
 
   // Embed the combined context for vector search
-  const queryEmb = await embedText(combinedContext);
+  const queryEmb = await embedText(combinedContext || 'next word');
   const sims = __labelEmbeddingsCache.map(e => cosineSimilarity(queryEmb, e));
   
   // Get a larger set of candidate words from vector search (top 50-80) for LLM to consider
-  // This gives LLM more context without overwhelming it
+
   const topK = Math.min(60, labels.length);
   const topIndices = topNIndices(sims, topK);
   const candidateWords = topIndices.map(i => labels[i]);
 
-  // Use local LLM to intelligently select best words based on transcript AND pressed tiles
+  // Use local LLM to select best words based on available context
   try {
     const llm = await getLocalLLMPipeline();
     
-    // Create prompt that includes both transcript context and pressed tiles
-    const pressedTilesInfo = pressedTiles && pressedTiles.length > 0 
-      ? `\nRecently pressed tiles: ${pressedTiles.join(', ')}` 
-      : '';
-    
-    const prompt = `Context: "${contextLines}"${pressedTilesInfo}
+    // Create prompt based on what context is available
+    let prompt = '';
+    if (contextLines.trim() && pressedTiles.length > 0) {
+      prompt = `Recently pressed tiles: ${pressedTiles.join(', ')}
+Transcript: "${contextLines}"
 
-Based on the transcript and recently pressed tiles, select the ${topN} best next tiles from: ${candidateWords.join(', ')}
+Based on the recently pressed tiles and transcript, select the ${topN} best next tiles from: ${candidateWords.join(', ')}
 
 Return words only, one per line:
 `;
+    } else if (contextLines.trim()) {
+      prompt = `Transcript: "${contextLines}"
+
+Based on the transcript, select the ${topN} best next tiles from: ${candidateWords.join(', ')}
+
+Return words only, one per line:
+`;
+    } else if (pressedTiles.length > 0) {
+      prompt = `Recently pressed tiles: ${pressedTiles.join(', ')}
+
+Based on the recently pressed tiles, select the ${topN} best next tiles from: ${candidateWords.join(', ')}
+
+Return words only, one per line:
+`;
+    } else {
+      // Fallback: just use candidate words
+      prompt = `Select the ${topN} best next tiles from: ${candidateWords.join(', ')}
+
+Return words only, one per line:
+`;
+    }
 
     // Generate text with the LLM - optimized for speed
     const result = await llm(prompt, {
-      max_new_tokens: 30, // Enough for 8 words
-      temperature: 0, // Greedy decoding (faster than sampling)
+      max_new_tokens: 40, // Enough for 10 words
+      temperature: 0, // Greedy decoding 
       do_sample: false, // Greedy decoding is faster
       return_full_text: false, // Don't return the prompt
     });
@@ -1209,28 +876,34 @@ Return words only, one per line:
 
 app.post('/api/nextTilePredLocal', async (req, res) => {
   try {
-    const { transcript, pressedTiles, topN = 8 } = req.body || {};
-    if (!transcript || typeof transcript !== 'string') {
-      return res.status(400).json({ error: 'Transcript text is required', status: 'error' });
-    }
-
-    const lines = transcript.trim().split('\n').filter(line => line.trim());
-    const contextLines = lines.slice(-2).join(' ');
-    if (!contextLines.trim()) {
-      return res.status(400).json({ error: 'No valid context found in transcript', status: 'error' });
-    }
-
+    const { transcript, pressedTiles, topN = 10 } = req.body || {};
+    
     // Validate pressedTiles if provided
     const validPressedTiles = Array.isArray(pressedTiles) 
       ? pressedTiles.filter(t => typeof t === 'string' && t.trim().length > 0)
       : [];
+
+    // Process transcript if provided
+    let contextLines = '';
+    if (transcript && typeof transcript === 'string' && transcript.trim()) {
+      const lines = transcript.trim().split('\n').filter(line => line.trim());
+      contextLines = lines.slice(-2).join(' ');
+    }
+
+    // At least one of transcript or pressedTiles must be provided
+    if (!contextLines.trim() && validPressedTiles.length === 0) {
+      return res.status(400).json({ 
+        error: 'Either transcript or pressedTiles (or both) must be provided', 
+        status: 'error' 
+      });
+    }
 
     const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
 
     return res.json({ 
       predictedTiles: predicted, 
       status: 'success', 
-      context: contextLines,
+      context: contextLines || '',
       pressedTiles: validPressedTiles
     });
   } catch (err) {
@@ -1265,22 +938,92 @@ const cleanupTempFiles = () => {
 
 
 /**
- * Graceful shutdown handler
+ * Track active socket connections
  * 
- * @function gracefulShutdown
- * @description Handles server shutdown and cleanup
+ * @type {Set<string>}
+ * @description Set of active socket IDs
  */
-const gracefulShutdown = async () => {
+const activeConnections = new Set();
+
+/**
+ * Shutdown the frontend Next.js dev server
+ * 
+ * @function shutdownFrontend
+ * @description Attempts to find and kill the Next.js dev server process running on port 3000
+ */
+const shutdownFrontend = () => {
+  return new Promise((resolve) => {
+    const platform = os.platform();
+    let command;
+    
+    if (platform === 'win32') {
+      // Windows: Find process using port 3000 and kill it
+      command = 'netstat -ano | findstr :3000';
+      exec(command, (error, stdout) => {
+        if (error || !stdout) {
+          console.log('Frontend process not found or already stopped');
+          resolve();
+          return;
+        }
+        
+        // Extract PID from netstat output
+        const lines = stdout.trim().split('\n');
+        const pids = new Set();
+        lines.forEach(line => {
+          const match = line.match(/\s+(\d+)\s*$/);
+          if (match) {
+            pids.add(match[1]);
+          }
+        });
+        
+        // Kill all processes using port 3000
+        pids.forEach(pid => {
+          exec(`taskkill /PID ${pid} /F`, (killError) => {
+            if (!killError) {
+              console.log(`Frontend process ${pid} terminated`);
+            }
+          });
+        });
+        resolve();
+      });
+    } else {
+      // Unix/Linux/Mac: Find and kill process using port 3000
+      command = 'lsof -ti:3000';
+      exec(command, (error, stdout) => {
+        if (error || !stdout) {
+          console.log('Frontend process not found or already stopped');
+          resolve();
+          return;
+        }
+        
+        const pids = stdout.trim().split('\n').filter(pid => pid);
+        pids.forEach(pid => {
+          exec(`kill -9 ${pid}`, (killError) => {
+            if (!killError) {
+              console.log(`Frontend process ${pid} terminated`);
+            }
+          });
+        });
+        resolve();
+      });
+    }
+  });
+};
+
+/**
+ * Shutdown handler
+ * 
+ * @function shutdown
+ * @description Handles server shutdown and cleanup, including frontend shutdown
+ * @param {boolean} shutdownFrontendProcess - Whether to also shutdown the frontend process
+ */
+const shutdown = async (shutdownFrontendProcess = false) => {
   console.log('Shutting down server...');
   
-  // Clean up vector store if it exists and OpenAI is initialized
-  if (vectorStoreId && openai) {
-    try {
-      await openai.vectorStores.delete(vectorStoreId);
-      console.log('Vector store cleaned up');
-    } catch (error) {
-      console.error('Error cleaning up vector store:', error);
-    }
+  // Shutdown frontend if requested
+  if (shutdownFrontendProcess) {
+    console.log('Attempting to shutdown frontend...');
+    await shutdownFrontend();
   }
   
   // Clean up all temp files on shutdown
@@ -1294,6 +1037,9 @@ const gracefulShutdown = async () => {
     console.error('Error cleaning up temp files on shutdown:', error);
   }
   
+  // Close all socket connections
+  io.disconnectSockets(true);
+  
   server.close(() => {
     console.log('Server closed');
     process.exit(0);
@@ -1303,9 +1049,9 @@ const gracefulShutdown = async () => {
 // Set up cleanup interval (every 30 minutes)
 setInterval(cleanupTempFiles, 10 * 60 * 1000);
 
-// Handle graceful shutdown
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+// Handle shutdown
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 
 
 
@@ -1317,14 +1063,11 @@ process.on('SIGINT', gracefulShutdown);
  * 
  * @postcondition Server is running and listening for connections on port 5000
  */
-server.listen(5000, async () => {
+server.listen(5000, () => {
   console.log("Server running on http://localhost:5000");
   console.log("Temp directory:", tempDir);
-  console.log(`[Configuration] Transcription Model: ${USE_TRANSCRIPTION_MODEL === 'local' ? 'Local Whisper' : 'OpenAI Whisper API'}`);
-  console.log(`[Configuration] Prediction Model: ${USE_MODEL === 'openai' ? 'OpenAI API with vector store' : 'Local LLM with vector search'}`);
-  
-  // Initialize vector store
-  await createVectorStore();
+  console.log("[Configuration] Transcription Model: Local Whisper");
+  console.log("[Configuration] Prediction Model: Local LLM with vector search");
 });
 
 /**
@@ -1337,6 +1080,8 @@ server.listen(5000, async () => {
  */
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
+  activeConnections.add(socket.id);
+  console.log(`Active connections: ${activeConnections.size}`);
 
   /**
    * FFmpeg child process
@@ -1576,12 +1321,12 @@ io.on("connection", (socket) => {
    * Processes audio data and sends it for transcription
    * 
    * @function processAudio
-   * @description Takes a chunk of audio from the buffer, converts it to WAV, and sends it to OpenAI for transcription
+   * @description Takes a chunk of audio from the buffer, converts it to WAV, and transcribes it using local Whisper model
    * 
    * @precondition Sufficient audio data must be available in the buffer
    * @postcondition Transcription results are emitted to the client if successful
    * 
-   * @throws {Error} If there are issues with file operations or the OpenAI API
+   * @throws {Error} If there are issues with file operations or the local Whisper model
    * @async
    */
   const processAudio = async () => {
@@ -1623,37 +1368,18 @@ io.on("connection", (socket) => {
       const filePath = path.join(tempDir, filename);
       fs.writeFileSync(filePath, wavData);
       
+      // Use local Whisper model for transcription
       let transcribedText = '';
-      
-      // Choose transcription method based on configuration
-      if (USE_TRANSCRIPTION_MODEL === 'local') {
-        try {
-          transcribedText = await transcribeAudioLocal(filePath);
-          if (transcribedText && transcribedText.trim() && !firstTranscriptionLogged) {
-            console.log('[Transcription] Using Local Whisper model');
-            console.log('[Transcription] Success - Local Whisper');
-            firstTranscriptionLogged = true;
-          }
-        } catch (transcriptionError) {
-          console.error('[Transcription] Failed - Local Whisper:', transcriptionError.message);
-          throw transcriptionError;
+      try {
+        transcribedText = await transcribeAudioLocal(filePath);
+        if (transcribedText && transcribedText.trim() && !firstTranscriptionLogged) {
+          console.log('[Transcription] Using Local Whisper model');
+          console.log('[Transcription] Success - Local Whisper');
+          firstTranscriptionLogged = true;
         }
-      } else {
-        // Use OpenAI Whisper API
-        //console.log('[Transcription] Using OpenAI Whisper API');
-        if (!openai) {
-          throw new Error('OpenAI client not initialized. Check API key configuration.');
-        }
-        const transcription = await openai.audio.transcriptions.create({
-          model: "whisper-1",
-          file: fs.createReadStream(filePath), // upload the wav file via stream
-          language: "en",
-          response_format: "json"
-        });
-        transcribedText = transcription.text;
-        if (transcribedText && transcribedText.trim()) {
-          //console.log('[Transcription] Success - OpenAI Whisper');
-        }
+      } catch (transcriptionError) {
+        console.error('[Transcription] Failed - Local Whisper:', transcriptionError.message);
+        throw transcriptionError;
       }
       
       // Clean the transcription to remove unwanted markers
@@ -1661,7 +1387,7 @@ io.on("connection", (socket) => {
         transcribedText = cleanTranscription(transcribedText);
       }
       
-      // Only emit if transcription is different from last one (prevent duplicates from overlap)
+      // Only emit if transcription is different from last one 
       if (transcribedText && transcribedText.trim()) {
         const normalizedText = transcribedText.trim().toLowerCase();
         const normalizedLast = lastTranscription.trim().toLowerCase();
@@ -1744,11 +1470,23 @@ io.on("connection", (socket) => {
    */
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
+    activeConnections.delete(socket.id);
+    console.log(`Active connections: ${activeConnections.size}`);
+    
     clearInterval(interval);
     if (ffmpeg) {
       ffmpeg.stdin.end();
       ffmpeg.kill();
     }
     audioBuffer = Buffer.alloc(0);
+    
+    // If this was the last connection, shutdown both frontend and backend
+    if (activeConnections.size === 0) {
+      console.log('Last client disconnected. Shutting down backend and frontend...');
+      // Give a small delay to allow cleanup to complete
+      setTimeout(() => {
+        shutdown(true);
+      }, 1000);
+    }
   });
 });
