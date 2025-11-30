@@ -417,13 +417,6 @@ const AudioTranscription = () => {
         });
     }, []);
 
-    // Track pressed tiles for the current recording session (snapshot latest history while recording)
-    React.useEffect(() => {
-        if (record) {
-            sessionPressedTilesRef.current = tileHistory.map(t => t.text);
-        }
-    }, [tileHistory, record]);
-
     React.useEffect(() => {
         // establish socket once
         socketRef.current = io(transcribeBaseUrl, {
