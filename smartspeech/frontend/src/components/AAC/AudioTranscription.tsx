@@ -72,7 +72,7 @@ const AudioTranscription = () => {
      */
     const { predictedTiles, setPredictedTiles } = usePredictedTiles();
     const { tileHistory } = useUtteredTiles();
-    const sessionPressedTilesRef = React.useRef<string[]>([]);
+    const sessionStartTimestampRef = React.useRef<number>(0);
     
     /**
      * State to track if prediction is loading
@@ -225,6 +225,7 @@ const AudioTranscription = () => {
     const startRecording = () => {
         setRecording(true);
         isRecordingRef.current = true;
+        sessionStartTimestampRef.current = Date.now();
         if (socketRef.current) {
             socketRef.current.on("transcript", transcriptHandler);
         } else {
@@ -238,7 +239,6 @@ const AudioTranscription = () => {
         // reset transcript and session pressed tiles for a new capture session
         setTranscript("");
         setPredictedTiles([]);
-        sessionPressedTilesRef.current = [];
     };
 
     /**
@@ -353,7 +353,10 @@ const AudioTranscription = () => {
             setPredictedTiles([]);
             return;
         }
-        const pressedTilesForRequest = sessionPressedTilesRef.current;
+        const sessionStart = sessionStartTimestampRef.current || 0;
+        const pressedTilesForRequest = tileHistory
+            .filter(t => t.rank >= sessionStart)
+            .map(t => t.text);
 
         // Always allow manual prediction (no throttling for manual requests)
         const now = Date.now();
