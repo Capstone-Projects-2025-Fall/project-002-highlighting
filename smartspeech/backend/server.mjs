@@ -383,15 +383,12 @@ let __localWhisperPipeline = null;
  */
 async function getLocalWhisperPipeline() {
   if (!__localWhisperPipeline) {
-    console.log('Loading local Whisper model (this may take a moment on first use)...');
-    
-    // whisper-tiny.en is smaller (~39MB) and faster, good for real-time transcription
+    // whisper-base.en is smaller (~74MB) and faster
     // For better accuracy but slower, use 'Xenova/whisper-small.en' (~244MB)
     __localWhisperPipeline = await pipeline(
       'automatic-speech-recognition',
-      'Xenova/whisper-small.en'
+      'Xenova/whisper-base.en'
     );
-    console.log('Local Whisper model loaded successfully');
   }
   return __localWhisperPipeline;
 }
@@ -421,7 +418,6 @@ function wavToFloat32Array(wavBuffer) {
     maxAmplitude = Math.max(maxAmplitude, Math.abs(samples[i]));
   }
   
-  // Skip expensive logging for performance
   // Only warn if audio is likely to fail
   if (maxAmplitude < 0.01) {
     console.warn('WARNING: Audio appears to be silent or very quiet');
@@ -451,8 +447,8 @@ async function transcribeAudioLocal(audioFilePath) {
     // This function also logs audio stats
     const audioData = wavToFloat32Array(wavBuffer);
     
-    // Check if audio has sufficient content
-    if (audioData.length < 16000) { // Less than 1 second
+    // Check if audio has sufficient content - need at least 1.5 seconds for good transcription
+    if (audioData.length < 24000) { // Less than 1.5 seconds
       return '';
     }
     
@@ -464,7 +460,7 @@ async function transcribeAudioLocal(audioFilePath) {
       maxAmplitude = Math.max(maxAmplitude, Math.abs(audioData[audioData.length - 1 - i]));
     }
     
-    // If first/last samples are silent, check middle section quickly
+    // If first/last samples are silent, check middle section 
     if (maxAmplitude < 0.01) {
       const midStart = Math.floor(audioData.length * 0.4);
       const midEnd = Math.floor(audioData.length * 0.6);
@@ -473,8 +469,8 @@ async function transcribeAudioLocal(audioFilePath) {
       }
     }
     
-    // Skip if completely silent (very low threshold to avoid missing quiet speech)
-    if (maxAmplitude < 0.0003) {
+    // Skip if completely silent (threshold set to 0.0002)
+    if (maxAmplitude < 0.0002) {
       return '';
     }
     
@@ -694,14 +690,12 @@ function topNIndices(arr, n) {
  */
 async function getLocalLLMPipeline() {
   if (!__localLLMPipeline) {
-    console.log('Loading local LLM model (this may take a moment on first use)...');
-    // Using GPT-2 small model - fast and lightweight for local inference
+    // GPT-2 small model - fast and lightweight for local inference
     // Alternative models: 'Xenova/gpt2', 'Xenova/distilgpt2' (even smaller)
     __localLLMPipeline = await pipeline(
       'text-generation',
       'Xenova/distilgpt2' // Smaller and faster than GPT-2
     );
-    console.log('Local LLM model loaded successfully');
   }
   return __localLLMPipeline;
 }
@@ -946,6 +940,22 @@ const cleanupTempFiles = () => {
 const activeConnections = new Set();
 
 /**
+ * Timeout for shutting down when all clients disconnect
+ * 
+ * @type {NodeJS.Timeout|null}
+ * @description Timer that triggers shutdown if no clients reconnect within the timeout period
+ */
+let shutdownTimeout = null;
+
+/**
+ * Delay before shutting down after all clients disconnect (in milliseconds)
+ * 
+ * @type {number}
+ * @description Time to wait for reconnection before assuming website is closed (5 seconds)
+ */
+const SHUTDOWN_DELAY = 5000;
+
+/**
  * Shutdown the frontend Next.js dev server
  * 
  * @function shutdownFrontend
@@ -1020,6 +1030,12 @@ const shutdownFrontend = () => {
 const shutdown = async (shutdownFrontendProcess = false) => {
   console.log('Shutting down server...');
   
+  // Clear any pending shutdown timeout
+  if (shutdownTimeout) {
+    clearTimeout(shutdownTimeout);
+    shutdownTimeout = null;
+  }
+  
   // Shutdown frontend if requested
   if (shutdownFrontendProcess) {
     console.log('Attempting to shutdown frontend...');
@@ -1049,26 +1065,95 @@ const shutdown = async (shutdownFrontendProcess = false) => {
 // Set up cleanup interval (every 30 minutes)
 setInterval(cleanupTempFiles, 10 * 60 * 1000);
 
-// Handle shutdown
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+// Handle shutdown - also shutdown frontend when server is explicitly terminated
+process.on('SIGTERM', () => shutdown(true));
+process.on('SIGINT', () => shutdown(true));
 
 
+
+/**
+ * Preload all models on server startup
+ * 
+ * @function preloadAllModels
+ * @description Loads all ML models into memory before server starts accepting requests
+ * @returns {Promise<void>}
+ * @async
+ */
+async function preloadAllModels() {
+  console.log('\n========================================');
+  console.log('Preloading ML Models...');
+  console.log('========================================\n');
+  
+  const startTime = Date.now();
+  
+  try {
+    // Load all three models in parallel for faster startup
+    const loadPromises = [
+      (async () => {
+        console.log('[1/3] Loading Whisper transcription model...');
+        const modelStart = Date.now();
+        await getLocalWhisperPipeline();
+        const modelTime = ((Date.now() - modelStart) / 1000).toFixed(2);
+        console.log(`[1/3] ✓ Whisper model loaded (${modelTime}s)`);
+      })(),
+      (async () => {
+        console.log('[2/3] Loading DistilGPT2 LLM model...');
+        const modelStart = Date.now();
+        await getLocalLLMPipeline();
+        const modelTime = ((Date.now() - modelStart) / 1000).toFixed(2);
+        console.log(`[2/3] ✓ LLM model loaded (${modelTime}s)`);
+      })(),
+      (async () => {
+        console.log('[3/3] Loading all-MiniLM-L6-v2 embeddings model...');
+        const modelStart = Date.now();
+        await getLocalEmbeddingPipeline();
+        const modelTime = ((Date.now() - modelStart) / 1000).toFixed(2);
+        console.log(`[3/3] ✓ Embeddings model loaded (${modelTime}s)`);
+      })()
+    ];
+    
+    // Wait for all models to load
+    await Promise.all(loadPromises);
+    
+    const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log('\n========================================');
+    console.log(`All models preloaded successfully! (${totalTime}s total)`);
+    console.log('========================================\n');
+  } catch (error) {
+    console.error('\n Error preloading models:', error);
+    throw error;
+  }
+}
 
 /**
  * Start the HTTP server
  * 
  * @function listen
- * @description Starts the server on port 5000
+ * @description Starts the server on port 5000 after preloading all models
  * 
  * @postcondition Server is running and listening for connections on port 5000
  */
-server.listen(5000, () => {
-  console.log("Server running on http://localhost:5000");
-  console.log("Temp directory:", tempDir);
-  console.log("[Configuration] Transcription Model: Local Whisper");
-  console.log("[Configuration] Prediction Model: Local LLM with vector search");
-});
+async function startServer() {
+  try {
+    // Preload all models before starting server
+    await preloadAllModels();
+    
+    // Start server after models are loaded
+    server.listen(5000, () => {
+      console.log("Server running on http://localhost:5000");
+      console.log("Temp directory:", tempDir);
+      console.log("[Configuration] Transcription Model: Local Whisper");
+      console.log("[Configuration] Prediction Model: Local LLM with vector search");
+      console.log("\n✓ Server ready to accept requests!\n");
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
 
 /**
  * Socket.io connection event handler
@@ -1080,6 +1165,14 @@ server.listen(5000, () => {
  */
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
+  
+  // Clear any pending shutdown timeout since a client has connected
+  if (shutdownTimeout) {
+    clearTimeout(shutdownTimeout);
+    shutdownTimeout = null;
+    console.log("Shutdown timeout cleared - client reconnected");
+  }
+  
   activeConnections.add(socket.id);
   console.log(`Active connections: ${activeConnections.size}`);
 
@@ -1132,6 +1225,22 @@ io.on("connection", (socket) => {
   let lastTranscription = '';
   
   /**
+   * Timestamp of last transcription sent
+   * 
+   * @type {number}
+   * @description Tracks when we last sent a transcription to prevent rapid duplicates
+   */
+  let lastTranscriptionTime = 0;
+  
+  /**
+   * Minimum time between sending similar transcriptions (in milliseconds)
+   * 
+   * @type {number}
+   * @description Prevents sending the same or very similar text within this time window
+   */
+  const MIN_TIME_BETWEEN_SIMILAR = 2000; // 2 seconds
+  
+  /**
    * Flag to track if first transcription has been logged
    * 
    * @type {boolean}
@@ -1145,7 +1254,7 @@ io.on("connection", (socket) => {
    * @type {number}
    * @description Defines how frequently the audio buffer is processed
    */
-  const CHUNK_DURATION = 3000; // 3 seconds for better quality and less repetition 
+  const CHUNK_DURATION = 2000; // 2 seconds - process more frequently to catch words sooner 
 
   /**
    * Initializes the FFmpeg process for audio conversion
@@ -1168,6 +1277,22 @@ io.on("connection", (socket) => {
       "-f", "s16le", // output format raw PCM(what whisper takes in)
       "pipe:1", //writes output to stdout
     ]);
+
+    /**
+     * FFmpeg stdin error event handler
+     * 
+     * @event stdin.error
+     * @description Handles errors when writing to FFmpeg stdin (like EPIPE)
+     * 
+     * @param {Error} err - The error object
+     */
+    ffmpeg.stdin.on("error", (err) => {
+      // EPIPE and EOF errors are expected when FFmpeg closes, don't log them as errors
+      if (err.code !== 'EPIPE' && err.code !== 'EOF') {
+        console.error("FFmpeg stdin error:", err);
+      }
+      // FFmpeg closed, will be reinitialized on next audio chunk if needed
+    });
 
     /**
      * FFmpeg stderr data event handler
@@ -1220,6 +1345,16 @@ io.on("connection", (socket) => {
    */
   ffmpeg.stdout.on("data", (chunk) => {
     audioBuffer = Buffer.concat([audioBuffer, chunk]);
+    
+    // Trigger immediate processing if we have enough audio and not already processing
+    // This provides lower latency and better word capture
+    const preferredChunkSize = 128000; // 4 seconds
+    if (!isProcessing && audioBuffer.length >= preferredChunkSize) {
+      // Process immediately instead of waiting for interval
+      processAudio().catch(err => {
+        console.error("Error in immediate audio processing:", err);
+      });
+    }
   });
 
   /**
@@ -1269,8 +1404,17 @@ io.on("connection", (socket) => {
   const calculateSimilarity = (text1, text2) => {
     if (!text1 || !text2) return 0;
     
-    const words1 = new Set(text1.split(/\s+/).filter(w => w.length > 0));
-    const words2 = new Set(text2.split(/\s+/).filter(w => w.length > 0));
+    // Exact match check first (case-insensitive)
+    if (text1.toLowerCase() === text2.toLowerCase()) return 1;
+    
+    // Normalize texts for comparison (remove punctuation, lowercase)
+    const normalize = (text) => text.toLowerCase().replace(/[^\w\s]/g, '').trim();
+    const norm1 = normalize(text1);
+    const norm2 = normalize(text2);
+    
+    // Word-based similarity
+    const words1 = new Set(norm1.split(/\s+/).filter(w => w.length > 0));
+    const words2 = new Set(norm2.split(/\s+/).filter(w => w.length > 0));
     
     if (words1.size === 0 && words2.size === 0) return 1;
     if (words1.size === 0 || words2.size === 0) return 0;
@@ -1299,10 +1443,14 @@ io.on("connection", (socket) => {
     }
     
     // Remove all square bracket markers (e.g., [BLANK_AUDIO], [INAUDIBLE], [gunshot], [clears throat], etc.)
-    // Also remove any dots/spaces before and after these markers
+    // Remove standalone ] and ^ markers as they are not actual speech content
     let cleaned = text
       // Remove all text in square brackets with any dots/spaces around them
       .replace(/\s*\.*\s*\[[^\]]+\]\s*\.*\s*/gi, ' ')
+      // Remove standalone ] characters (not part of brackets)
+      .replace(/\]/g, '')
+      // Remove ^ characters (used by Whisper to indicate unclear/missing speech)
+      .replace(/\^+/g, '')
       // Remove excessive dots (2 or more consecutive dots)
       .replace(/\.{2,}/g, '')
       // Remove dots/spaces at the beginning or end of lines
@@ -1331,13 +1479,16 @@ io.on("connection", (socket) => {
    */
   const processAudio = async () => {
     // Skip processing if already busy or audio buffer is too small
-    // Reduced to 1 second for lower latency
-    const minAudioSize = 16000; // 1 second = 16000 samples/sec * 2 bytes/sample * 1 sec
+    // Need at least 1.5 seconds for better transcription quality
+    const minAudioSize = 24000; // 1.5 seconds = 16000 samples/sec * 2 bytes/sample * 1.5 sec
     if (isProcessing || audioBuffer.length < minAudioSize) {
       silenceCounter++;
-      if (silenceCounter > 10) {
+      // Only reset buffer if we've had many silent attempts AND buffer is getting very large
+      if (silenceCounter > 20 && audioBuffer.length > 480000) { // > 15 seconds of audio
         // Reset buffer if too much silence to prevent memory buildup
-        audioBuffer = Buffer.alloc(0);
+        // But keep the last 2 seconds in case there's valid audio
+        const keepSize = 64000; // Keep 2 seconds
+        audioBuffer = audioBuffer.slice(-keepSize);
         silenceCounter = 0;
       }
       return;
@@ -1346,18 +1497,17 @@ io.on("connection", (socket) => {
     isProcessing = true;
     silenceCounter = 0;
     
-    // Take a chunk of audio - larger chunks for better quality and less repetition
-    // 4 seconds = 128000 bytes - better quality, less frequent processing
+    // Take a chunk of audio - larger chunks provide better context for Whisper
+    // 4 seconds = 128000 bytes - better quality and more context for accurate transcription
     const preferredChunkSize = 128000; // 4 seconds = 16000 samples/sec * 2 bytes/sample * 4 sec
     const chunkSize = Math.min(audioBuffer.length, preferredChunkSize);
     
-    // Minimal overlap to reduce repetition - only 0.25 seconds
-    const overlapSize = 8000; // 0.25 seconds overlap (reduced from 0.5s)
+    // Overlap to catch words at boundaries - 1 second overlap helps ensure no words are missed
+    const overlapSize = 32000; // 1 second overlap - ensures words spanning boundaries are captured
     const pcmChunk = audioBuffer.slice(0, chunkSize);
     
-    // Remove most of the processed audio, keeping only small overlap
-    const removeSize = chunkSize - overlapSize;
-    audioBuffer = audioBuffer.slice(removeSize);
+    // DON'T remove audio from buffer yet - wait until we know transcription succeeded
+    // This ensures we don't lose audio if transcription fails
     
     // Generate a unique filename per chunk
     const filename = `temp_${socket.id}_${Date.now()}_${fileCounter++}.wav`;
@@ -1388,30 +1538,89 @@ io.on("connection", (socket) => {
       }
       
       // Only emit if transcription is different from last one 
+      let shouldSendTranscription = false;
+      let shouldRemoveAudio = false;
+      
       if (transcribedText && transcribedText.trim()) {
         const normalizedText = transcribedText.trim().toLowerCase();
-        const normalizedLast = lastTranscription.trim().toLowerCase();
+        const now = Date.now();
+        const timeSinceLastTranscription = now - lastTranscriptionTime;
         
-        // Calculate similarity - if texts are too similar, it's likely a duplicate from overlap
-        const similarity = calculateSimilarity(normalizedText, normalizedLast);
+        // Check if we have a previous transcription to compare
+        if (lastTranscription && lastTranscription.trim()) {
+          const normalizedLast = lastTranscription.trim().toLowerCase();
+          
+          // Calculate similarity - if texts are too similar, it's likely a duplicate from overlap
+          const similarity = calculateSimilarity(normalizedText, normalizedLast);
+          
+          // Stricter duplicate detection:
+          // 1. Exact match (similarity = 1.0) - skip sending but still remove audio 
+          // 2. Very similar (>95%) - skip unless enough time has passed
+          // 3. Similar (>85%) - skip if sent recently (< 2 seconds)
+          // 4. Different enough (<85%) - always send
+          
+          if (similarity >= 0.95) {
+            // Very similar or exact match - skip unless it's been a while
+            if (timeSinceLastTranscription < MIN_TIME_BETWEEN_SIMILAR * 2) {
+              // Skip duplicate, but still remove audio since it was successfully processed
+              shouldRemoveAudio = true;
+            } else {
+              shouldSendTranscription = true;
+              shouldRemoveAudio = true;
+            }
+          } else if (similarity >= 0.85) {
+            // Similar - only send if enough time has passed
+            if (timeSinceLastTranscription < MIN_TIME_BETWEEN_SIMILAR) {
+              // Skip recent similar, but still remove audio
+              shouldRemoveAudio = true;
+            } else {
+              shouldSendTranscription = true;
+              shouldRemoveAudio = true;
+            }
+          } else {
+            // Different enough to send
+            shouldSendTranscription = true;
+            shouldRemoveAudio = true;
+          }
+        } else {
+          // No previous transcription, always send
+          shouldSendTranscription = true;
+          shouldRemoveAudio = true;
+        }
         
-        // Only send if significantly different (similarity < 80%) or if last was empty
-        if (!lastTranscription || similarity < 0.8) {
+        // Send the transcription if needed
+        if (shouldSendTranscription) {
           socket.emit("transcript", transcribedText);
           lastTranscription = transcribedText;
+          lastTranscriptionTime = now;
         }
+      } else {
+        // Transcription returned empty - audio was processed but result was empty (silence or noise)
+        // Still remove audio since it was successfully processed, just had no speech
+        shouldRemoveAudio = true;
+      }
+      
+      // Always remove audio from buffer AFTER processing (successful or empty result)
+      // This ensures we process all audio sequentially without gaps
+      if (shouldRemoveAudio) {
+        const removeSize = chunkSize - overlapSize; // Keep exactly 1 second of overlap
+        audioBuffer = audioBuffer.slice(removeSize);
       }
       // error handling
     } catch (err) {
       console.error("Transcription error:", err);
+      // On error, don't remove audio from buffer - keep it to retry
+      // Only remove a small amount to prevent infinite retries on bad audio
       if (err.status === 400 || err.message?.includes('format')) {
         console.error("Bad request - audio format issue");
-        // If there's a format issue, try with a different approach
-        if (audioBuffer.length > 128000) {
-          // If we have enough data, try skipping the problematic chunk
-          audioBuffer = audioBuffer.slice(128000);
+        // If there's a format issue, remove a small chunk and try to continue
+        // But keep most of the audio in case it's recoverable
+        const smallRemove = 16000; // Remove only 0.5 seconds
+        if (audioBuffer.length > smallRemove) {
+          audioBuffer = audioBuffer.slice(smallRemove);
         }
       }
+      // For other errors, keep the audio in buffer to retry on next interval
     } finally {
       // Clean up temp file
       try {
@@ -1447,16 +1656,37 @@ io.on("connection", (socket) => {
    */
   socket.on("audio-chunk", (data) => {
     try {
-      if (ffmpeg && ffmpeg.stdin.writable) {
-        ffmpeg.stdin.write(Buffer.from(data));
+      if (ffmpeg && ffmpeg.stdin && ffmpeg.stdin.writable) {
+        ffmpeg.stdin.write(Buffer.from(data), (err) => {
+          // Handle write errors (EPIPE and EOF are expected when FFmpeg closes)
+          if (err && err.code !== 'EPIPE' && err.code !== 'EOF') {
+            console.error("stdin write error:", err);
+            // Reinitialize FFmpeg if there's a non-EPIPE/EOF error
+            if (ffmpeg) {
+              try {
+                ffmpeg.kill();
+              } catch (killErr) {
+                // Ignore errors when killing
+              }
+            }
+            initializeFFmpeg();
+          }
+        });
       }
     } catch (err) {
-      console.error("stdin write error:", err);
-      // Reinitialize FFmpeg if there's an error
-      if (ffmpeg) {
-        ffmpeg.kill();
+      // EPIPE and EOF errors are expected when FFmpeg closes, don't log them
+      if (err.code !== 'EPIPE' && err.code !== 'EOF') {
+        console.error("stdin write error:", err);
+        // Reinitialize FFmpeg if there's a non-EPIPE/EOF error
+        if (ffmpeg) {
+          try {
+            ffmpeg.kill();
+          } catch (killErr) {
+            // Ignore errors when killing
+          }
+        }
+        initializeFFmpeg();
       }
-      initializeFFmpeg();
     }
   });
 
@@ -1468,25 +1698,61 @@ io.on("connection", (socket) => {
    * 
    * @postcondition FFmpeg process is terminated, interval is cleared, and buffer is reset
    */
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     console.log("Client disconnected:", socket.id);
     activeConnections.delete(socket.id);
     console.log(`Active connections: ${activeConnections.size}`);
     
     clearInterval(interval);
+    
+    // Process any remaining audio before cleaning up to capture last words
+    if (audioBuffer.length >= 24000 && !isProcessing) { // At least 1.5 seconds
+      try {
+        await processAudio();
+      } catch (err) {
+        console.error("Error processing final audio on disconnect:", err);
+      }
+    }
+    
     if (ffmpeg) {
-      ffmpeg.stdin.end();
-      ffmpeg.kill();
+      // Safely close FFmpeg stdin and kill process
+      try {
+        if (ffmpeg.stdin && !ffmpeg.stdin.destroyed && ffmpeg.stdin.writable) {
+          ffmpeg.stdin.end();
+        }
+      } catch (err) {
+        // EPIPE errors are expected when stdin is already closed
+        if (err.code !== 'EPIPE') {
+          console.error("Error closing FFmpeg stdin:", err);
+        }
+      }
+      
+      try {
+        if (!ffmpeg.killed) {
+          ffmpeg.kill();
+        }
+      } catch (err) {
+        // Ignore errors when killing (process might already be dead)
+      }
     }
     audioBuffer = Buffer.alloc(0);
     
-    // If this was the last connection, shutdown both frontend and backend
+    // If this was the last connection, start a shutdown timer
+    // If a client reconnects (page refresh), the timer will be cleared
     if (activeConnections.size === 0) {
-      console.log('Last client disconnected. Shutting down backend and frontend...');
-      // Give a small delay to allow cleanup to complete
-      setTimeout(() => {
+      console.log('All clients disconnected. Starting shutdown timer...');
+      console.log(`Will shutdown in ${SHUTDOWN_DELAY / 1000} seconds if no clients reconnect.`);
+      
+      // Clear any existing timeout
+      if (shutdownTimeout) {
+        clearTimeout(shutdownTimeout);
+      }
+      
+      // Set a new timeout to shutdown after delay
+      shutdownTimeout = setTimeout(() => {
+        console.log('No clients reconnected. Shutting down backend and frontend...');
         shutdown(true);
-      }, 1000);
+      }, SHUTDOWN_DELAY);
     }
   });
 });
