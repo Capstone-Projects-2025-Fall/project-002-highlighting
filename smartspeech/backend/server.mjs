@@ -145,6 +145,41 @@ const USE_TRANSCRIPTION_MODEL = (
   (process.env.OPENAI_API_KEY ? 'openai' : 'local')
 ).toLowerCase(); // valid: 'local' | 'openai'
 
+// Supabase logging configuration (optional)
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const SUPABASE_PREDICTION_TABLE = process.env.SUPABASE_PREDICTION_TABLE || 'prediction_logs';
+
+/**
+ * Logs prediction events to Supabase (no-op if env is not set)
+ * @param {Object} payload
+ */
+async function logPredictionEvent(payload) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return;
+  }
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_PREDICTION_TABLE}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        transcript: payload.transcript,
+        pressed_tiles: payload.pressedTiles || [],
+        predicted_tiles: payload.predictedTiles || [],
+        predicted_tiles_with_scores: payload.predictedTilesWithScores || [],
+        model: payload.model || USE_MODEL,
+        created_at: new Date().toISOString()
+      })
+    });
+  } catch (err) {
+    console.error('Supabase logging failed:', err?.message || err);
+  }
+}
+
 /**
  * OpenAI API client
  * 
@@ -371,8 +406,16 @@ app.post('/api/nextTilePred', async (req, res) => {
     if (USE_MODEL === 'openai-local') {
       console.log('[Prediction] Using Local LLM with vector search');
       const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 8);
+      await logPredictionEvent({
+        transcript,
+        pressedTiles: validPressedTiles,
+        predictedTiles: predicted.tiles,
+        predictedTilesWithScores: predicted.tilesWithScores,
+        model: 'openai-local'
+      });
       return res.json({
-        predictedTiles: predicted,
+        predictedTiles: predicted.tiles,
+        predictedTilesWithScores: predicted.tilesWithScores,
         status: 'success',
         context: contextLines,
         pressedTiles: validPressedTiles
@@ -385,8 +428,16 @@ app.post('/api/nextTilePred', async (req, res) => {
       if (!openai) {
         console.error('OpenAI client not initialized. Falling back to local LLM prediction.');
         const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 8);
+        await logPredictionEvent({
+          transcript,
+          pressedTiles: validPressedTiles,
+          predictedTiles: predicted.tiles,
+          predictedTilesWithScores: predicted.tilesWithScores,
+          model: 'openai-local'
+        });
         return res.json({
-          predictedTiles: predicted,
+          predictedTiles: predicted.tiles,
+          predictedTilesWithScores: predicted.tilesWithScores,
           status: 'success',
           context: contextLines,
           pressedTiles: validPressedTiles
@@ -544,8 +595,18 @@ Return ONLY the words, nothing else.`,
         relevantWords = findRelevantWords(contextLines, wordsData.tiles);
       }
       
+        const predictedTilesWithScores = relevantWords.map(word => ({ tile: word, confidence: null }));
+        await logPredictionEvent({
+          transcript,
+          pressedTiles: validPressedTiles,
+          predictedTiles: relevantWords,
+          predictedTilesWithScores,
+          model: 'openai'
+        });
+
         res.json({
           predictedTiles: relevantWords,
+          predictedTilesWithScores,
           status: 'success',
           context: contextLines,
           pressedTiles: validPressedTiles
@@ -556,9 +617,18 @@ Return ONLY the words, nothing else.`,
         
         // Fallback to simple text matching
         const relevantWords = findRelevantWords(contextLines, wordsData.tiles);
-        
+        const predictedTilesWithScores = relevantWords.map(word => ({ tile: word, confidence: null }));
+        await logPredictionEvent({
+          transcript,
+          pressedTiles: validPressedTiles,
+          predictedTiles: relevantWords,
+          predictedTilesWithScores,
+          model: 'openai-fallback'
+        });
+
         res.json({
           predictedTiles: relevantWords,
+          predictedTilesWithScores,
           status: 'success',
           context: contextLines,
           pressedTiles: validPressedTiles
@@ -567,14 +637,22 @@ Return ONLY the words, nothing else.`,
     } else {
       // Fallback for unsupported USE_MODEL value
       console.error('Unsupported USE_MODEL value. Falling back to local LLM prediction.');
-      const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 8);
-      return res.json({
-        predictedTiles: predicted,
-        status: 'success',
-        context: contextLines,
-        pressedTiles: validPressedTiles
-      });
-    }
+        const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 8);
+        await logPredictionEvent({
+          transcript,
+          pressedTiles: validPressedTiles,
+          predictedTiles: predicted.tiles,
+          predictedTilesWithScores: predicted.tilesWithScores,
+          model: 'openai-local'
+        });
+        return res.json({
+          predictedTiles: predicted.tiles,
+          predictedTilesWithScores: predicted.tilesWithScores,
+          status: 'success',
+          context: contextLines,
+          pressedTiles: validPressedTiles
+        });
+      }
 
   } catch (error) {
     console.error('NextTilePred error:', error);
@@ -1089,7 +1167,7 @@ async function getLocalLLMPipeline() {
  * @param {string} contextLines - The conversation context (transcript)
  * @param {string[]} pressedTiles - Array of tiles that were recently pressed
  * @param {number} topN - Number of tiles to return (default: 8)
- * @returns {Promise<string[]>} Array of predicted tile words
+ * @returns {Promise<{ tiles: string[], tilesWithScores: {tile: string, confidence: number|null}[] }>}
  * @async
  */
 async function predictNextTilesLocalLLM(contextLines, pressedTiles = [], topN = 8) {
@@ -1106,7 +1184,7 @@ async function predictNextTilesLocalLLM(contextLines, pressedTiles = [], topN = 
   ]);
 
   const labels = __labelList.filter(w => !excluded.has(String(w).toLowerCase()));
-  if (!labels.length) return [];
+  if (!labels.length) return { tiles: [], tilesWithScores: [] };
 
   // Ensure embeddings are cached
   if (!__labelEmbeddingsCache || __labelEmbeddingsCache.length !== labels.length) {
@@ -1205,16 +1283,38 @@ Return words only, one per line:
       const vectorSearchResults = topIndices.slice(0, topN).map(i => labels[i]);
       // Combine and deduplicate
       const combined = [...extractedWords, ...vectorSearchResults.filter(w => !extractedWords.includes(w.toLowerCase()))];
-      return combined.slice(0, topN);
+      const trimmed = combined.slice(0, topN);
+      return {
+        tiles: trimmed,
+        tilesWithScores: trimmed.map(word => {
+          const idx = labels.findIndex(l => l === word);
+          const confidence = idx >= 0 ? sims[idx] : null;
+          return { tile: word, confidence };
+        })
+      };
     }
 
-    return extractedWords;
+    const tilesWithScores = extractedWords.map(word => {
+      const idx = labels.findIndex(l => l === word);
+      const confidence = idx >= 0 ? sims[idx] : null;
+      return { tile: word, confidence };
+    });
+
+    return { tiles: extractedWords, tilesWithScores };
 
   } catch (error) {
     console.error('Local LLM prediction error:', error);
     // Fallback to pure vector search if LLM fails
     const indices = topNIndices(sims, Math.min(topN, labels.length));
-    return indices.map(i => labels[i]);
+    const tiles = indices.map(i => labels[i]);
+    return {
+      tiles,
+      tilesWithScores: tiles.map(word => {
+        const idx = labels.findIndex(l => l === word);
+        const confidence = idx >= 0 ? sims[idx] : null;
+        return { tile: word, confidence };
+      })
+    };
   }
 }
 
@@ -1237,9 +1337,17 @@ app.post('/api/nextTilePredLocal', async (req, res) => {
       : [];
 
     const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
+    await logPredictionEvent({
+      transcript,
+      pressedTiles: validPressedTiles,
+      predictedTiles: predicted.tiles,
+      predictedTilesWithScores: predicted.tilesWithScores,
+      model: 'openai-local'
+    });
 
     return res.json({ 
-      predictedTiles: predicted, 
+      predictedTiles: predicted.tiles, 
+      predictedTilesWithScores: predicted.tilesWithScores,
       status: 'success', 
       context: contextLines,
       pressedTiles: validPressedTiles
