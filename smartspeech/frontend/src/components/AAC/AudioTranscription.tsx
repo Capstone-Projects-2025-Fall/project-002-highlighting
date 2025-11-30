@@ -2,6 +2,7 @@ import React from "react";
 import { io, Socket } from "socket.io-client";
 import styles from "./AudioTranscription.module.css";
 import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
+import { getBackendUrl } from "@/util/backend-url";
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -112,6 +113,15 @@ const AudioTranscription = () => {
 
     // Controls whether the bar is expanded or collapsed
     const [expanded, setExpanded] = React.useState(false);
+
+    // Base URL for transcription/socket server (prefers env, falls back to localhost)
+    const transcribeBaseUrl = React.useMemo(() => {
+        const configured = process.env.NEXT_PUBLIC_TRANSCRIBE_URL || getBackendUrl();
+        if (typeof configured === "string" && configured.length > 0) {
+            return configured.replace(/\/$/, "");
+        }
+        return "http://localhost:5000";
+    }, []);
 
     const formatTime = (seconds: number) => {
         if (!isFinite(seconds) || seconds < 0) return "0:00";
@@ -355,7 +365,7 @@ const AudioTranscription = () => {
         setIsPredicting(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/nextTilePred', {
+            const response = await fetch(`${transcribeBaseUrl}/api/nextTilePred`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -415,7 +425,7 @@ const AudioTranscription = () => {
 
     React.useEffect(() => {
         // establish socket once
-        socketRef.current = io("http://localhost:5000");
+        socketRef.current = io(transcribeBaseUrl);
         
         // Add connection logging
         socketRef.current.on("connect", () => {
