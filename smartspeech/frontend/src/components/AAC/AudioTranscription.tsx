@@ -3,6 +3,7 @@ import { io, Socket } from "socket.io-client";
 import styles from "./AudioTranscription.module.css";
 import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
 import { getBackendUrl } from "@/util/backend-url";
+import { useUtteredTiles } from "@/react-state-management/providers/useUtteredTiles";
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -70,6 +71,8 @@ const AudioTranscription = () => {
      * Predicted tiles from context
      */
     const { predictedTiles, setPredictedTiles } = usePredictedTiles();
+    const { tileHistory } = useUtteredTiles();
+    const sessionPressedTilesRef = React.useRef<string[]>([]);
     
     /**
      * State to track if prediction is loading
@@ -232,6 +235,10 @@ const AudioTranscription = () => {
 
         // start recorder
         mediaRecorderRef.current!.start(3000);
+        // reset transcript and session pressed tiles for a new capture session
+        setTranscript("");
+        setPredictedTiles([]);
+        sessionPressedTilesRef.current = [];
     };
 
     /**
@@ -346,6 +353,7 @@ const AudioTranscription = () => {
             setPredictedTiles([]);
             return;
         }
+        const pressedTilesForRequest = sessionPressedTilesRef.current;
 
         // Always allow manual prediction (no throttling for manual requests)
         const now = Date.now();
@@ -358,7 +366,7 @@ const AudioTranscription = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ transcript }),
+                body: JSON.stringify({ transcript, pressedTiles: pressedTilesForRequest }),
             });
 
             if (!response.ok) {
@@ -405,6 +413,13 @@ const AudioTranscription = () => {
             return newTranscript;
         });
     }, []);
+
+    // Track pressed tiles for the current recording session (snapshot latest history while recording)
+    React.useEffect(() => {
+        if (record) {
+            sessionPressedTilesRef.current = tileHistory.map(t => t.text);
+        }
+    }, [tileHistory, record]);
 
     React.useEffect(() => {
         // establish socket once
