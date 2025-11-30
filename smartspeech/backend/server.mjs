@@ -113,6 +113,11 @@ app.use((req, res, next) => {
   }
 });
 
+// Simple health check for Render/monitoring
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 /**
  * Configuration: Switch between OpenAI API and Local LLM
  * 
@@ -1307,18 +1312,19 @@ setInterval(cleanupTempFiles, 10 * 60 * 1000);
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
-
+// Render/Heroku style port (falls back to 5000 for local dev)
+const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
 
 /**
  * Start the HTTP server
  * 
  * @function listen
- * @description Starts the server on port 5000
+ * @description Starts the server on the configured port
  * 
- * @postcondition Server is running and listening for connections on port 5000
+ * @postcondition Server is running and listening for connections
  */
-server.listen(5000, async () => {
-  console.log("Server running on http://localhost:5000");
+server.listen(PORT, async () => {
+  console.log(`Server running on http://localhost:${PORT}`);
   console.log("Temp directory:", tempDir);
   console.log(`[Configuration] Transcription Model: ${USE_TRANSCRIPTION_MODEL === 'local' ? 'Local Whisper' : 'OpenAI Whisper API'}`);
   console.log(`[Configuration] Prediction Model: ${USE_MODEL === 'openai' ? 'OpenAI API with vector store' : 'Local LLM with vector search'}`);
