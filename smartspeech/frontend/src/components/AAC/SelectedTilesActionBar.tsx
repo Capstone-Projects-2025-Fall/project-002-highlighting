@@ -55,22 +55,6 @@ export default function SelectedTilesActionBar() {
             <button className="bg-red-400 p-2 rounded hover:shadow-xl" data-testid={actionBarDataTestIds.clearBtn} onClick={clear}>
                 <RxCross2 className="w-12 h-12" />
             </button>
-            {
-                // show toggle button IF backend is even working at the moment
-                backendActive && (
-                    <button
-                        className={`${toggle ? "bg-gray-400" : "bg-gray-600"} p-2 rounded hover:shadow-xl`}
-                        onClick={toggleCamera}
-                        data-testid={actionBarDataTestIds.toggleCamBtn}
-                    >
-                        {toggle ? (
-                            <RiCameraFill data-testid={actionBarDataTestIds.cameraIconOn} className="w-12 h-12" />
-                        ) : (
-                            <RiCameraOffFill data-testid={actionBarDataTestIds.cameraIconOff} className="w-12 h-12" />
-                        )}
-                    </button>
-                )
-            }
         </div>
     );
 }

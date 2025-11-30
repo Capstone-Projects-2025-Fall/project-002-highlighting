@@ -165,10 +165,8 @@ const AudioTranscription = () => {
     React.useEffect(() => {
         if (navigator.mediaDevices) {
             // creates stream. You should get a pop up on your browser on whether or not to allow streaming
-            console.log("Asking for mic permission...");
             navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
                 // Resume here after user clicks allow 
-                console.log("Got mic stream!", stream);
                 // create recorder
                 mediaRecorderRef.current = new MediaRecorder(stream);
 
@@ -201,16 +199,12 @@ const AudioTranscription = () => {
                  * @postcondition Audio URL is set and chunks are cleared
                  */
                 mediaRecorderRef.current.onstop = (e: Event) => {
-                    console.log("Data available after MediaRecorder.stop() called");
                     const blob = new Blob(chunksRef.current, { type: "audio/ogg; codecs=opus" });
                     chunksRef.current = [];
                     setaudioURL(URL.createObjectURL(blob));
                 };
 
-            }).catch((err) => {
-                console.error("The following error occured: ", err);
-            }
-            );
+            }).catch(() => {});
         }
     }, []);
 
@@ -229,22 +223,15 @@ const AudioTranscription = () => {
         setRecording(true);
         isRecordingRef.current = true;
         if (socketRef.current) {
-            console.log("Setting up transcript listener, socket connected:", socketRef.current.connected);
             socketRef.current.on("transcript", transcriptHandler);
         } else {
-            console.error("Socket not initialized!");
+            // Socket not available; no-op
         }
         //Check if browser sees any audio-in devices(if you have no mic, no stream object will be created)
-        navigator.mediaDevices.enumerateDevices().then(devices => {
-            // Print whether your device has a mic or not(f12)
-            console.log(devices);
-        });
+        navigator.mediaDevices.enumerateDevices().then(() => {});
 
         // start recorder
         mediaRecorderRef.current!.start(3000);
-        // print mediaRecorder state
-        console.log("recorder state", mediaRecorderRef.current!.state);
-        console.log("recorder started");
     };
 
     /**
@@ -265,8 +252,6 @@ const AudioTranscription = () => {
         if (socketRef.current) {
             socketRef.current.off("transcript", transcriptHandler);
         }
-        console.log(mediaRecorderRef.current!.state);
-        console.log("recorder stopped");
     };
 
     /**
@@ -386,11 +371,9 @@ const AudioTranscription = () => {
                 setPredictedTiles(data.predictedTiles || []);
                 setPredictionTimestamp(Date.now());
             } else {
-                console.error('Prediction error:', data.error);
                 setPredictedTiles([]);
             }
         } catch (error) {
-            console.error('Error predicting next tiles:', error);
             setPredictedTiles([]);
         } finally {
             setIsPredicting(false);
@@ -409,11 +392,8 @@ const AudioTranscription = () => {
      * @postcondition Component will receive and display transcription updates
      */
     const transcriptHandler = React.useCallback((text: string) => {
-        console.log("Received transcript from server:", text);
         setTranscript((prev) => {
             const newTranscript = prev + " " + text;
-
-            console.log("Updated transcript:", newTranscript);
             
             // No automatic prediction - only manual via search button
             // Cancel any existing auto-prediction timeout if it exists
@@ -428,7 +408,6 @@ const AudioTranscription = () => {
 
     React.useEffect(() => {
         // establish socket once
-        console.log("Connecting to transcription socket at:", transcribeBaseUrl);
         socketRef.current = io(transcribeBaseUrl, {
             transports: ["websocket"],
             withCredentials: false,
@@ -437,17 +416,14 @@ const AudioTranscription = () => {
         // Add connection logging
         socketRef.current.on("connect", () => {
             setConnectionStatus("connected");
-            console.log("Socket connected:", socketRef.current?.id);
         });
         
         socketRef.current.on("disconnect", (reason) => {
             setConnectionStatus("disconnected");
-            console.log("Socket disconnected", reason);
         });
         
         socketRef.current.on("connect_error", (error) => {
             setConnectionStatus("error");
-            console.error("Socket connection error:", error?.message || error);
         });
         
         return () => {
