@@ -10,7 +10,9 @@ COPY ./requirements.txt /code/requirements.txt
 # Install dependencies
 RUN pip install uvicorn
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-RUN python -m spacy download en_core_web_lg
+
+# Install spaCy model explicitly (avoids the bad auto-generated URL seen on some environments)
+RUN python -m pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.1/en_core_web_lg-3.7.1-py3-none-any.whl
 
 # Copy application code
 COPY ./src /code/src
