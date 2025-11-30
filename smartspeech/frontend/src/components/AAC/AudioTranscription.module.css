@@ -298,6 +298,8 @@
   font-size: 10px;
   color: white;
   cursor: pointer;
+  border: none;
+  display: inline-block;
   transition: all 0.2s ease;
   white-space: nowrap;
 }

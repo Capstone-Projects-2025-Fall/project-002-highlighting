@@ -4,6 +4,8 @@ import styles from "./AudioTranscription.module.css";
 import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
 import { getBackendUrl } from "@/util/backend-url";
 import { useUtteredTiles } from "@/react-state-management/providers/useUtteredTiles";
+import { useTilesProvider } from "@/react-state-management/providers/tileProvider";
+import { TileProps } from "./Tile";
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -71,8 +73,10 @@ const AudioTranscription = () => {
      * Predicted tiles from context
      */
     const { predictedTiles, setPredictedTiles } = usePredictedTiles();
-    const { tileHistory } = useUtteredTiles();
+    const { tileHistory, addTile } = useUtteredTiles();
+    const { flatList } = useTilesProvider();
     const sessionStartTimestampRef = React.useRef<number>(0);
+    const sessionPressedTilesRef = React.useRef<string[]>([]);
     
     /**
      * State to track if prediction is loading
@@ -135,6 +139,19 @@ const AudioTranscription = () => {
         const s = Math.floor(seconds % 60);
         const sPadded = s < 10 ? `0${s}` : `${s}`;
         return `${m}:${sPadded}`;
+    };
+
+    const resolveSuggestionTile = (name: string): TileProps => {
+        const direct = flatList[name];
+        if (direct) return direct;
+        const ci = Object.values(flatList).find(t => t.text.toLowerCase() === name.toLowerCase());
+        if (ci) return ci;
+        return {
+            text: name,
+            sound: name,
+            image: "/AAC_assets/img/standard/custom.png",
+            tileColor: "gray" as const
+        };
     };
 
     /**
@@ -239,6 +256,7 @@ const AudioTranscription = () => {
         // reset transcript and session pressed tiles for a new capture session
         setTranscript("");
         setPredictedTiles([]);
+        sessionPressedTilesRef.current = [];
     };
 
     /**
@@ -354,9 +372,11 @@ const AudioTranscription = () => {
             return;
         }
         const sessionStart = sessionStartTimestampRef.current || 0;
-        const pressedTilesForRequest = tileHistory
-            .filter(t => t.rank >= sessionStart)
-            .map(t => t.text);
+        const pressedTilesForRequest = sessionPressedTilesRef.current.length
+            ? sessionPressedTilesRef.current
+            : tileHistory
+                .filter(t => t.rank >= sessionStart)
+                .map(t => t.text);
 
         // Always allow manual prediction (no throttling for manual requests)
         const now = Date.now();
@@ -416,6 +436,16 @@ const AudioTranscription = () => {
             return newTranscript;
         });
     }, []);
+
+    // Track pressed tiles for the current recording session
+    React.useEffect(() => {
+        if (record) {
+            const sessionStart = sessionStartTimestampRef.current || 0;
+            sessionPressedTilesRef.current = tileHistory
+                .filter(t => t.rank >= sessionStart)
+                .map(t => t.text);
+        }
+    }, [tileHistory, record]);
 
     React.useEffect(() => {
         // establish socket once
@@ -506,9 +536,14 @@ const AudioTranscription = () => {
                     <div className={styles.predictionTiles}>
                         {predictedTiles.length > 0 ? (
                             predictedTiles.map((tile, index) => (
-                                <span key={index} className={styles.predictionTile}>
+                                <button
+                                    type="button"
+                                    key={index}
+                                    className={styles.predictionTile}
+                                    onClick={() => addTile(resolveSuggestionTile(tile))}
+                                >
                                     {tile}
-                                </span>
+                                </button>
                             ))
                         ) : (
                             <span className={styles.predictionTile}>
