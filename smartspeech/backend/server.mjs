@@ -1313,7 +1313,11 @@ process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
 // Render/Heroku style port (falls back to 5000 for local dev)
-const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
+const rawPort = process.env.PORT ?? '5000';
+let PORT = Number.parseInt(rawPort, 10);
+if (Number.isNaN(PORT) || PORT <= 0 || PORT >= 65536) {
+  PORT = 5000;
+}
 
 /**
  * Start the HTTP server
