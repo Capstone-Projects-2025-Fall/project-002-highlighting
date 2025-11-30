@@ -123,6 +123,9 @@ const AudioTranscription = () => {
         return "http://localhost:5000";
     }, []);
 
+    // Connection status for quick UI visibility
+    const [connectionStatus, setConnectionStatus] = React.useState<"connecting" | "connected" | "error" | "disconnected">("connecting");
+
     const formatTime = (seconds: number) => {
         if (!isFinite(seconds) || seconds < 0) return "0:00";
         const m = Math.floor(seconds / 60);
@@ -425,19 +428,26 @@ const AudioTranscription = () => {
 
     React.useEffect(() => {
         // establish socket once
-        socketRef.current = io(transcribeBaseUrl);
+        console.log("Connecting to transcription socket at:", transcribeBaseUrl);
+        socketRef.current = io(transcribeBaseUrl, {
+            transports: ["websocket"],
+            withCredentials: false,
+        });
         
         // Add connection logging
         socketRef.current.on("connect", () => {
+            setConnectionStatus("connected");
             console.log("Socket connected:", socketRef.current?.id);
         });
         
-        socketRef.current.on("disconnect", () => {
-            console.log("Socket disconnected");
+        socketRef.current.on("disconnect", (reason) => {
+            setConnectionStatus("disconnected");
+            console.log("Socket disconnected", reason);
         });
         
         socketRef.current.on("connect_error", (error) => {
-            console.error("Socket connection error:", error);
+            setConnectionStatus("error");
+            console.error("Socket connection error:", error?.message || error);
         });
         
         return () => {
@@ -478,6 +488,12 @@ const AudioTranscription = () => {
                 >
                     {record ? "Stop Recording" : "Start Recording"}
                 </button>
+                <div className={styles.connectionStatus} title={`Socket status: ${connectionStatus}`}>
+                    {connectionStatus === "connected" && "🟢 Connected"}
+                    {connectionStatus === "connecting" && "🟡 Connecting"}
+                    {connectionStatus === "error" && "🔴 Error"}
+                    {connectionStatus === "disconnected" && "⚪ Disconnected"}
+                </div>
             </div>
 
             <div className={styles.transcriptContainer}>

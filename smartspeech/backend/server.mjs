@@ -118,6 +118,11 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// Compatibility health endpoint for clients expecting /health-check
+app.get('/health-check', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 /**
  * Configuration: Switch between OpenAI API and Local LLM
  * 
@@ -125,19 +130,20 @@ app.get('/health', (_req, res) => {
  * - 'openai': Use OpenAI API with vector store (requires API key)
  * - 'openai-local': Use local LLM with local vector search (offline)
  */
-//const USE_MODEL = 'openai'; // ← Uncomment to use OpenAI API
-const USE_MODEL = 'openai-local'; // ← Use local LLM with vector search
+const USE_MODEL = process.env.PREDICT_MODEL === 'openai'
+  ? 'openai'
+  : 'openai-local'; // default: local LLM with vector search
 
 /**
  * Configuration: Switch between Local and OpenAI Transcription
  * 
- * To switch transcription models, simply comment out one line and uncomment the other:
- * 
- * Use Local Whisper Model (offline): const USE_TRANSCRIPTION_MODEL = 'local';
- * Use OpenAI Whisper API (requires API key): const USE_TRANSCRIPTION_MODEL = 'openai';
+ * Use Local Whisper Model (offline): set TRANSCRIPTION_MODEL=local
+ * Use OpenAI Whisper API (requires API key): set TRANSCRIPTION_MODEL=openai
  */
-const USE_TRANSCRIPTION_MODEL = 'local'; // ← Comment this out to use OpenAI
-//const USE_TRANSCRIPTION_MODEL = 'openai'; // ← Uncomment this to use OpenAI
+const USE_TRANSCRIPTION_MODEL = (
+  process.env.TRANSCRIPTION_MODEL ||
+  (process.env.OPENAI_API_KEY ? 'openai' : 'local')
+).toLowerCase(); // valid: 'local' | 'openai'
 
 /**
  * OpenAI API client
@@ -1762,3 +1768,4 @@ io.on("connection", (socket) => {
     audioBuffer = Buffer.alloc(0);
   });
 });
+
