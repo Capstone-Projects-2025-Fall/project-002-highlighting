@@ -1,0 +1,115 @@
+# flyctl launch added from .gitignore
+# Generated files
+**\.docusaurus
+
+# Misc
+**\.DS_Store
+**\.env.local
+**\.env.development.local
+**\.env.test.local
+**\.env.production.local
+**\.env.
+
+# flyctl launch added from documentation\.gitignore
+# Dependencies
+documentation\node_modules
+
+# Production
+documentation\build
+
+# Generated files
+documentation\.docusaurus
+documentation\**\.cache-loader
+
+# Misc
+documentation\**\.DS_Store
+documentation\**\.env.local
+documentation\**\.env.development.local
+documentation\**\.env.test.local
+documentation\**\.env.production.local
+
+documentation\**\npm-debug.log*
+documentation\**\yarn-debug.log*
+documentation\**\yarn-error.log*
+
+# flyctl launch added from smartspeech\.gitignore
+# dependencies
+smartspeech\**\node_modules
+smartspeech\**\.pnp
+smartspeech\**\.pnp.js
+smartspeech\**\env
+
+# testing
+smartspeech\**\coverage
+smartspeech\**\.coverage
+
+# next.js
+smartspeech\**\.next
+smartspeech\**\out
+
+# production
+smartspeech\**\build\*
+
+# misc
+smartspeech\**\.DS_Store
+smartspeech\**\*.pem
+smartspeech\**\.idea
+smartspeech\**\.vscode
+
+# debug
+smartspeech\**\npm-debug.log*
+smartspeech\**\yarn-debug.log*
+smartspeech\**\yarn-error.log*
+
+# local env files
+smartspeech\**\.env*.local
+
+# vercel
+smartspeech\**\.vercel
+
+# typescript
+smartspeech\**\*.tsbuildinfo
+smartspeech\**\next-env.d.ts
+
+# Generated files
+smartspeech\**\.docusaurus
+
+# Misc
+smartspeech\**\.DS_Store
+smartspeech\**\.env.local
+smartspeech\**\.env.development.local
+smartspeech\**\.env.test.local
+smartspeech\**\.env.production.local
+smartspeech\**\.env
+
+# service worker outputs
+smartspeech\**\frontend\public\sw.js
+smartspeech\**\frontend\public\sw.js.map
+smartspeech\**\frontend\public\workbox-*.js
+smartspeech\**\frontend\public\workbox-*.js.map
+smartspeech\**\frontend\.swc
+
+# docs - obsidian
+smartspeech\**\.obsidian
+
+# docs - typedoc
+smartspeech\**\documentation\static\typedoc
+
+# python
+smartspeech\**\venv
+smartspeech\**\__pycache__
+smartspeech\**\.vscode
+smartspeech\**\.pytest_cache
+
+# terraform 
+smartspeech\**\.terraform
+smartspeech\**\.terraform.lock.hcl
+smartspeech\**\*.tfvars
+
+# Hidden secrets
+smartspeech\**\.env.local
+smartspeech\**\trash
+
+# flyctl launch added from smartspeech\frontend\.gitignore
+smartspeech\frontend\**\.vercel
+fly.toml
