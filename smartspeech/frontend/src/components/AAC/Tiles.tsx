@@ -4,7 +4,8 @@ import { stackReducer } from "@/react-state-management/reducers/stackReducer";
 import { TileAssets, TileData } from "./TileTypes";
 import { useTilesProvider } from "@/react-state-management/providers/tileProvider";
 import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
-import { FaCog } from 'react-icons/fa';
+import { useRecordingControl } from "@/react-state-management/providers/RecordingControlProvider";
+import { FaCog, FaStop, FaPlay } from 'react-icons/fa';
 import type { MouseEvent } from "react";
 
 export const BACK_BTN_TEXT = "Back";
@@ -76,6 +77,8 @@ export default function Tiles() {
     const [activeHighlights, setActiveHighlights] = useState<Set<string>>(new Set(['opacity']));
     const [opacityControlsVisible, setOpacityControlsVisible] = useState<boolean>(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+    const { isActive, setIsActive } = useRecordingControl();
+    const { setPredictedTiles } = usePredictedTiles();
 
     // Helper function to toggle a highlight method on/off
     const toggleHighlightMethod = (method: string) => {
@@ -115,7 +118,7 @@ export default function Tiles() {
     const isTileOrSubtilePredicted = (tileData: TileData, predictedTiles: string[]): boolean => {
         // Check if the tile itself is predicted
         const isPredicted = predictedTiles.some(predicted => 
-            predicted.toLowerCase() === tileData.text.toLowerCase()
+            predicted && tileData.text && predicted.toLowerCase() === tileData.text.toLowerCase()
         );
         
         if (isPredicted) return true;
@@ -414,6 +417,30 @@ export default function Tiles() {
                         </div>
                     </div>
                 )}
+                
+                {/* Start/Stop Recording button below settings */}
+                <button
+                    onClick={() => {
+                        const newActiveState = !isActive;
+                        setIsActive(newActiveState);
+                        // Clear predicted tiles immediately when stopping
+                        if (!newActiveState) {
+                            setPredictedTiles([]);
+                        }
+                    }}
+                    className={`w-10 h-10 mt-2 flex items-center justify-center transition-colors duration-200 ${
+                        isActive 
+                            ? 'bg-red-500 hover:bg-red-600' 
+                            : 'bg-green-500 hover:bg-green-600'
+                    }`}
+                    title={isActive ? "Stop Recording" : "Start Recording"}
+                >
+                    {isActive ? (
+                        <FaStop className="w-4 h-4 text-white" />
+                    ) : (
+                        <FaPlay className="w-4 h-4 text-white" />
+                    )}
+                </button>
             </div>
 
             {/* Controls collapsed by default (removed small plus opener) */}

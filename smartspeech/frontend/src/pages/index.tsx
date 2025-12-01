@@ -19,6 +19,7 @@ import InferenceProvider from "@/react-state-management/providers/InferenceProvi
 import CaretakerPopupProvider from "@/react-state-management/providers/CaretakerPopupProvider";
 import LoginPopupProvider from "@/react-state-management/providers/LoginPopupProvider";
 import PredictedTilesProvider from "@/react-state-management/providers/PredictedTilesProvider";
+import RecordingControlProvider from "@/react-state-management/providers/RecordingControlProvider";
 
 import useDisableZoom from "@/react-helpers/hooks/useDisableZoom";
 import CaretakerScreen from "@/components/AAC/CaretakerScreen";
@@ -36,7 +37,8 @@ export default function Home() {
         <section className="font-inter h-screen max-w-[100vw] box-border">
             <HealthCheckProvider>
                 <TileProvider>
-                    <PredictedTilesProvider>
+                    <RecordingControlProvider>
+                        <PredictedTilesProvider>
                         <RekognitionProvider>
                             <SimilarityProvider>
                                 <StrokeProvider>
@@ -74,7 +76,8 @@ export default function Home() {
                                 </StrokeProvider>
                             </SimilarityProvider>
                         </RekognitionProvider>
-                    </PredictedTilesProvider>
+                        </PredictedTilesProvider>
+                    </RecordingControlProvider>
                 </TileProvider>
             </HealthCheckProvider>
         </section>

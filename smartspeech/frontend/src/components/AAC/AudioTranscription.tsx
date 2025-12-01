@@ -3,6 +3,7 @@ import { io, Socket } from "socket.io-client";
 import styles from "./AudioTranscription.module.css";
 import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
 import { useUtteredTiles } from "@/react-state-management/providers/useUtteredTiles";
+import { useRecordingControl } from "@/react-state-management/providers/RecordingControlProvider";
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -77,6 +78,11 @@ const AudioTranscription = () => {
     const { tiles: utteredTiles } = useUtteredTiles();
     
     /**
+     * Recording control from context
+     */
+    const { isActive } = useRecordingControl();
+    
+    /**
      * State to track if prediction is loading
      * 
      * @type {boolean}
@@ -123,6 +129,11 @@ const AudioTranscription = () => {
      * Reference to track previous uttered tiles length to detect actual tile clicks
      */
     const previousUtteredTilesLengthRef = React.useRef(0);
+
+    /**
+     * Reference to store the latest isActive state for use in intervals
+     */
+    const isActiveRef = React.useRef(isActive);
 
     /**
      * State to track when predictions were last updated
@@ -271,8 +282,8 @@ const AudioTranscription = () => {
      * @throws {Error} If MediaRecorder is not initialized or microphone permissions are denied
      */
     const startRecording = React.useCallback(() => {
-        if (!mediaRecorderRef.current || isRecordingRef.current) {
-            return; // Already recording or not ready
+        if (!mediaRecorderRef.current || isRecordingRef.current || !isActive) {
+            return; // Already recording, not ready, or not active
         }
         setRecording(true);
         isRecordingRef.current = true;
@@ -293,7 +304,7 @@ const AudioTranscription = () => {
         // print mediaRecorder state
         console.log("recorder state", mediaRecorderRef.current.state);
         console.log("recorder started");
-    }, [transcriptHandler]);
+    }, [transcriptHandler, isActive]);
 
     /**
      * Stops the audio recording process
@@ -313,6 +324,9 @@ const AudioTranscription = () => {
         if (socketRef.current) {
             socketRef.current.off("transcript", transcriptHandler);
         }
+        // Clear transcript and predicted tiles when stopping recording
+        setTranscript("");
+        setPredictedTiles([]);
         console.log(mediaRecorderRef.current!.state);
         console.log("recorder stopped");
     };
@@ -406,6 +420,11 @@ const AudioTranscription = () => {
      * @throws {Error} If the API request fails
      */
     const predictNextTiles = React.useCallback(async () => {
+        // Don't predict if recording control is inactive
+        if (!isActive) {
+            return;
+        }
+        
         // Get recent pressed tiles (last 5 tiles for context)
         const recentPressedTiles = utteredTiles
             .slice(-5)
@@ -471,7 +490,7 @@ const AudioTranscription = () => {
         } finally {
             setIsPredicting(false);
         }
-    }, [transcript, utteredTiles]);
+    }, [transcript, utteredTiles, isActive]);
 
     React.useEffect(() => {
         // establish socket once
@@ -480,10 +499,10 @@ const AudioTranscription = () => {
         // Add connection logging
         socketRef.current.on("connect", () => {
             console.log("Socket connected:", socketRef.current?.id);
-            // Auto-start recording if MediaRecorder is ready
+            // Auto-start recording if MediaRecorder is ready and isActive is true
             // Use a small delay to ensure everything is initialized
             setTimeout(() => {
-                if (mediaRecorderRef.current && socketRef.current?.connected && !isRecordingRef.current) {
+                if (mediaRecorderRef.current && socketRef.current?.connected && !isRecordingRef.current && isActive) {
                     console.log("Auto-starting recording after socket connection...");
                     startRecording();
                 }
@@ -523,7 +542,8 @@ const AudioTranscription = () => {
             if (
                 mediaRecorderRef.current && 
                 socketRef.current?.connected && 
-                !isRecordingRef.current
+                !isRecordingRef.current &&
+                isActive
             ) {
                 console.log("Both MediaRecorder and Socket ready - auto-starting recording...");
                 startRecording();
@@ -561,6 +581,11 @@ const AudioTranscription = () => {
      * Tile clicks always trigger predictions (no throttling)
      */
     React.useEffect(() => {
+        // Don't predict if not active
+        if (!isActive) {
+            return;
+        }
+        
         // Only trigger if tiles actually changed (length increased, meaning a new tile was clicked)
         if (utteredTiles.length > previousUtteredTilesLengthRef.current && utteredTiles.length > 0) {
             previousUtteredTilesLengthRef.current = utteredTiles.length;
@@ -576,7 +601,7 @@ const AudioTranscription = () => {
             previousUtteredTilesLengthRef.current = utteredTiles.length;
         }
         
-    }, [utteredTiles.length]);
+    }, [utteredTiles.length, isActive, predictNextTiles]);
 
     /**
      * Update refs when transcript or utteredTiles change
@@ -589,13 +614,60 @@ const AudioTranscription = () => {
         utteredTilesRef.current = utteredTiles;
     }, [utteredTiles]);
 
+    React.useEffect(() => {
+        isActiveRef.current = isActive;
+    }, [isActive]);
+
+    /**
+     * Effect to handle recording control state changes
+     * Stops recording and clears data when isActive becomes false
+     */
+    React.useEffect(() => {
+        if (!isActive) {
+            // Stop recording if it's currently active
+            if (isRecordingRef.current && mediaRecorderRef.current) {
+                console.log("Stopping recording due to inactive state");
+                setRecording(false);
+                isRecordingRef.current = false;
+                mediaRecorderRef.current.stop();
+                if (socketRef.current) {
+                    socketRef.current.off("transcript", transcriptHandler);
+                }
+            }
+            // Clear transcript and predicted tiles
+            setTranscript("");
+            setPredictedTiles([]);
+        } else {
+            // If becoming active and not already recording, try to start
+            if (!isRecordingRef.current && mediaRecorderRef.current && socketRef.current?.connected) {
+                console.log("Starting recording due to active state");
+                startRecording();
+            }
+        }
+    }, [isActive, startRecording, transcriptHandler]);
+
     /**
      * Effect to set up periodic prediction every 15 seconds
      * Uses refs to avoid recreating the interval when transcript changes
      */
     React.useEffect(() => {
+        // Don't set up interval if not active
+        if (!isActive) {
+            // Clear interval if it exists
+            if (periodicPredictionIntervalRef.current) {
+                clearInterval(periodicPredictionIntervalRef.current);
+                periodicPredictionIntervalRef.current = null;
+            }
+            return;
+        }
+        
         // Set up interval for automatic predictions every 15 seconds
         periodicPredictionIntervalRef.current = setInterval(() => {
+            // Check if still active using ref to get current value
+            if (!isActiveRef.current) {
+                return;
+            }
+            
             // Use refs to get latest values without causing effect to re-run
             const currentTranscript = transcriptRef.current;
             const currentUtteredTiles = utteredTilesRef.current;
@@ -660,7 +732,7 @@ const AudioTranscription = () => {
                 periodicPredictionIntervalRef.current = null;
             }
         };
-    }, []); // Empty dependency array - interval is set up once and uses refs
+    }, [isActive]); // Re-run when isActive changes
 
     /**
      * Renders the AudioTranscription component
