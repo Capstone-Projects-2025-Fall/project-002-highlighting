@@ -1,7 +1,7 @@
 import { TileColor } from "@/components/AAC/Tile";
 import { FlatTileAssets, TileAssets, TileData } from "@/components/AAC/TileTypes";
 import { getTileFlatList } from "@/data/testing/AAC/flatListDataFile";
-import { getAACAssets } from "@/util/AAC/getAACAssets";
+import { getAACAssets, getAACAssetsAsync } from "@/util/AAC/getAACAssets";
 import getTilesByEmail, { GetTileData } from "@/util/CustomTile/getTilesByEmail";
 import { EMPTY_FUNCTION } from "@/util/constants";
 import { useSession } from "next-auth/react";
@@ -44,9 +44,22 @@ export default function TileProvider({ children }: TileProviderProps) {
     const { data: session, status } = useSession();
 
     useEffect(() => {
-        // replace with actual tile getter
-        const tilesResp = getAACAssets();
-        setTiles(tilesResp);
+        let mounted = true;
+
+        // Try the async backend builder first; fall back to static data synchronously.
+        getAACAssetsAsync()
+            .then((res) => {
+                if (!mounted) return;
+                setTiles(res);
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setTiles(getAACAssets());
+            });
+
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     useEffect(() => {

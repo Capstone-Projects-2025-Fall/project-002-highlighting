@@ -137,7 +137,14 @@ export default function Tiles() {
         const entries = Object.entries(currentFrame);
 
         if (isRootView) {
-            const remainingEntries = new Map(entries);
+            // take any tiles that explicitly specify a home_layout index and
+            // place them first ordered by that index. They should not be
+            // considered by the static ROOT_LAYOUT_COLUMN_KEYS placement.
+            const orderedByIndexEntries: [string, TileData][] = entries
+                .filter(([, td]) => typeof (td as any).home_layout === 'number')
+                .sort(([, a], [, b]) => ((a as any).home_layout as number) - ((b as any).home_layout as number));
+
+            const remainingEntries = new Map(entries.filter(([k]) => !orderedByIndexEntries.some(([ok]) => ok === k)));
 
             const columns: [string, TileData][][] = ROOT_LAYOUT_COLUMN_KEYS.map((columnKeys) => {
                 const columnEntries: [string, TileData][] = [];
@@ -169,7 +176,9 @@ export default function Tiles() {
                 });
             }
 
-            return arranged;
+            // prepend the index-ordered tiles (converted to array) so they appear first on the home page
+            const orderedPrefix = orderedByIndexEntries;
+            return [...orderedPrefix, ...arranged];
         }
 
         const pronounEntries: [string, TileData][] = [];

@@ -3,7 +3,7 @@ import axios from "axios";
 type HealthCheckSuccessResp = { message: string };
 
 export function getBackendUrl() {
-    const defaultUrl = "http://localhost:8000";
+    const defaultUrl = "http://localhost:3001";
 
     if (!process.env.NEXT_PUBLIC_PROG_MODE || typeof process.env.NEXT_PUBLIC_PROG_MODE !== "string") return defaultUrl;
     if (!process.env.NEXT_PUBLIC_BACKEND_URL_DEV || typeof process.env.NEXT_PUBLIC_BACKEND_URL_DEV !== "string") return defaultUrl;
