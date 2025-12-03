@@ -953,7 +953,8 @@ let shutdownTimeout = null;
  * @type {number}
  * @description Time to wait for reconnection before assuming website is closed (5 seconds)
  */
-const SHUTDOWN_DELAY = 5000;
+// Allow idle time of 1 hour before shutting down
+const SHUTDOWN_DELAY = 60 * 60 * 1000;
 
 /**
  * Shutdown the frontend Next.js dev server
@@ -1269,6 +1270,11 @@ io.on("connection", (socket) => {
    * @throws {Error} If FFmpeg is not installed or encounters an error during initialization
    */
   const initializeFFmpeg = () => {
+    // If an existing ffmpeg instance is running, don't spawn another
+    if (ffmpeg && !ffmpeg.killed && ffmpeg.exitCode === null) {
+      return;
+    }
+
     ffmpeg = spawn(ffmpegPath, [
       "-f", "webm", // input format : webm
       "-i", "pipe:0", // input goes into stdin
@@ -1317,6 +1323,9 @@ io.on("connection", (socket) => {
      */
     ffmpeg.on("close", (code) => {
       console.log("ffmpeg closed with code", code);
+      // Auto-restart FFmpeg so the next incoming chunk has a live process
+      // Listeners (stdin/stdout/error) are reattached on each init
+      initializeFFmpeg();
     });
 
     /**
@@ -1330,33 +1339,33 @@ io.on("connection", (socket) => {
     ffmpeg.on("error", (err) => {
       console.error("FFmpeg error:", err);
     });
+
+    /**
+     * FFmpeg stdout data event handler
+     * 
+     * @event stdout.data
+     * @description Collects converted PCM audio data from FFmpeg
+     * 
+     * @param {Buffer} chunk - A chunk of PCM audio data
+     * @postcondition Audio data is appended to the audioBuffer
+     */
+    ffmpeg.stdout.on("data", (chunk) => {
+      audioBuffer = Buffer.concat([audioBuffer, chunk]);
+      
+      // Trigger immediate processing if we have enough audio and not already processing
+      // This provides lower latency and better word capture
+      const preferredChunkSize = 128000; // 4 seconds
+      if (!isProcessing && audioBuffer.length >= preferredChunkSize) {
+        // Process immediately instead of waiting for interval
+        processAudio().catch(err => {
+          console.error("Error in immediate audio processing:", err);
+        });
+      }
+    });
   };
   
   // Initialize ffmpeg process 
   initializeFFmpeg();
-
-  /**
-   * FFmpeg stdout data event handler
-   * 
-   * @event stdout.data
-   * @description Collects converted PCM audio data from FFmpeg
-   * 
-   * @param {Buffer} chunk - A chunk of PCM audio data
-   * @postcondition Audio data is appended to the audioBuffer
-   */
-  ffmpeg.stdout.on("data", (chunk) => {
-    audioBuffer = Buffer.concat([audioBuffer, chunk]);
-    
-    // Trigger immediate processing if we have enough audio and not already processing
-    // This provides lower latency and better word capture
-    const preferredChunkSize = 128000; // 4 seconds
-    if (!isProcessing && audioBuffer.length >= preferredChunkSize) {
-      // Process immediately instead of waiting for interval
-      processAudio().catch(err => {
-        console.error("Error in immediate audio processing:", err);
-      });
-    }
-  });
 
   /**
    * Creates a WAV file from raw PCM data
@@ -1657,6 +1666,10 @@ io.on("connection", (socket) => {
    */
   socket.on("audio-chunk", (data) => {
     try {
+      // Ensure ffmpeg is alive before writing
+      if (!ffmpeg || ffmpeg.killed || ffmpeg.exitCode !== null) {
+        initializeFFmpeg();
+      }
       if (ffmpeg && ffmpeg.stdin && ffmpeg.stdin.writable) {
         ffmpeg.stdin.write(Buffer.from(data), (err) => {
           // Handle write errors (EPIPE and EOF are expected when FFmpeg closes)
