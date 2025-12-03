@@ -1139,8 +1139,9 @@ async function startServer() {
     await preloadAllModels();
     
     // Start server after models are loaded
-    server.listen(5000, () => {
-      console.log("Server running on http://localhost:5000");
+    const PORT = process.env.PORT || 5000; // Render injects PORT for web services
+    server.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
       console.log("Temp directory:", tempDir);
       console.log("[Configuration] Transcription Model: Local Whisper");
       console.log("[Configuration] Prediction Model: Local LLM with vector search");
