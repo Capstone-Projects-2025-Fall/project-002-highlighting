@@ -5,6 +5,9 @@ import { usePredictedTiles } from "@/react-state-management/providers/PredictedT
 import { useUtteredTiles } from "@/react-state-management/providers/useUtteredTiles";
 import { useRecordingControl } from "@/react-state-management/providers/RecordingControlProvider";
 
+// Backend base URL for transcription and predictions
+const TRANSCRIBE_BASE_URL = process.env.NEXT_PUBLIC_TRANSCRIBE_URL || "http://localhost:5000";
+
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
  * 
@@ -457,7 +460,7 @@ const AudioTranscription = () => {
         // Don't clear them here - only update when new data arrives
 
         try {
-            const response = await fetch('http://localhost:5000/api/nextTilePred', {
+            const response = await fetch(`${TRANSCRIBE_BASE_URL}/api/nextTilePred`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -494,7 +497,7 @@ const AudioTranscription = () => {
 
     React.useEffect(() => {
         // establish socket once
-        socketRef.current = io("http://localhost:5000");
+        socketRef.current = io(TRANSCRIBE_BASE_URL);
         
         // Add connection logging
         socketRef.current.on("connect", () => {
@@ -695,7 +698,7 @@ const AudioTranscription = () => {
                 console.log(`[Periodic Prediction] Starting prediction at ${new Date().toLocaleTimeString()}`);
 
                 // Call the prediction API
-                fetch('http://localhost:5000/api/nextTilePred', {
+                fetch(`${TRANSCRIBE_BASE_URL}/api/nextTilePred`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
