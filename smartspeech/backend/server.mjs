@@ -22,6 +22,10 @@ dotenv.config();
 import { File } from "node:buffer";
 globalThis.File = File;
 
+// Default to the previous Whisper model unless overridden for constrained hosts
+const WHISPER_MODEL_ID = process.env.WHISPER_MODEL_ID || "Xenova/whisper-base.en";
+const USE_FAST_TILE_PREDICTION = (process.env.FAST_TILE_PREDICTION || "true").toLowerCase() === "true";
+
 /**
  * Express application instance
  * 

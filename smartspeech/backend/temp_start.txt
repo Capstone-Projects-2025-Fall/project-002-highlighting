@@ -1,0 +1,40 @@
+
+/**
+ * Start the HTTP server
+ * 
+ * @function listen
+ * @description Starts the server on port 5000 after preloading all models
+ * 
+ * @postcondition Server is running and listening for connections on port 5000
+ */
+async function startServer() {
+  try {
+    // Preload all models before starting server
+    await preloadAllModels();
+    
+    // Start server after models are loaded
+    const PORT = process.env.PORT || 5000; // Render injects PORT for web services
+    server.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+      console.log("Temp directory:", tempDir);
+      console.log("[Configuration] Transcription Model: Local Whisper");
+      console.log("[Configuration] Prediction Model: Local LLM with vector search");
+      console.log("\n✓ Server ready to accept requests!\n");
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
+
+/**
+ * Socket.io connection event handler
+ * 
+ * @event connection
+ * @description Handles new client connections and sets up audio processing for each client
+ * 
+ * @param {Socket} socket - The Socket.io socket object for the connected client
+ */
