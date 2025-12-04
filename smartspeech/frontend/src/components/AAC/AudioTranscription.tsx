@@ -815,7 +815,7 @@ const AudioTranscription = () => {
             <div className={styles.predictionContainer}>
                 <button
                     className={styles.searchButton}
-                    onClick={predictNextTiles}
+                    onClick={() => predictNextTiles()}
                     disabled={isPredicting || (!transcript.trim() && utteredTiles.length === 0)}
                     title="Get next tile suggestions"
                 >
