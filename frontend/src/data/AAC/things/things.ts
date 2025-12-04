@@ -114,13 +114,7 @@ const things: TileAssets = {
         text: "Wallet",
         sound: "Wallet",
         tileColor: THINGS_TILES_COLOR,
-    },
-    rifle: {
-        image: "/AAC_assets/img/things/rifle.png",
-        text: "Rifle",
-        sound: "Rifle",
-        tileColor: THINGS_TILES_COLOR,
-    },
+    }
 };
 
 export default things;

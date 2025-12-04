@@ -4,7 +4,6 @@ import { AT_TILES_COLOR } from "@/data/AAC/at/at";
 import house from "@/data/AAC/house/house";
 import { HOUSE_TILES_COLOR } from "@/data/AAC/house/house";
 import directions from "@/data/AAC/directions/directions";
-import somewhereElse from "@/data/AAC/somewhereElse/somewhereElse";
 
 export const LOCATION_TILES_COLOR = "blue";
 
@@ -150,13 +149,6 @@ const locations: TileAssets = {
         tileColor: "purple",
         subTiles: directions,
     },
-    somewhereElse: {
-        image: "/AAC_assets/img/go/somewhereElse.png",
-        text: "Somewhere Else",
-        sound: "Somewhere Else",
-        tileColor: "purple",
-        subTiles: somewhereElse,
-    }
 };
 
 export default locations;

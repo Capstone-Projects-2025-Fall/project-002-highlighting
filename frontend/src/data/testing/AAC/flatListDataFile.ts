@@ -1675,12 +1675,6 @@ const flatList: FlatTileAssets = {
         sound: "Work People",
         tileColor: "yellow",
     },
-    employee: {
-        image: "/AAC_assets/img/job/employee.png",
-        text: "employee",
-        sound: "Employee",
-        tileColor: "blue",
-    },
     work: {
         image: "/AAC_assets/img/job/work.png",
         text: "Work",

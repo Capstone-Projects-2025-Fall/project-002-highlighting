@@ -4,12 +4,6 @@ import foods from "../foods/foods";
 export const FEELINGS_TILES_COLOR = "blue";
 
 const feelings: TileAssets = {
-    feelings: {
-        image: "/AAC_assets/img/feelings/feelings.png",
-        text: "Feelings",
-        sound: "Feelings",
-        tileColor: FEELINGS_TILES_COLOR,
-    },
     love: {
         image: "/AAC_assets/img/feelings/love.png",
         text: "Love",
@@ -28,22 +22,10 @@ const feelings: TileAssets = {
         sound: "Silly",
         tileColor: FEELINGS_TILES_COLOR,
     },
-    change: {
-        image: "/AAC_assets/img/feelings/change.png",
-        text: "Change",
-        sound: "Change",
-        tileColor: FEELINGS_TILES_COLOR,
-    },
     nice: {
         image: "/AAC_assets/img/feelings/nice.png",
         text: "Nice",
         sound: "Nice",
-        tileColor: FEELINGS_TILES_COLOR,
-    },
-    ready: {
-        image: "/AAC_assets/img/feelings/ready.png",
-        text: "Ready",
-        sound: "Ready",
         tileColor: FEELINGS_TILES_COLOR,
     },
     tired: {
