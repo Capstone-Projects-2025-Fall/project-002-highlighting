@@ -22,9 +22,10 @@ dotenv.config();
 import { File } from "node:buffer";
 globalThis.File = File;
 
-// Default to the previous Whisper model unless overridden for constrained hosts
-const WHISPER_MODEL_ID = process.env.WHISPER_MODEL_ID || "Xenova/whisper-base.en";
+// Default to tiny model to stay under 2 GB; override with WHISPER_MODEL_ID for larger models when resources allow.
+const WHISPER_MODEL_ID = process.env.WHISPER_MODEL_ID || "Xenova/whisper-tiny.en";
 const USE_FAST_TILE_PREDICTION = (process.env.FAST_TILE_PREDICTION || "true").toLowerCase() === "true";
+const MAX_RSS_BYTES = Number(process.env.MAX_RSS_BYTES || 1.5 * 1024 * 1024 * 1024); // 1.5 GB guard to prevent OOM
 
 /**
  * Express application instance
@@ -1260,7 +1261,7 @@ io.on("connection", (socket) => {
    * @type {number}
    * @description Defines how frequently the audio buffer is processed
    */
-  const CHUNK_DURATION = 2000; // 2 seconds - process more frequently to catch words sooner 
+  const CHUNK_DURATION = 1500; // shorter cadence to reduce buffer growth and latency
 
   /**
    * Initializes the FFmpeg process for audio conversion
@@ -1352,13 +1353,19 @@ io.on("connection", (socket) => {
      * 
      * @param {Buffer} chunk - A chunk of PCM audio data
      * @postcondition Audio data is appended to the audioBuffer
-     */
+    */
     ffmpeg.stdout.on("data", (chunk) => {
       audioBuffer = Buffer.concat([audioBuffer, chunk]);
       
+      // Keep buffer bounded so slow inference doesn't explode CPU/RAM on small hosts
+      const MAX_BUFFER_BYTES = 16000 * 2 * 6; // ~6 seconds of mono 16kHz audio
+      if (audioBuffer.length > MAX_BUFFER_BYTES) {
+        audioBuffer = audioBuffer.slice(audioBuffer.length - MAX_BUFFER_BYTES);
+      }
+      
       // Trigger immediate processing if we have enough audio and not already processing
       // This provides lower latency and better word capture
-      const preferredChunkSize = 128000; // 4 seconds
+      const preferredChunkSize = 64000; // ~2 seconds
       if (!isProcessing && audioBuffer.length >= preferredChunkSize) {
         // Process immediately instead of waiting for interval
         processAudio().catch(err => {
@@ -1492,16 +1499,24 @@ io.on("connection", (socket) => {
    * @async
    */
   const processAudio = async () => {
+    // Bail early if process memory is already high to avoid OOM restarts
+    const rss = process.memoryUsage().rss;
+    if (rss > MAX_RSS_BYTES) {
+      console.warn(`[Memory] RSS ${Math.round(rss / 1024 / 1024)} MB exceeds guard ${Math.round(MAX_RSS_BYTES / 1024 / 1024)} MB. Skipping audio processing and clearing buffer.`);
+      audioBuffer = Buffer.alloc(0);
+      return;
+    }
+
     // Skip processing if already busy or audio buffer is too small
     // Need at least 1.5 seconds for better transcription quality
     const minAudioSize = 24000; // 1.5 seconds = 16000 samples/sec * 2 bytes/sample * 1.5 sec
     if (isProcessing || audioBuffer.length < minAudioSize) {
       silenceCounter++;
       // Only reset buffer if we've had many silent attempts AND buffer is getting very large
-      if (silenceCounter > 20 && audioBuffer.length > 480000) { // > 15 seconds of audio
+      if (silenceCounter > 20 && audioBuffer.length > 192000) { // > 6 seconds of audio
         // Reset buffer if too much silence to prevent memory buildup
-        // But keep the last 2 seconds in case there's valid audio
-        const keepSize = 64000; // Keep 2 seconds
+        // But keep the last ~2 seconds in case there's valid audio
+        const keepSize = 64000; // Keep ~2 seconds
         audioBuffer = audioBuffer.slice(-keepSize);
         silenceCounter = 0;
       }
@@ -1513,11 +1528,11 @@ io.on("connection", (socket) => {
     
     // Take a chunk of audio - larger chunks provide better context for Whisper
     // 4 seconds = 128000 bytes - better quality and more context for accurate transcription
-    const preferredChunkSize = 128000; // 4 seconds = 16000 samples/sec * 2 bytes/sample * 4 sec
+    const preferredChunkSize = 64000; // ~2 seconds = 16000 samples/sec * 2 bytes/sample * 2 sec
     const chunkSize = Math.min(audioBuffer.length, preferredChunkSize);
     
     // Overlap to catch words at boundaries - 1 second overlap helps ensure no words are missed
-    const overlapSize = 32000; // 1 second overlap - ensures words spanning boundaries are captured
+    const overlapSize = 16000; // 0.5 second overlap - still captures boundary words, less memory
     const pcmChunk = audioBuffer.slice(0, chunkSize);
     
     // DON'T remove audio from buffer yet - wait until we know transcription succeeded
