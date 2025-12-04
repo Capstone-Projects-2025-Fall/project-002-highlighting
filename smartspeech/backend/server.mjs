@@ -195,6 +195,17 @@ app.post('/api/nextTilePred', async (req, res) => {
       : contextLines.trim() 
         ? 'transcript only'
         : 'tiles only';
+    if (USE_FAST_TILE_PREDICTION) {
+      console.log(`[Prediction] Using fast heuristic mode (mode: ${predictionMode})`);
+      const predicted = predictNextTilesFast(contextLines, validPressedTiles, 10);
+      return res.json({
+        predictedTiles: predicted,
+        status: 'success',
+        context: contextLines || '',
+        pressedTiles: validPressedTiles
+      });
+    }
+
     console.log(`[Prediction] Using Local LLM with vector search (mode: ${predictionMode})`);
     
     const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 10);
@@ -229,7 +240,8 @@ app.post('/api/nextTilePred', async (req, res) => {
  */
 function findRelevantWords(context, words) {
   const contextLower = context.toLowerCase();
-  const contextWords = contextLower.split(/\s+/);
+  // Keep only last ~30 words to keep it snappy
+  const contextWords = contextLower.split(/\s+/).slice(-30);
   
   // Comprehensive exclusion list
   const excludedWords = [
@@ -766,7 +778,7 @@ async function predictNextTilesLocalLLM(contextLines = '', pressedTiles = [], to
   
   // Get a larger set of candidate words from vector search (top 50-80) for LLM to consider
 
-  const topK = Math.min(60, labels.length);
+  const topK = Math.min(30, labels.length); // tighter candidate set for speed
   const topIndices = topNIndices(sims, topK);
   const candidateWords = topIndices.map(i => labels[i]);
 
@@ -808,7 +820,7 @@ Return words only, one per line:
 
     // Generate text with the LLM - optimized for speed
     const result = await llm(prompt, {
-      max_new_tokens: 40, // Enough for 10 words
+      max_new_tokens: 24, // Enough for ~8-12 words, faster
       temperature: 0, // Greedy decoding 
       do_sample: false, // Greedy decoding is faster
       return_full_text: false, // Don't return the prompt
@@ -896,7 +908,9 @@ app.post('/api/nextTilePredLocal', async (req, res) => {
       });
     }
 
-    const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
+    const predicted = USE_FAST_TILE_PREDICTION
+      ? predictNextTilesFast(contextLines, validPressedTiles, topN)
+      : await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
 
     return res.json({ 
       predictedTiles: predicted, 
