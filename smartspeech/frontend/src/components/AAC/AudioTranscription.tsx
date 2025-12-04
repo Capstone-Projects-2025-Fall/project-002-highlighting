@@ -7,9 +7,15 @@ import { useRecordingControl } from "@/react-state-management/providers/Recordin
 
 // Backend base URL for transcription and predictions
 // Prefer env var; otherwise use relative URL in the browser to avoid http://localhost calls on Vercel/Render
-const TRANSCRIBE_BASE_URL =
+const RAW_TRANSCRIBE_BASE_URL =
     process.env.NEXT_PUBLIC_TRANSCRIBE_URL ||
     (typeof window !== "undefined" ? "" : "http://localhost:5000");
+
+// Normalize to avoid double slashes that can break CORS/CDN
+const TRANSCRIBE_BASE_URL = RAW_TRANSCRIBE_BASE_URL.replace(/\/+$/, "");
+
+const apiUrl = (path: string) =>
+    TRANSCRIBE_BASE_URL ? `${TRANSCRIBE_BASE_URL}${path}` : path;
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -463,7 +469,7 @@ const AudioTranscription = () => {
         // Don't clear them here - only update when new data arrives
 
         try {
-            const response = await fetch(`${TRANSCRIBE_BASE_URL}/api/nextTilePred`, {
+            const response = await fetch(apiUrl("/api/nextTilePred"), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -500,7 +506,12 @@ const AudioTranscription = () => {
 
     React.useEffect(() => {
         // establish socket once
-        socketRef.current = io(TRANSCRIBE_BASE_URL);
+        // Prefer websockets only to avoid polling being blocked by service workers/CDNs
+        socketRef.current = io(TRANSCRIBE_BASE_URL || undefined, {
+            transports: ["websocket"],
+            path: "/socket.io",
+            withCredentials: false,
+        });
         
         // Add connection logging
         socketRef.current.on("connect", () => {
@@ -701,7 +712,7 @@ const AudioTranscription = () => {
                 console.log(`[Periodic Prediction] Starting prediction at ${new Date().toLocaleTimeString()}`);
 
                 // Call the prediction API
-                fetch(`${TRANSCRIBE_BASE_URL}/api/nextTilePred`, {
+                fetch(apiUrl("/api/nextTilePred"), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
