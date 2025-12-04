@@ -24,7 +24,14 @@ globalThis.File = File;
 
 // Default to tiny model to stay under 2 GB; override with WHISPER_MODEL_ID for larger models when resources allow.
 const WHISPER_MODEL_ID = process.env.WHISPER_MODEL_ID || "Xenova/whisper-tiny.en";
-const USE_FAST_TILE_PREDICTION = (process.env.FAST_TILE_PREDICTION || "true").toLowerCase() === "true";
+
+// Hard default to the lightweight prediction path; LOW_MEMORY_MODE forces fast-only regardless of env overrides.
+const LOW_MEMORY_MODE = (process.env.LOW_MEMORY_MODE || "true").toLowerCase() === "true";
+const USE_FAST_TILE_PREDICTION = LOW_MEMORY_MODE
+  ? true
+  : (process.env.FAST_TILE_PREDICTION || "true").toLowerCase() === "true";
+
+// Memory guard to prevent OOM restarts. Increase via MAX_RSS_BYTES if you have more headroom.
 const MAX_RSS_BYTES = Number(process.env.MAX_RSS_BYTES || 1.5 * 1024 * 1024 * 1024); // 1.5 GB guard to prevent OOM
 
 /**
@@ -190,12 +197,24 @@ app.post('/api/nextTilePred', async (req, res) => {
       });
     }
 
-    // Use Local LLM with vector search
+    // Use Local LLM with vector search unless in fast/low-memory mode
     const predictionMode = contextLines.trim() && validPressedTiles.length > 0 
       ? 'transcript and tiles'
       : contextLines.trim() 
         ? 'transcript only'
         : 'tiles only';
+    
+    if (USE_FAST_TILE_PREDICTION || LOW_MEMORY_MODE) {
+      console.log(`[Prediction] Using fast heuristic mode (mode: ${predictionMode})`);
+      const predicted = predictNextTilesFast(contextLines, validPressedTiles, 10);
+      return res.json({
+        predictedTiles: predicted,
+        status: 'success',
+        context: contextLines || '',
+        pressedTiles: validPressedTiles
+      });
+    }
+
     console.log(`[Prediction] Using Local LLM with vector search (mode: ${predictionMode})`);
     
     const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 10);
@@ -694,6 +713,9 @@ function topNIndices(arr, n) {
  * @async
  */
 async function getLocalLLMPipeline() {
+  if (LOW_MEMORY_MODE) {
+    throw new Error('LLM disabled in LOW_MEMORY_MODE');
+  }
   if (!__localLLMPipeline) {
     // GPT-2 small model - fast and lightweight for local inference
     // Alternative models: 'Xenova/gpt2', 'Xenova/distilgpt2' (even smaller)
@@ -721,6 +743,10 @@ async function getLocalLLMPipeline() {
  * @async
  */
 async function predictNextTilesLocalLLM(contextLines = '', pressedTiles = [], topN = 10) {
+  if (LOW_MEMORY_MODE) {
+    // Shouldn't be called when LOW_MEMORY_MODE is true, but guard anyway
+    return predictNextTilesFast(contextLines, pressedTiles, topN);
+  }
   const excluded = new Set([
     'he','she','it','they','we','you','him','her','his','hers','theirs','mine','yours','ours',
     'and','or','but','because','if','when','where','what','who','how','why',
@@ -897,7 +923,9 @@ app.post('/api/nextTilePredLocal', async (req, res) => {
       });
     }
 
-    const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
+    const predicted = (USE_FAST_TILE_PREDICTION || LOW_MEMORY_MODE)
+      ? predictNextTilesFast(contextLines, validPressedTiles, topN)
+      : await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
 
     return res.json({ 
       predictedTiles: predicted, 
