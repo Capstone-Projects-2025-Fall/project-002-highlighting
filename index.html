@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.8.1">
 <title data-rh="true">Hello from Project 002 Highlighting | Project 002 Highlighting</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://Capstone-Projects-2025-Fall.github.io/project-002-highlighting/"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="Hello from Project 002 Highlighting | Project 002 Highlighting"><meta data-rh="true" name="description" content="Description will go into a meta tag in &lt;head /&gt;"><meta data-rh="true" property="og:description" content="Description will go into a meta tag in &lt;head /&gt;"><link data-rh="true" rel="icon" href="/project-002-highlighting/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://Capstone-Projects-2025-Fall.github.io/project-002-highlighting/"><link data-rh="true" rel="alternate" href="https://Capstone-Projects-2025-Fall.github.io/project-002-highlighting/" hreflang="en"><link data-rh="true" rel="alternate" href="https://Capstone-Projects-2025-Fall.github.io/project-002-highlighting/" hreflang="x-default"><script data-rh="true">function insertBanner(){var n=document.createElement("div");n.id="__docusaurus-base-url-issue-banner-container";n.innerHTML='\n<div id="__docusaurus-base-url-issue-banner" style="border: thick solid red; background-color: rgb(255, 230, 179); margin: 20px; padding: 20px; font-size: 20px;">\n   <p style="font-weight: bold; font-size: 30px;">Your Docusaurus site did not load properly.</p>\n   <p>A very common reason is a wrong site <a href="https://docusaurus.io/docs/docusaurus.config.js/#baseUrl" style="font-weight: bold;">baseUrl configuration</a>.</p>\n   <p>Current configured baseUrl = <span style="font-weight: bold; color: red;">/project-002-highlighting/</span> </p>\n   <p>We suggest trying baseUrl = <span id="__docusaurus-base-url-issue-banner-suggestion-container" style="font-weight: bold; color: green;"></span></p>\n</div>\n',document.body.prepend(n);var e=document.getElementById("__docusaurus-base-url-issue-banner-suggestion-container"),s=window.location.pathname,o="/"===s.substr(-1)?s:s+"/";e.innerHTML=o}document.addEventListener("DOMContentLoaded",(function(){void 0===window.docusaurus&&insertBanner()}))</script><script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script><link rel="stylesheet" href="/project-002-highlighting/assets/css/styles.c1a668b4.css">
-<script src="/project-002-highlighting/assets/js/runtime~main.096375b5.js" defer="defer"></script>
+<script src="/project-002-highlighting/assets/js/runtime~main.ff33e1a8.js" defer="defer"></script>
 <script src="/project-002-highlighting/assets/js/main.ba747a97.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -19,14 +19,57 @@
 <h2 class="anchor anchorWithStickyNavbar_LWe7" id="project-abstract">Project Abstract<a href="#project-abstract" class="hash-link" aria-label="Direct link to Project Abstract" title="Direct link to Project Abstract">​</a></h2>
 <p>This document proposes an application that aims to replicate the intelligent text prediction found within smartphones into an AAC device. The application will use methods of highlighting to direct the attention of the user of the AAC device. This includes primarily the use of different levels of opacity to draw more attention to specific words that are relevant to the context of conversation. The application will allow the user to use the device&#x27;s microphone to listen to conversations and highlight relevant words to choose from that best fit the context.</p>
 <p>The goal of this application is to give the user a more efficient time to engage in conversation with others using an AAC device, while not limiting or overloading them with word options to choose from.</p>
-<h2 class="anchor anchorWithStickyNavbar_LWe7" id="high-level-requirement">High Level Requirement<a href="#high-level-requirement" class="hash-link" aria-label="Direct link to High Level Requirement" title="Direct link to High Level Requirement">​</a></h2>
-<p>Describe the requirements – i.e., what the product does and how it does it from a user point of view – at a high level.</p>
 <h2 class="anchor anchorWithStickyNavbar_LWe7" id="conceptual-design">Conceptual Design<a href="#conceptual-design" class="hash-link" aria-label="Direct link to Conceptual Design" title="Direct link to Conceptual Design">​</a></h2>
-<p>Describe the initial design concept: Hardware/software architecture, programming language, operating system, etc.</p>
+<p>The application will be built upon a previous capstone project that made an AAC board, Smartspeech will provide the basis for this project for us to build on it to incorporate the highlighting portion into it. The application will mainly incorporate Typescript and Python for the coding languages as the board was made primarily with them.</p>
+<p>For the speech recognition to apply the highlighting to specific words, we will be using Whisper AI which is an automatic speech recognition system model. The frontend will be using Vercel to host on a browser for easy and convenient access to the board and its highlighting features.</p>
 <h2 class="anchor anchorWithStickyNavbar_LWe7" id="background">Background<a href="#background" class="hash-link" aria-label="Direct link to Background" title="Direct link to Background">​</a></h2>
-<p>The background will contain a more detailed description of the product and a comparison to existing similar projects/products. A literature search should be conducted and the results listed. Proper citation of sources is required. If there are similar open-source products, you should state whether existing source will be used and to what extent. If there are similar closed-source/proprietary products, you should state how the proposed product will be similar and different.</p>
+<p>The use of AAC devices is imperative for non-verbal communication and autism spectrum children. This application aims to improve the time efficiency of communication this way as in most AAC devices now still are lacking in how fast conversations are expected to be. The project hopes to solve this problem of conversations taking longer than expected by using context awareness methods like speech recognition and highlighting.</p>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id="how-to-run">How to Run:<a href="#how-to-run" class="hash-link" aria-label="Direct link to How to Run:" title="Direct link to How to Run:">​</a></h2>
+<p><strong>Local</strong></p>
+<ol>
+<li>Clone this repo.</li>
+<li>CD into smartspeech/backend and create a .env file</li>
+<li>In the .env file add in :</li>
+</ol>
+<div class="language-shell codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-shell codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">OPENAI_API_KEY=sk-proj-iOpmSXZlUEjyICPAS6Hmef5REO9vKnIBTzrasfjLpXoMA0fvcWLkJzieVWILoFMsZMQqlPyTrOT3IBbkFJOoO6pekfDFvIV58ySsrgSsZX0vPsQKGW6Zptqya1aP34ykSU6d8qafugpX7Eyj56ZG5QhPcA</span><br></span></code></pre></div></div>
+<p>NOTE: This specific key is for testing purposes, actual key is protected</p>
+<ol start="4">
+<li>Run the following commands in smartspeech/backend:</li>
+</ol>
+<div class="language-shell codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-shell codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">npm install</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">node server.mjs &amp; (FOR Ubunut / MAC OS)</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">start node server.mjs (FOR Powershell)</span><br></span></code></pre></div></div>
+<ol start="5">
+<li>Run the following commands in smartspeech/frontend:</li>
+</ol>
+<div class="language-shell codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-shell codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">npm i</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">npm run dev</span><br></span></code></pre></div></div>
+<ol start="6">
+<li>Go to <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer">http://localhost:3000</a> to view the website</li>
+</ol>
+<p><strong>Deployed version</strong></p>
+<ol>
+<li>Go to <a href="https://aachighlighting.vercel.app/" target="_blank" rel="noopener noreferrer">https://aachighlighting.vercel.app/</a></li>
+</ol>
 <h2 class="anchor anchorWithStickyNavbar_LWe7" id="required-resources">Required Resources<a href="#required-resources" class="hash-link" aria-label="Direct link to Required Resources" title="Direct link to Required Resources">​</a></h2>
-<p>Discuss what you need to develop this project. This includes background information you will need to acquire, hardware resources, and software resources. If these are not part of the standard Computer Science Department lab resources, these must be identified early and discussed with the instructor.</p>
+<ul>
+<li>
+<p>What users will need:</p>
+<ul>
+<li>Ipad or tablet device (Needs microphone for active listening)</li>
+<li>Internet access</li>
+</ul>
+</li>
+<li>
+<p>What the project needs:</p>
+<ul>
+<li>Github and git commands</li>
+<li>Strong enough machine to run AAC board and its features locally</li>
+<li>Whisper AI for speech recognition</li>
+<li>Typescript</li>
+<li>Python</li>
+<li>Docusaurus for convenient documentation</li>
+<li>Vercel to host the AAC board</li>
+</ul>
+</li>
+</ul>
 <h2 class="anchor anchorWithStickyNavbar_LWe7" id="collaborators">Collaborators<a href="#collaborators" class="hash-link" aria-label="Direct link to Collaborators" title="Direct link to Collaborators">​</a></h2>
 <div align="center"><p><a href="https://github.com/tuh14497" target="_blank" rel="noopener noreferrer">Joo Cha</a> •
 <a href="https://github.com/JudeP2" target="_blank" rel="noopener noreferrer">Jude Piacentino</a> •
