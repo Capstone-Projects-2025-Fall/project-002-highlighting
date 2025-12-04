@@ -80,9 +80,6 @@ classDiagram
         MiniTile(image: string, text: string)
     }
 
-    class CaretakerPopup {
-        showDialog: boolean
-    }
 
     class ManualModeButton {
         isOpen: boolean
@@ -90,11 +87,6 @@ classDiagram
 
     class ManualTilesPopup {
         isOpen: boolean
-    }
-
-    class CaretakerPopup {
-        status: string
-        router: NextRouter
     }
 
     class InferenceProvider {
@@ -119,26 +111,20 @@ classDiagram
     Home --> Tiles: instantiates
     Home --> Canvas: contains
     Home --> RecentlyClickedTiles: contains
-    Home --> CaretakerPopup: conditionally contains
     Home --> ManualModeButton: contains
 
     RecentlyClickedTiles --> UtteredTilesProvider: gets list of tiles
 
     ManualModeButton --> ManualTilesPopup: opens on short press
-    ManualModeButton --> CaretakerScreen: opens on long press
-
-    ManualModeButton --> LoginPopupProvider: uses to open caretaker page
 
     ManualTilesPopup --> Tiles: contains
     ManualTilesPopup --> SelectedTilesActionBar: contains
 
-    CaretakerPopup --> LoginPopupProvider: uses to ensure user is logged in
 
     Canvas --> InferenceProvider: uses to access drawing recognition model
 
     Tiles --> Backend: fetches custom tiles
 
-    CaretakerPopup --> Backend: uploads custom tiles
 
     Home --> Backend: make tts requests
 ```

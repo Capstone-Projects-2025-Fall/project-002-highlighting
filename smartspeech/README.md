@@ -59,7 +59,7 @@ This tool is novel in the sense that other AAC tools like Fluent AAC[^2] and Ass
   - All tiles in the tile bar can be played as a sentence.
   - Users can delete the most recent tile or delete all tiles in the tile bar.
 - Audio data is cached to provide faster service to the user.
-- The app is able to be used by a user who cannot read. Further, the app minus caretaker features are all on one page, making the app easy to navigate.
+
 
 ## How to Run the Full Application
 

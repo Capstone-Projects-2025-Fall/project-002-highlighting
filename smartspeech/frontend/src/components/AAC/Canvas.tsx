@@ -4,7 +4,6 @@ import useClientRender from "@/react-helpers/hooks/useClientRender";
 import { useSimilarity } from "@/react-state-management/providers/useSimilarity";
 import { useInferenceContext } from "@/react-state-management/providers/InferenceProvider";
 import useSize from "@/react-helpers/hooks/useSize";
-import LoadingScreenBlocker from "../util/LoadingScreenBlocker";
 import { useStrokeRecorderContext } from "@/react-state-management/providers/StrokeProvider";
 
 
@@ -104,10 +103,6 @@ export default function Canvas() {
                    
                 </div>
 
-                {
-                    /*Block actions when screen changes*/
-                    isContainerShifting && <LoadingScreenBlocker message="Screen change detected. Please wait for resize" />
-                }
                 <canvas
                     ref={canvasRef}
                     onMouseDown={onMouseDown}
