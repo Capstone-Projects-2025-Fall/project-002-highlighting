@@ -366,6 +366,35 @@ function findRelevantWords(context, words) {
 
 
 /**
+ * Lightweight prediction without LLM/vector search.
+ * Uses simple relevance plus recent pressed tiles to keep things fast.
+ */
+function predictNextTilesFast(contextLines = '', pressedTiles = [], topN = 10) {
+  const baseContext = [contextLines, Array.isArray(pressedTiles) ? pressedTiles.join(' ') : '']
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+
+  const initial = findRelevantWords(baseContext || '', __labelList || []);
+  const recentPressed = Array.isArray(pressedTiles) ? pressedTiles.slice(-topN) : [];
+  const pressedLower = new Set(recentPressed.map(t => String(t || '').toLowerCase()));
+  const merged = [];
+
+  // Keep most recent pressed tiles first so UI highlights familiar words
+  merged.push(...recentPressed);
+
+  for (const word of initial) {
+    if (merged.length >= topN) break;
+    if (pressedLower.has(String(word || '').toLowerCase())) continue;
+    merged.push(word);
+  }
+
+  return merged.slice(0, topN);
+}
+
+
+
+/**
  * Local embedding pipeline and cache for vector search
  * Used by Local LLM prediction to find relevant tiles via semantic search
  */
