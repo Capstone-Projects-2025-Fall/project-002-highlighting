@@ -464,7 +464,8 @@ export default function Tiles() {
                 </div>
             )}
             <section className="w-full flex flex-col items-center gap-4 pt-12">
-                <div className="grid grid-cols-8 gap-4 2xl-max:grid-cols-7 md-max:gap-2" data-testid={TilesTestIds.mainContainer}>
+                <div className="grid grid-cols-7 gap-4" data-testid={TilesTestIds.mainContainer}>
+
                     {dataLocation.length > 0 && (
                         <div onClick={() => dispatch({ type: "remove" })}>
                             {/* Back button should always be fully visible */}
