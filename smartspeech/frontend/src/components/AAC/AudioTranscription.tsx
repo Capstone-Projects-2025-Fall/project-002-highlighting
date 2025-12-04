@@ -6,7 +6,10 @@ import { useUtteredTiles } from "@/react-state-management/providers/useUtteredTi
 import { useRecordingControl } from "@/react-state-management/providers/RecordingControlProvider";
 
 // Backend base URL for transcription and predictions
-const TRANSCRIBE_BASE_URL = process.env.NEXT_PUBLIC_TRANSCRIBE_URL || "http://localhost:5000";
+// Prefer env var; otherwise use relative URL in the browser to avoid http://localhost calls on Vercel/Render
+const TRANSCRIBE_BASE_URL =
+    process.env.NEXT_PUBLIC_TRANSCRIBE_URL ||
+    (typeof window !== "undefined" ? "" : "http://localhost:5000");
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
