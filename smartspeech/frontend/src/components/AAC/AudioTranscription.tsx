@@ -5,18 +5,6 @@ import { usePredictedTiles } from "@/react-state-management/providers/PredictedT
 import { useUtteredTiles } from "@/react-state-management/providers/useUtteredTiles";
 import { useRecordingControl } from "@/react-state-management/providers/RecordingControlProvider";
 
-// Backend base URL for transcription and predictions
-// Prefer env var; otherwise use relative URL in the browser to avoid http://localhost calls on Vercel/Render
-const RAW_TRANSCRIBE_BASE_URL =
-    process.env.NEXT_PUBLIC_TRANSCRIBE_URL ||
-    (typeof window !== "undefined" ? "" : "http://localhost:5000");
-
-// Normalize to avoid double slashes that can break CORS/CDN
-const TRANSCRIBE_BASE_URL = RAW_TRANSCRIBE_BASE_URL.replace(/\/+$/, "");
-
-const apiUrl = (path: string) =>
-    TRANSCRIBE_BASE_URL ? `${TRANSCRIBE_BASE_URL}${path}` : path;
-
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
  * 
@@ -146,11 +134,6 @@ const AudioTranscription = () => {
      * Reference to store the latest isActive state for use in intervals
      */
     const isActiveRef = React.useRef(isActive);
-
-    /**
-     * Reference to track the last prediction payload so we skip duplicate calls
-     */
-    const lastPredictionPayloadRef = React.useRef<string>("");
 
     /**
      * State to track when predictions were last updated
@@ -436,7 +419,7 @@ const AudioTranscription = () => {
      * @async
      * @throws {Error} If the API request fails
      */
-    const predictNextTiles = React.useCallback(async (force = false) => {
+    const predictNextTiles = React.useCallback(async () => {
         // Don't predict if recording control is inactive
         if (!isActive) {
             return;
@@ -451,16 +434,6 @@ const AudioTranscription = () => {
         // At least one of transcript or pressed tiles must be available
         if (!transcript.trim() && recentPressedTiles.length === 0) {
             // Don't clear tiles if we have no context - just skip prediction
-            return;
-        }
-
-        // Skip if payload hasn't changed since last prediction
-        const payloadKey = JSON.stringify({
-            t: transcript.trim(),
-            p: recentPressedTiles,
-        });
-        if (!force && payloadKey === lastPredictionPayloadRef.current) {
-            console.log("[Prediction] Skipped duplicate payload");
             return;
         }
 
@@ -484,7 +457,7 @@ const AudioTranscription = () => {
         // Don't clear them here - only update when new data arrives
 
         try {
-            const response = await fetch(apiUrl("/api/nextTilePred"), {
+            const response = await fetch('http://localhost:5000/api/nextTilePred', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -501,11 +474,10 @@ const AudioTranscription = () => {
 
             const data = await response.json();
 
-        if (data.status === 'success') {
-            // Only update if we got valid predictions
-            setPredictedTiles(data.predictedTiles || []);
-            setPredictionTimestamp(Date.now());
-            lastPredictionPayloadRef.current = payloadKey;
+            if (data.status === 'success') {
+                // Only update if we got valid predictions
+                setPredictedTiles(data.predictedTiles || []);
+                setPredictionTimestamp(Date.now());
             } else {
                 console.error('Prediction error:', data.error);
                 // Only clear on actual error, not on loading
@@ -522,12 +494,7 @@ const AudioTranscription = () => {
 
     React.useEffect(() => {
         // establish socket once
-        // Prefer websockets only to avoid polling being blocked by service workers/CDNs
-        socketRef.current = io(TRANSCRIBE_BASE_URL || undefined, {
-            transports: ["websocket"],
-            path: "/socket.io",
-            withCredentials: false,
-        });
+        socketRef.current = io("http://localhost:5000");
         
         // Add connection logging
         socketRef.current.on("connect", () => {
@@ -626,7 +593,7 @@ const AudioTranscription = () => {
             console.log(`[Prediction] Triggered by tile click (${utteredTiles.length} tiles)`);
             // Small delay to ensure state is updated
             const timeoutId = setTimeout(() => {
-                predictNextTiles(true); // force call on tile clicks
+                predictNextTiles();
             }, 100);
             return () => clearTimeout(timeoutId);
         } else if (utteredTiles.length !== previousUtteredTilesLengthRef.current) {
@@ -701,27 +668,17 @@ const AudioTranscription = () => {
                 return;
             }
             
-                // Use refs to get latest values without causing effect to re-run
-                const currentTranscript = transcriptRef.current;
-                const currentUtteredTiles = utteredTilesRef.current;
-                
-                // Only predict if we have transcript or pressed tiles
-                if (currentTranscript.trim() || currentUtteredTiles.length > 0) {
-                    // Skip if payload hasn't changed since last prediction
-                    const periodicPayload = JSON.stringify({
-                        t: currentTranscript.trim(),
-                        p: currentUtteredTiles.slice(-5).map(t => t.text).filter(Boolean),
-                    });
-                    if (periodicPayload === lastPredictionPayloadRef.current) {
-                        console.log("[Periodic Prediction] Skipped duplicate payload");
-                        return;
-                    }
-
-                    // Get recent pressed tiles (last 5 tiles for context)
-                    const recentPressedTiles = currentUtteredTiles
-                        .slice(-5)
-                        .map(tile => tile.text)
-                        .filter(text => text && text.trim());
+            // Use refs to get latest values without causing effect to re-run
+            const currentTranscript = transcriptRef.current;
+            const currentUtteredTiles = utteredTilesRef.current;
+            
+            // Only predict if we have transcript or pressed tiles
+            if (currentTranscript.trim() || currentUtteredTiles.length > 0) {
+                // Get recent pressed tiles (last 5 tiles for context)
+                const recentPressedTiles = currentUtteredTiles
+                    .slice(-5)
+                    .map(tile => tile.text)
+                    .filter(text => text && text.trim());
 
                 // Throttle predictions to avoid too many requests
                 const now = Date.now();
@@ -738,7 +695,7 @@ const AudioTranscription = () => {
                 console.log(`[Periodic Prediction] Starting prediction at ${new Date().toLocaleTimeString()}`);
 
                 // Call the prediction API
-                fetch(apiUrl("/api/nextTilePred"), {
+                fetch('http://localhost:5000/api/nextTilePred', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -758,7 +715,6 @@ const AudioTranscription = () => {
                     if (data.status === 'success') {
                         setPredictedTiles(data.predictedTiles || []);
                         setPredictionTimestamp(Date.now());
-                        lastPredictionPayloadRef.current = periodicPayload;
                     }
                 })
                 .catch(error => {
@@ -815,7 +771,7 @@ const AudioTranscription = () => {
             <div className={styles.predictionContainer}>
                 <button
                     className={styles.searchButton}
-                    onClick={() => predictNextTiles()}
+                    onClick={predictNextTiles}
                     disabled={isPredicting || (!transcript.trim() && utteredTiles.length === 0)}
                     title="Get next tile suggestions"
                 >

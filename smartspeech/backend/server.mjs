@@ -22,10 +22,6 @@ dotenv.config();
 import { File } from "node:buffer";
 globalThis.File = File;
 
-// Default to the previous Whisper model unless overridden for constrained hosts
-const WHISPER_MODEL_ID = process.env.WHISPER_MODEL_ID || "Xenova/whisper-base.en";
-const USE_FAST_TILE_PREDICTION = (process.env.FAST_TILE_PREDICTION || "true").toLowerCase() === "true";
-
 /**
  * Express application instance
  * 
@@ -195,17 +191,6 @@ app.post('/api/nextTilePred', async (req, res) => {
       : contextLines.trim() 
         ? 'transcript only'
         : 'tiles only';
-    if (USE_FAST_TILE_PREDICTION) {
-      console.log(`[Prediction] Using fast heuristic mode (mode: ${predictionMode})`);
-      const predicted = predictNextTilesFast(contextLines, validPressedTiles, 10);
-      return res.json({
-        predictedTiles: predicted,
-        status: 'success',
-        context: contextLines || '',
-        pressedTiles: validPressedTiles
-      });
-    }
-
     console.log(`[Prediction] Using Local LLM with vector search (mode: ${predictionMode})`);
     
     const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 10);
@@ -240,8 +225,7 @@ app.post('/api/nextTilePred', async (req, res) => {
  */
 function findRelevantWords(context, words) {
   const contextLower = context.toLowerCase();
-  // Keep only last ~30 words to keep it snappy
-  const contextWords = contextLower.split(/\s+/).slice(-30);
+  const contextWords = contextLower.split(/\s+/);
   
   // Comprehensive exclusion list
   const excludedWords = [
@@ -361,35 +345,6 @@ function findRelevantWords(context, words) {
   }
   
   return relevantWords.slice(0, 10);
-}
-
-
-
-/**
- * Lightweight prediction without LLM/vector search.
- * Uses simple relevance plus recent pressed tiles to keep things fast.
- */
-function predictNextTilesFast(contextLines = '', pressedTiles = [], topN = 10) {
-  const baseContext = [contextLines, Array.isArray(pressedTiles) ? pressedTiles.join(' ') : '']
-    .filter(Boolean)
-    .join(' ')
-    .trim();
-
-  const initial = findRelevantWords(baseContext || '', __labelList || []);
-  const recentPressed = Array.isArray(pressedTiles) ? pressedTiles.slice(-topN) : [];
-  const pressedLower = new Set(recentPressed.map(t => String(t || '').toLowerCase()));
-  const merged = [];
-
-  // Keep most recent pressed tiles first so UI highlights familiar words
-  merged.push(...recentPressed);
-
-  for (const word of initial) {
-    if (merged.length >= topN) break;
-    if (pressedLower.has(String(word || '').toLowerCase())) continue;
-    merged.push(word);
-  }
-
-  return merged.slice(0, topN);
 }
 
 
@@ -807,7 +762,7 @@ async function predictNextTilesLocalLLM(contextLines = '', pressedTiles = [], to
   
   // Get a larger set of candidate words from vector search (top 50-80) for LLM to consider
 
-  const topK = Math.min(30, labels.length); // tighter candidate set for speed
+  const topK = Math.min(60, labels.length);
   const topIndices = topNIndices(sims, topK);
   const candidateWords = topIndices.map(i => labels[i]);
 
@@ -849,7 +804,7 @@ Return words only, one per line:
 
     // Generate text with the LLM - optimized for speed
     const result = await llm(prompt, {
-      max_new_tokens: 24, // Enough for ~8-12 words, faster
+      max_new_tokens: 40, // Enough for 10 words
       temperature: 0, // Greedy decoding 
       do_sample: false, // Greedy decoding is faster
       return_full_text: false, // Don't return the prompt
@@ -937,9 +892,7 @@ app.post('/api/nextTilePredLocal', async (req, res) => {
       });
     }
 
-    const predicted = USE_FAST_TILE_PREDICTION
-      ? predictNextTilesFast(contextLines, validPressedTiles, topN)
-      : await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
+    const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
 
     return res.json({ 
       predictedTiles: predicted, 
@@ -1000,8 +953,7 @@ let shutdownTimeout = null;
  * @type {number}
  * @description Time to wait for reconnection before assuming website is closed (5 seconds)
  */
-// Allow idle time of 1 hour before shutting down
-const SHUTDOWN_DELAY = 60 * 60 * 1000;
+const SHUTDOWN_DELAY = 5000;
 
 /**
  * Shutdown the frontend Next.js dev server
@@ -1187,9 +1139,8 @@ async function startServer() {
     await preloadAllModels();
     
     // Start server after models are loaded
-    const PORT = process.env.PORT || 5000; // Render injects PORT for web services
-    server.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+    server.listen(5000, () => {
+      console.log("Server running on http://localhost:5000");
       console.log("Temp directory:", tempDir);
       console.log("[Configuration] Transcription Model: Local Whisper");
       console.log("[Configuration] Prediction Model: Local LLM with vector search");
@@ -1317,11 +1268,6 @@ io.on("connection", (socket) => {
    * @throws {Error} If FFmpeg is not installed or encounters an error during initialization
    */
   const initializeFFmpeg = () => {
-    // If an existing ffmpeg instance is running, don't spawn another
-    if (ffmpeg && !ffmpeg.killed && ffmpeg.exitCode === null) {
-      return;
-    }
-
     ffmpeg = spawn(ffmpegPath, [
       "-f", "webm", // input format : webm
       "-i", "pipe:0", // input goes into stdin
@@ -1370,9 +1316,6 @@ io.on("connection", (socket) => {
      */
     ffmpeg.on("close", (code) => {
       console.log("ffmpeg closed with code", code);
-      // Auto-restart FFmpeg so the next incoming chunk has a live process
-      // Listeners (stdin/stdout/error) are reattached on each init
-      initializeFFmpeg();
     });
 
     /**
@@ -1386,33 +1329,33 @@ io.on("connection", (socket) => {
     ffmpeg.on("error", (err) => {
       console.error("FFmpeg error:", err);
     });
-
-    /**
-     * FFmpeg stdout data event handler
-     * 
-     * @event stdout.data
-     * @description Collects converted PCM audio data from FFmpeg
-     * 
-     * @param {Buffer} chunk - A chunk of PCM audio data
-     * @postcondition Audio data is appended to the audioBuffer
-     */
-    ffmpeg.stdout.on("data", (chunk) => {
-      audioBuffer = Buffer.concat([audioBuffer, chunk]);
-      
-      // Trigger immediate processing if we have enough audio and not already processing
-      // This provides lower latency and better word capture
-      const preferredChunkSize = 128000; // 4 seconds
-      if (!isProcessing && audioBuffer.length >= preferredChunkSize) {
-        // Process immediately instead of waiting for interval
-        processAudio().catch(err => {
-          console.error("Error in immediate audio processing:", err);
-        });
-      }
-    });
   };
   
   // Initialize ffmpeg process 
   initializeFFmpeg();
+
+  /**
+   * FFmpeg stdout data event handler
+   * 
+   * @event stdout.data
+   * @description Collects converted PCM audio data from FFmpeg
+   * 
+   * @param {Buffer} chunk - A chunk of PCM audio data
+   * @postcondition Audio data is appended to the audioBuffer
+   */
+  ffmpeg.stdout.on("data", (chunk) => {
+    audioBuffer = Buffer.concat([audioBuffer, chunk]);
+    
+    // Trigger immediate processing if we have enough audio and not already processing
+    // This provides lower latency and better word capture
+    const preferredChunkSize = 128000; // 4 seconds
+    if (!isProcessing && audioBuffer.length >= preferredChunkSize) {
+      // Process immediately instead of waiting for interval
+      processAudio().catch(err => {
+        console.error("Error in immediate audio processing:", err);
+      });
+    }
+  });
 
   /**
    * Creates a WAV file from raw PCM data
@@ -1713,10 +1656,6 @@ io.on("connection", (socket) => {
    */
   socket.on("audio-chunk", (data) => {
     try {
-      // Ensure ffmpeg is alive before writing
-      if (!ffmpeg || ffmpeg.killed || ffmpeg.exitCode !== null) {
-        initializeFFmpeg();
-      }
       if (ffmpeg && ffmpeg.stdin && ffmpeg.stdin.writable) {
         ffmpeg.stdin.write(Buffer.from(data), (err) => {
           // Handle write errors (EPIPE and EOF are expected when FFmpeg closes)
