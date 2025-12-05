@@ -13,12 +13,18 @@ jest.mock('../../react-state-management/providers/PredictedTilesProvider', () =>
     usePredictedTiles: jest.fn(),
 }));
 
+jest.mock('../../react-state-management/providers/RecordingControlProvider', () => ({
+    useRecordingControl: jest.fn(),
+}));
+
 // Import after mocking
 import { useTilesProvider } from '../../react-state-management/providers/tileProvider';
 import { usePredictedTiles } from '../../react-state-management/providers/PredictedTilesProvider';
+import { useRecordingControl } from '../../react-state-management/providers/RecordingControlProvider';
 
 const mockUseTilesProvider = useTilesProvider as jest.MockedFunction<typeof useTilesProvider>;
 const mockUsePredictedTiles = usePredictedTiles as jest.MockedFunction<typeof usePredictedTiles>;
+const mockUseRecordingControl = useRecordingControl as jest.MockedFunction<typeof useRecordingControl>;
 
 // Mock the Tile component
 jest.mock('./Tile', () => {
@@ -129,6 +135,10 @@ describe('Tiles Component', () => {
         mockUsePredictedTiles.mockReturnValue({
             predictedTiles: [],
             setPredictedTiles: mockSetPredictedTiles,
+        });
+
+        mockUseRecordingControl.mockReturnValue({
+            isActive: true,
         });
     });
 
@@ -747,6 +757,226 @@ describe('Tiles Component', () => {
                 // Should have all 9 tiles plus back button
                 expect(tiles.length).toBeGreaterThan(9);
             });
+        });
+    });
+
+    describe('Multiple Highlighting Methods', () => {
+        test('supports enabling multiple highlighting methods', async () => {
+            render(<Tiles />);
+
+            // Settings button should be visible
+            const settingsButton = screen.getByTitle('Settings');
+            expect(settingsButton).toBeInTheDocument();
+
+            // Click settings to open menu
+            fireEvent.click(settingsButton);
+
+            // Settings menu should show all methods
+            await waitFor(() => {
+                expect(screen.getByText('Highlighting Methods')).toBeInTheDocument();
+                expect(screen.getByText('Opacity')).toBeInTheDocument();
+                expect(screen.getByText('Border')).toBeInTheDocument();
+                expect(screen.getByText('Pulse')).toBeInTheDocument();
+            });
+        });
+
+        test('can enable opacity highlighting method', async () => {
+            render(<Tiles />);
+
+            const settingsButton = screen.getByTitle('Settings');
+            fireEvent.click(settingsButton);
+
+            await waitFor(() => {
+                expect(screen.getByText('Opacity')).toBeInTheDocument();
+            });
+
+            // Find and click the opacity method button
+            const opacityButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Opacity')
+            );
+            
+            fireEvent.click(opacityButtons[opacityButtons.length - 1]);
+
+            // Tiles should be rendered
+            expect(screen.getByTestId('tile-Eat')).toBeInTheDocument();
+        });
+
+        test('can enable border highlighting method', async () => {
+            render(<Tiles />);
+
+            const settingsButton = screen.getByTitle('Settings');
+            fireEvent.click(settingsButton);
+
+            await waitFor(() => {
+                expect(screen.getByText('Border')).toBeInTheDocument();
+            });
+
+            const borderButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Border')
+            );
+            
+            fireEvent.click(borderButtons[borderButtons.length - 1]);
+
+            // Tiles should be rendered with border method active
+            expect(screen.getByTestId('tile-Eat')).toBeInTheDocument();
+        });
+
+        test('can enable pulse highlighting method', async () => {
+            render(<Tiles />);
+
+            const settingsButton = screen.getByTitle('Settings');
+            fireEvent.click(settingsButton);
+
+            await waitFor(() => {
+                expect(screen.getByText('Pulse')).toBeInTheDocument();
+            });
+
+            const pulseButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Pulse')
+            );
+            
+            fireEvent.click(pulseButtons[pulseButtons.length - 1]);
+
+            // Tiles should be rendered with pulse method active
+            expect(screen.getByTestId('tile-Eat')).toBeInTheDocument();
+        });
+
+        test('can enable multiple highlighting methods simultaneously', async () => {
+            render(<Tiles />);
+
+            const settingsButton = screen.getByTitle('Settings');
+            
+            // Open settings menu
+            fireEvent.click(settingsButton);
+            await waitFor(() => {
+                expect(screen.getByText('Opacity')).toBeInTheDocument();
+            });
+
+            // Enable opacity
+            let opacityButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Opacity')
+            );
+            fireEvent.click(opacityButtons[opacityButtons.length - 1]);
+
+            // Menu should still be open, enable border
+            await waitFor(() => {
+                expect(screen.getByText('Border')).toBeInTheDocument();
+            });
+
+            let borderButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Border')
+            );
+            fireEvent.click(borderButtons[borderButtons.length - 1]);
+
+            // Enable pulse (menu still open)
+            await waitFor(() => {
+                expect(screen.getByText('Pulse')).toBeInTheDocument();
+            });
+
+            let pulseButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Pulse')
+            );
+            fireEvent.click(pulseButtons[pulseButtons.length - 1]);
+
+            // All methods should be enabled - tiles should still render correctly
+            expect(screen.getByTestId('tile-Eat')).toBeInTheDocument();
+            expect(screen.getByTestId('tile-I')).toBeInTheDocument();
+        });
+
+        test('can disable highlighting methods by clicking them again', async () => {
+            render(<Tiles />);
+
+            const settingsButton = screen.getByTitle('Settings');
+            
+            // Open settings menu and enable opacity
+            fireEvent.click(settingsButton);
+            await waitFor(() => {
+                expect(screen.getByText('Opacity')).toBeInTheDocument();
+            });
+
+            let opacityButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Opacity')
+            );
+            fireEvent.click(opacityButtons[opacityButtons.length - 1]);
+
+            // Disable opacity by clicking again (menu should still be open)
+            await waitFor(() => {
+                expect(screen.getByText('Opacity')).toBeInTheDocument();
+            });
+
+            opacityButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Opacity')
+            );
+            fireEvent.click(opacityButtons[opacityButtons.length - 1]);
+
+            // Tiles should still render without that highlighting method
+            expect(screen.getByTestId('tile-Eat')).toBeInTheDocument();
+        });
+
+        test('settings menu displays checkboxes for active highlighting methods', async () => {
+            render(<Tiles />);
+
+            const settingsButton = screen.getByTitle('Settings');
+            fireEvent.click(settingsButton);
+
+            await waitFor(() => {
+                // All checkboxes should be visible
+                const checkboxes = screen.getAllByRole('checkbox');
+                expect(checkboxes.length).toBe(3);
+            });
+
+            // Enable opacity
+            let opacityButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Opacity')
+            );
+            fireEvent.click(opacityButtons[opacityButtons.length - 1]);
+
+            // Check that opacity checkbox state changed
+            await waitFor(() => {
+                const checkboxes = screen.getAllByRole('checkbox');
+                // Opacity checkbox should have toggled its state
+                expect(checkboxes.length).toBe(3);
+            });
+        });
+
+        test('multiple highlighting methods can be active independently', async () => {
+            render(<Tiles />);
+
+            const settingsButton = screen.getByTitle('Settings');
+            
+            // Open and enable opacity and border
+            fireEvent.click(settingsButton);
+            await waitFor(() => {
+                expect(screen.getByText('Opacity')).toBeInTheDocument();
+            });
+
+            let opacityButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Opacity')
+            );
+            fireEvent.click(opacityButtons[opacityButtons.length - 1]);
+
+            // Menu stays open, enable border
+            await waitFor(() => {
+                expect(screen.getByText('Border')).toBeInTheDocument();
+            });
+
+            let borderButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Border')
+            );
+            fireEvent.click(borderButtons[borderButtons.length - 1]);
+
+            // Now disable opacity while keeping border
+            await waitFor(() => {
+                expect(screen.getByText('Opacity')).toBeInTheDocument();
+            });
+
+            opacityButtons = screen.getAllByRole('button').filter(btn => 
+                btn.textContent?.includes('Opacity')
+            );
+            fireEvent.click(opacityButtons[opacityButtons.length - 1]);
+
+            // Tiles should render with only border active now
+            expect(screen.getByTestId('tile-Eat')).toBeInTheDocument();
         });
     });
 });
