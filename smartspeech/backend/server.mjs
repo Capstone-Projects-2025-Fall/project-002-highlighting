@@ -25,6 +25,8 @@ globalThis.File = File;
 // Default to the previous Whisper model unless overridden for constrained hosts
 const WHISPER_MODEL_ID = process.env.WHISPER_MODEL_ID || "Xenova/whisper-base.en";
 const USE_FAST_TILE_PREDICTION = (process.env.FAST_TILE_PREDICTION || "true").toLowerCase() === "true";
+const TILE_PREDICTION_CACHE_TTL = 20_000; // ms
+const TILE_PREDICTION_CACHE_MAX = 32;
 
 /**
  * Express application instance
@@ -401,6 +403,46 @@ function predictNextTilesFast(contextLines = '', pressedTiles = [], topN = 10) {
 let __localEmbeddingPipeline = null;
 let __labelList = wordsData?.tiles || [];
 let __labelEmbeddingsCache = null; // Cache for label embeddings
+const __tilePredictionCache = new Map();
+const PREDICTION_EXCLUDED_WORDS = new Set([
+  'he','she','it','they','we','you','him','her','his','hers','theirs','mine','yours','ours',
+  'and','or','but','because','if','when','where','what','who','how','why',
+  'at','by','for','from','in','of','on','to','with','up','down','over','under','through',
+  'am','is','are','was','were','be','been','being','have','has','had','do','does','did',
+  'will','would','could','should','may','might','can','must',
+  'again','also','still','very','really','maybe','definitely','almost','even','just','only',
+  'bottom','top','side','middle','front','back','left','right','center',
+  'ai','animal','chair','bridge','bring','thing','stuff','place','way','time','day','night','year','month','week','hour','minute','second',
+  'about','around','somewhere','anywhere','everywhere','nowhere','awesome','cool','nice','great','wonderful','amazing','fantastic'
+]);
+
+function getPredictLabels() {
+  return (__labelList || []).filter(w => !PREDICTION_EXCLUDED_WORDS.has(String(w || '').toLowerCase()));
+}
+
+function makePredictionCacheKey(contextLines, pressedTiles, topN) {
+  const ctx = (contextLines || '').trim().toLowerCase();
+  const tiles = Array.isArray(pressedTiles) ? pressedTiles.map(t => String(t || '').trim().toLowerCase()).join('|') : '';
+  return `${topN}::${ctx}::${tiles}`;
+}
+
+function getCachedPrediction(key) {
+  const entry = __tilePredictionCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > TILE_PREDICTION_CACHE_TTL) {
+    __tilePredictionCache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function setCachedPrediction(key, value) {
+  __tilePredictionCache.set(key, { value, timestamp: Date.now() });
+  while (__tilePredictionCache.size > TILE_PREDICTION_CACHE_MAX) {
+    const oldestKey = __tilePredictionCache.keys().next().value;
+    __tilePredictionCache.delete(oldestKey);
+  }
+}
 
 /**
  * Local LLM pipeline for text generation
@@ -692,6 +734,19 @@ async function embedText(text) {
   return meanPoolAndNormalize(embeddingArray);
 }
 
+async function ensureLabelEmbeddings(labels) {
+  if (__labelEmbeddingsCache && __labelEmbeddingsCache.length === labels.length) {
+    return;
+  }
+  console.log(`Computing embeddings for ${labels.length} labels...`);
+  const embeddings = [];
+  for (const label of labels) {
+    embeddings.push(await embedText(label));
+  }
+  __labelEmbeddingsCache = embeddings;
+  console.log('Label embeddings cached successfully.');
+}
+
 function cosineSimilarity(vecA, vecB) {
   if (!vecA || !vecB || vecA.length !== vecB.length) {
     console.warn(`Cosine similarity: mismatched dimensions. vecA: ${vecA?.length}, vecB: ${vecB?.length}`);
@@ -761,32 +816,16 @@ async function getLocalLLMPipeline() {
  * @async
  */
 async function predictNextTilesLocalLLM(contextLines = '', pressedTiles = [], topN = 10) {
-  const excluded = new Set([
-    'he','she','it','they','we','you','him','her','his','hers','theirs','mine','yours','ours',
-    'and','or','but','because','if','when','where','what','who','how','why',
-    'at','by','for','from','in','of','on','to','with','up','down','over','under','through',
-    'am','is','are','was','were','be','been','being','have','has','had','do','does','did',
-    'will','would','could','should','may','might','can','must',
-    'again','also','still','very','really','maybe','definitely','almost','even','just','only',
-    'bottom','top','side','middle','front','back','left','right','center',
-    'ai','animal','chair','bridge','bring','thing','stuff','place','way','time','day','night','year','month','week','hour','minute','second',
-    'about','around','somewhere','anywhere','everywhere','nowhere','awesome','cool','nice','great','wonderful','amazing','fantastic'
-  ]);
-
-  const labels = __labelList.filter(w => !excluded.has(String(w).toLowerCase()));
+  const labels = getPredictLabels();
   if (!labels.length) return [];
 
-  // Ensure embeddings are cached
-  if (!__labelEmbeddingsCache || __labelEmbeddingsCache.length !== labels.length) {
-    console.log(`Computing embeddings for ${labels.length} labels (first time only)...`);
-    __labelEmbeddingsCache = [];
-    for (let i = 0; i < labels.length; i++) {
-      const label = labels[i];
-      const emb = await embedText(label);
-      __labelEmbeddingsCache.push(emb);
-    }
-    console.log('Label embeddings cached successfully.');
+  const cacheKey = makePredictionCacheKey(contextLines, pressedTiles, topN);
+  const cached = getCachedPrediction(cacheKey);
+  if (cached) {
+    return cached.slice(0, topN);
   }
+
+  await ensureLabelEmbeddings(labels);
 
   // Create combined context from transcript and/or pressed tiles
   let combinedContext = '';
@@ -895,21 +934,27 @@ Return words only, one per line:
       })
       .slice(0, topN); // Limit to topN
 
+    let finalWords;
     // If LLM didn't generate enough valid words, fall back to vector search results
     if (extractedWords.length < topN) {
       const vectorSearchResults = topIndices.slice(0, topN).map(i => labels[i]);
       // Combine and deduplicate
-      const combined = [...extractedWords, ...vectorSearchResults.filter(w => !extractedWords.includes(w.toLowerCase()))];
-      return combined.slice(0, topN);
+      finalWords = [...extractedWords, ...vectorSearchResults.filter(w => !extractedWords.includes(w.toLowerCase()))]
+        .slice(0, topN);
+    } else {
+      finalWords = extractedWords;
     }
 
-    return extractedWords;
+    setCachedPrediction(cacheKey, finalWords);
+    return finalWords;
 
   } catch (error) {
     console.error('Local LLM prediction error:', error);
     // Fallback to pure vector search if LLM fails
     const indices = topNIndices(sims, Math.min(topN, labels.length));
-    return indices.map(i => labels[i]);
+    const fallback = indices.map(i => labels[i]);
+    setCachedPrediction(cacheKey, fallback);
+    return fallback;
   }
 }
 
@@ -1135,33 +1180,44 @@ async function preloadAllModels() {
   const startTime = Date.now();
   
   try {
-    // Load all three models in parallel for faster startup
+    // Load core models in parallel for faster startup
     const loadPromises = [
       (async () => {
-        console.log('[1/3] Loading Whisper transcription model...');
+        console.log('[1/4] Loading Whisper transcription model...');
         const modelStart = Date.now();
         await getLocalWhisperPipeline();
         const modelTime = ((Date.now() - modelStart) / 1000).toFixed(2);
-        console.log(`[1/3] ✓ Whisper model loaded (${modelTime}s)`);
+        console.log(`[1/4] Whisper model loaded (${modelTime}s)`);
       })(),
       (async () => {
-        console.log('[2/3] Loading DistilGPT2 LLM model...');
+        console.log('[2/4] Loading DistilGPT2 LLM model...');
         const modelStart = Date.now();
         await getLocalLLMPipeline();
         const modelTime = ((Date.now() - modelStart) / 1000).toFixed(2);
-        console.log(`[2/3] ✓ LLM model loaded (${modelTime}s)`);
+        console.log(`[2/4] LLM model loaded (${modelTime}s)`);
       })(),
       (async () => {
-        console.log('[3/3] Loading all-MiniLM-L6-v2 embeddings model...');
+        console.log('[3/4] Loading all-MiniLM-L6-v2 embeddings model...');
         const modelStart = Date.now();
         await getLocalEmbeddingPipeline();
         const modelTime = ((Date.now() - modelStart) / 1000).toFixed(2);
-        console.log(`[3/3] ✓ Embeddings model loaded (${modelTime}s)`);
+        console.log(`[3/4] Embeddings model loaded (${modelTime}s)`);
       })()
     ];
     
     // Wait for all models to load
     await Promise.all(loadPromises);
+
+    // Precompute label embeddings once so predictions stay fast
+    try {
+      console.log('[4/4] Precomputing label embeddings...');
+      const labelStart = Date.now();
+      await ensureLabelEmbeddings(getPredictLabels());
+      const labelTime = ((Date.now() - labelStart) / 1000).toFixed(2);
+      console.log(`[4/4] Label embeddings cached (${labelTime}s)`);
+    } catch (embedErr) {
+      console.error('Precomputing label embeddings failed; will compute on-demand:', embedErr);
+    }
     
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log('\n========================================');
