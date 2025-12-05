@@ -29,15 +29,13 @@ For the speech recognition to apply the highlighting to specific words, we will 
 The use of AAC devices is imperative for non-verbal communication and autism spectrum children. This application aims to improve the time efficiency of communication this way as in most AAC devices now still are lacking in how fast conversations are expected to be. The project hopes to solve this problem of conversations taking longer than expected by using context awareness methods like speech recognition and highlighting.
 
 ## How to Run:
-**Local**
+
 1. Clone this repo.
 2. CD into smartspeech/backend and create a .env file 
 3. In the .env file add in : 
 ```shell 
-OPENAI_API_KEY=sk-proj-iOpmSXZlUEjyICPAS6Hmef5REO9vKnIBTzrasfjLpXoMA0fvcWLkJzieVWILoFMsZMQqlPyTrOT3IBbkFJOoO6pekfDFvIV58ySsrgSsZX0vPsQKGW6Zptqya1aP34ykSU6d8qafugpX7Eyj56ZG5QhPcA
-``` 
-NOTE: This specific key is for testing purposes, actual key is protected
-
+OPENAI_API_KEY = yourownkey
+```
 4. Run the following commands in smartspeech/backend:
 ```shell 
 npm install
@@ -53,8 +51,6 @@ npm run dev
 
 6. Go to http://localhost:3000 to view the website
 
-**Deployed version**
-1. Go to https://aachighlighting.vercel.app/
 
 ## Required Resources
 
@@ -85,3 +81,4 @@ npm run dev
 [Sley Chery](https://github.com/SleyChery) •
 
 </div>
+
