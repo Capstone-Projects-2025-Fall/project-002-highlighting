@@ -353,9 +353,11 @@ export default function Tiles() {
         };
 
         // Return tile
+        // Include predictedTiles in key to force animation reset when new tiles are suggested
+        const tileKey = `${key}-${predictedTiles.join(',')}-${activeHighlights.has('pulse') ? 'pulse' : ''}`;
 
         return (
-            <div key={key} onClick={handleClick}>
+            <div key={tileKey} onClick={handleClick}>
                 {tile}
             </div>
         );
