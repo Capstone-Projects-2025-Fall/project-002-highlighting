@@ -22,18 +22,6 @@ dotenv.config();
 import { File } from "node:buffer";
 globalThis.File = File;
 
-// Default to tiny model to stay under 2 GB; override with WHISPER_MODEL_ID for larger models when resources allow.
-const WHISPER_MODEL_ID = process.env.WHISPER_MODEL_ID || "Xenova/whisper-tiny.en";
-
-// Hard default to the lightweight prediction path; LOW_MEMORY_MODE forces fast-only regardless of env overrides.
-const LOW_MEMORY_MODE = (process.env.LOW_MEMORY_MODE || "true").toLowerCase() === "true";
-const USE_FAST_TILE_PREDICTION = LOW_MEMORY_MODE
-  ? true
-  : (process.env.FAST_TILE_PREDICTION || "true").toLowerCase() === "true";
-
-// Memory guard to prevent OOM restarts. Increase via MAX_RSS_BYTES if you have more headroom.
-const MAX_RSS_BYTES = Number(process.env.MAX_RSS_BYTES || 1.5 * 1024 * 1024 * 1024); // 1.5 GB guard to prevent OOM
-
 /**
  * Express application instance
  * 
@@ -197,24 +185,12 @@ app.post('/api/nextTilePred', async (req, res) => {
       });
     }
 
-    // Use Local LLM with vector search unless in fast/low-memory mode
+    // Use Local LLM with vector search
     const predictionMode = contextLines.trim() && validPressedTiles.length > 0 
       ? 'transcript and tiles'
       : contextLines.trim() 
         ? 'transcript only'
         : 'tiles only';
-    
-    if (USE_FAST_TILE_PREDICTION || LOW_MEMORY_MODE) {
-      console.log(`[Prediction] Using fast heuristic mode (mode: ${predictionMode})`);
-      const predicted = predictNextTilesFast(contextLines, validPressedTiles, 10);
-      return res.json({
-        predictedTiles: predicted,
-        status: 'success',
-        context: contextLines || '',
-        pressedTiles: validPressedTiles
-      });
-    }
-
     console.log(`[Prediction] Using Local LLM with vector search (mode: ${predictionMode})`);
     
     const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 10);
@@ -713,9 +689,6 @@ function topNIndices(arr, n) {
  * @async
  */
 async function getLocalLLMPipeline() {
-  if (LOW_MEMORY_MODE) {
-    throw new Error('LLM disabled in LOW_MEMORY_MODE');
-  }
   if (!__localLLMPipeline) {
     // GPT-2 small model - fast and lightweight for local inference
     // Alternative models: 'Xenova/gpt2', 'Xenova/distilgpt2' (even smaller)
@@ -743,10 +716,6 @@ async function getLocalLLMPipeline() {
  * @async
  */
 async function predictNextTilesLocalLLM(contextLines = '', pressedTiles = [], topN = 10) {
-  if (LOW_MEMORY_MODE) {
-    // Shouldn't be called when LOW_MEMORY_MODE is true, but guard anyway
-    return predictNextTilesFast(contextLines, pressedTiles, topN);
-  }
   const excluded = new Set([
     'he','she','it','they','we','you','him','her','his','hers','theirs','mine','yours','ours',
     'and','or','but','because','if','when','where','what','who','how','why',
@@ -923,9 +892,7 @@ app.post('/api/nextTilePredLocal', async (req, res) => {
       });
     }
 
-    const predicted = (USE_FAST_TILE_PREDICTION || LOW_MEMORY_MODE)
-      ? predictNextTilesFast(contextLines, validPressedTiles, topN)
-      : await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
+    const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
 
     return res.json({ 
       predictedTiles: predicted, 
@@ -986,8 +953,7 @@ let shutdownTimeout = null;
  * @type {number}
  * @description Time to wait for reconnection before assuming website is closed (5 seconds)
  */
-// Allow idle time of 1 hour before shutting down
-const SHUTDOWN_DELAY = 60 * 60 * 1000;
+const SHUTDOWN_DELAY = 5000;
 
 /**
  * Shutdown the frontend Next.js dev server
@@ -1173,9 +1139,8 @@ async function startServer() {
     await preloadAllModels();
     
     // Start server after models are loaded
-    const PORT = process.env.PORT || 5000; // Render injects PORT for web services
-    server.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+    server.listen(5000, () => {
+      console.log("Server running on http://localhost:5000");
       console.log("Temp directory:", tempDir);
       console.log("[Configuration] Transcription Model: Local Whisper");
       console.log("[Configuration] Prediction Model: Local LLM with vector search");
@@ -1289,7 +1254,7 @@ io.on("connection", (socket) => {
    * @type {number}
    * @description Defines how frequently the audio buffer is processed
    */
-  const CHUNK_DURATION = 1500; // shorter cadence to reduce buffer growth and latency
+  const CHUNK_DURATION = 2000; // 2 seconds - process more frequently to catch words sooner 
 
   /**
    * Initializes the FFmpeg process for audio conversion
@@ -1303,11 +1268,6 @@ io.on("connection", (socket) => {
    * @throws {Error} If FFmpeg is not installed or encounters an error during initialization
    */
   const initializeFFmpeg = () => {
-    // If an existing ffmpeg instance is running, don't spawn another
-    if (ffmpeg && !ffmpeg.killed && ffmpeg.exitCode === null) {
-      return;
-    }
-
     ffmpeg = spawn(ffmpegPath, [
       "-f", "webm", // input format : webm
       "-i", "pipe:0", // input goes into stdin
@@ -1356,9 +1316,6 @@ io.on("connection", (socket) => {
      */
     ffmpeg.on("close", (code) => {
       console.log("ffmpeg closed with code", code);
-      // Auto-restart FFmpeg so the next incoming chunk has a live process
-      // Listeners (stdin/stdout/error) are reattached on each init
-      initializeFFmpeg();
     });
 
     /**
@@ -1372,39 +1329,33 @@ io.on("connection", (socket) => {
     ffmpeg.on("error", (err) => {
       console.error("FFmpeg error:", err);
     });
-
-    /**
-     * FFmpeg stdout data event handler
-     * 
-     * @event stdout.data
-     * @description Collects converted PCM audio data from FFmpeg
-     * 
-     * @param {Buffer} chunk - A chunk of PCM audio data
-     * @postcondition Audio data is appended to the audioBuffer
-    */
-    ffmpeg.stdout.on("data", (chunk) => {
-      audioBuffer = Buffer.concat([audioBuffer, chunk]);
-      
-      // Keep buffer bounded so slow inference doesn't explode CPU/RAM on small hosts
-      const MAX_BUFFER_BYTES = 16000 * 2 * 6; // ~6 seconds of mono 16kHz audio
-      if (audioBuffer.length > MAX_BUFFER_BYTES) {
-        audioBuffer = audioBuffer.slice(audioBuffer.length - MAX_BUFFER_BYTES);
-      }
-      
-      // Trigger immediate processing if we have enough audio and not already processing
-      // This provides lower latency and better word capture
-      const preferredChunkSize = 64000; // ~2 seconds
-      if (!isProcessing && audioBuffer.length >= preferredChunkSize) {
-        // Process immediately instead of waiting for interval
-        processAudio().catch(err => {
-          console.error("Error in immediate audio processing:", err);
-        });
-      }
-    });
   };
   
   // Initialize ffmpeg process 
   initializeFFmpeg();
+
+  /**
+   * FFmpeg stdout data event handler
+   * 
+   * @event stdout.data
+   * @description Collects converted PCM audio data from FFmpeg
+   * 
+   * @param {Buffer} chunk - A chunk of PCM audio data
+   * @postcondition Audio data is appended to the audioBuffer
+   */
+  ffmpeg.stdout.on("data", (chunk) => {
+    audioBuffer = Buffer.concat([audioBuffer, chunk]);
+    
+    // Trigger immediate processing if we have enough audio and not already processing
+    // This provides lower latency and better word capture
+    const preferredChunkSize = 128000; // 4 seconds
+    if (!isProcessing && audioBuffer.length >= preferredChunkSize) {
+      // Process immediately instead of waiting for interval
+      processAudio().catch(err => {
+        console.error("Error in immediate audio processing:", err);
+      });
+    }
+  });
 
   /**
    * Creates a WAV file from raw PCM data
@@ -1527,24 +1478,16 @@ io.on("connection", (socket) => {
    * @async
    */
   const processAudio = async () => {
-    // Bail early if process memory is already high to avoid OOM restarts
-    const rss = process.memoryUsage().rss;
-    if (rss > MAX_RSS_BYTES) {
-      console.warn(`[Memory] RSS ${Math.round(rss / 1024 / 1024)} MB exceeds guard ${Math.round(MAX_RSS_BYTES / 1024 / 1024)} MB. Skipping audio processing and clearing buffer.`);
-      audioBuffer = Buffer.alloc(0);
-      return;
-    }
-
     // Skip processing if already busy or audio buffer is too small
     // Need at least 1.5 seconds for better transcription quality
     const minAudioSize = 24000; // 1.5 seconds = 16000 samples/sec * 2 bytes/sample * 1.5 sec
     if (isProcessing || audioBuffer.length < minAudioSize) {
       silenceCounter++;
       // Only reset buffer if we've had many silent attempts AND buffer is getting very large
-      if (silenceCounter > 20 && audioBuffer.length > 192000) { // > 6 seconds of audio
+      if (silenceCounter > 20 && audioBuffer.length > 480000) { // > 15 seconds of audio
         // Reset buffer if too much silence to prevent memory buildup
-        // But keep the last ~2 seconds in case there's valid audio
-        const keepSize = 64000; // Keep ~2 seconds
+        // But keep the last 2 seconds in case there's valid audio
+        const keepSize = 64000; // Keep 2 seconds
         audioBuffer = audioBuffer.slice(-keepSize);
         silenceCounter = 0;
       }
@@ -1556,11 +1499,11 @@ io.on("connection", (socket) => {
     
     // Take a chunk of audio - larger chunks provide better context for Whisper
     // 4 seconds = 128000 bytes - better quality and more context for accurate transcription
-    const preferredChunkSize = 64000; // ~2 seconds = 16000 samples/sec * 2 bytes/sample * 2 sec
+    const preferredChunkSize = 128000; // 4 seconds = 16000 samples/sec * 2 bytes/sample * 4 sec
     const chunkSize = Math.min(audioBuffer.length, preferredChunkSize);
     
     // Overlap to catch words at boundaries - 1 second overlap helps ensure no words are missed
-    const overlapSize = 16000; // 0.5 second overlap - still captures boundary words, less memory
+    const overlapSize = 32000; // 1 second overlap - ensures words spanning boundaries are captured
     const pcmChunk = audioBuffer.slice(0, chunkSize);
     
     // DON'T remove audio from buffer yet - wait until we know transcription succeeded
@@ -1713,10 +1656,6 @@ io.on("connection", (socket) => {
    */
   socket.on("audio-chunk", (data) => {
     try {
-      // Ensure ffmpeg is alive before writing
-      if (!ffmpeg || ffmpeg.killed || ffmpeg.exitCode !== null) {
-        initializeFFmpeg();
-      }
       if (ffmpeg && ffmpeg.stdin && ffmpeg.stdin.writable) {
         ffmpeg.stdin.write(Buffer.from(data), (err) => {
           // Handle write errors (EPIPE and EOF are expected when FFmpeg closes)
