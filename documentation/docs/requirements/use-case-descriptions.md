@@ -11,7 +11,7 @@ sidebar_position: 5
 3. Recording will show a transcription of what was said and can be replayed
 
 ## Use Case 2 - Sentence Formation
-<i> Speech-impaired user wants to communicate with a user via AAC Board<i>
+<i> Speech-impaired user wants to communicate with a user via AAC Board </i>
 1. User will download and open the app
 2. User will press on tiles to form sentence with highlighted tiles changing upon each tile pressed
 3. User will click on audio output to translate text to speech
