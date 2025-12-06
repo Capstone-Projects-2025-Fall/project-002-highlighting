@@ -25,6 +25,7 @@ sidebar_position: 5
 4. Child's mom could ask what the child wants for dinner with the board actively listening
 5. Board will highlight several food word options to choose from
 6. User chooses best option according to their preference
+7. User plays tiles section out loud for parent to hear and acknowledge
 
 ## Use Case 4 - Toggling microphone when not in a conversation
 <i>As a user, it is important that I can toggle on and off the microphone when I am not in a conversation. </i>

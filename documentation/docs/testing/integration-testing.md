@@ -32,6 +32,7 @@ sidebar_position: 2
 4. Parent/person in conversation can ask what you want for dinner and the board picks this up
 5. Board will highlight relevant food tiles to choose from
 6. Choose highlighted tile that best fits preference for response.
+7. Play tiles selected outloud so parent or person in conversation can hear response
 
 ## Use Case 4 - Toggling microphone when not in a conversation
 <i>As a user, it is important that I can toggle on and off the microphone when I am not in a conversation. </i>
