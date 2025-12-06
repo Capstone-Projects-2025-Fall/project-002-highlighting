@@ -1,42 +1,57 @@
 ---
 sidebar_position: 5
 ---
-## Use Case 1 - AAC Board for communication
-<img width="1289" height="983" alt="usecase1" src="https://github.com/user-attachments/assets/9d213e1d-c4c0-4a95-a9ce-6af195ec9739" />
 
-## Use Case 2 - AAC Board listens to its environment
-<img width="1142" height="660" alt="usecase2" src="https://github.com/user-attachments/assets/c7bc8962-aa89-468c-aea0-ac88d2051fb9" />
+## Use Case 1 - Audio transcription for hearing loss
+<img width="706" height="583" alt="Usecase1SD" src="https://github.com/user-attachments/assets/9a7ef916-9626-4f14-abf2-fac6d2d0df2b" />
 
-
-## Use Case 3 - AAC Board listens with low latecy
-<img width="1362" height="730" alt="usecase3" src="https://github.com/user-attachments/assets/7205530a-d777-4ef5-9897-36f9f812a943" />
+**Figure 1.** Use case 1 Sequence Diagram
 
 
-## Use Case 4 - AAC board keeps pictures in the same location to not confuse user
-<img width="1282" height="878" alt="usecase4" src="https://github.com/user-attachments/assets/571ccf1e-23a9-4198-885d-cfcaf4dd3d58" />
+<i> User wants to communicate with a user that is hearing impaired </i>
 
-## Use Case 5 - Predicting answers 
-<img width="1327" height="469" alt="usecase5" src="https://github.com/user-attachments/assets/8b7e97dc-bf66-46cb-8150-a7cc10b7ca15" />
-
-
-## Use Case 6 - Use context to highlight suggestions
-<img width="1365" height="757" alt="usecase6" src="https://github.com/user-attachments/assets/6fee41fc-c261-4b79-a8c3-bc88a408a485" />
+1. User will download and open the app
+2. User will toggle the microphone on and speak into the recording
+3. Recording will show a transcription of what was said and can be replayed
 
 
 
+## Use Case 2 - Sentence Formation
+<img width="821" height="493" alt="Usecase2SD" src="https://github.com/user-attachments/assets/0e335715-eb59-4bfb-b247-db4cba7139bb" />
 
-## Use Case 7 - Contextualized contact based predicting
-<img width="3840" height="2252" alt="usecase7" src="https://github.com/user-attachments/assets/8cedc698-79ec-4308-9cf5-e483363c7935" />
+
+**Figure 2.** Use case 2 Sequence Diagram
+
+<i> Speech-impaired user wants to communicate with a user via AAC Board </i>
+
+1. User will download and open the app
+2. User will press on tiles to form sentence with highlighted tiles changing upon each tile pressed
+3. User will click on audio output to translate text to speech
+4. AAC Board will relay text to speech
 
 
-## Use Case 8 - Toggling microphone when not in a conversation
+## Use Case 3 - Contextual based prediction 
+**<img width="835" height="554" alt="Usecase3SD" src="https://github.com/user-attachments/assets/9693f02d-30eb-48f4-9a60-8ffd30c7d5f7" />
+
+Figure 3.** Use case 3 Sequence Diagram
+
+<i>As a user, it is important that the device can display options to me based on what is being spoken by the other person in conversation </i>
+
+1. A parent asks their child a question
+2. AAC device would pick up the question through audio input (speech to text)
+3. Displays suggestive options to form a sentence that would function as a relevant response. 
+4. Child's mom could ask what the child wants for dinner with the board actively listening
+5. Board will highlight several food word options to choose from
+6. User chooses best option according to their preference
+7. User plays tiles section out loud for parent to hear and acknowledge
+
+## Use Case 4 - Toggling microphone when not in a conversation
 <img width="3730" height="3840" alt="usecase8" src="https://github.com/user-attachments/assets/c97b3d59-34a5-44d9-ac0a-e9e05b762daf" />
+**Figure 4.** Use case 4 Sequence Diagram
 
 
+<i>As a user, it is important that I can toggle on and off the microphone when I am not in a conversation. </i>
 
-## Use Case 9 - Highlighting specific catagories with context from question
-<img width="1385" height="717" alt="usecase9" src="https://github.com/user-attachments/assets/7d7ba828-5072-4ae9-9f0d-95ac26f7c419" />
+1. When the user first launches the application the microphone will be on by default for fast conversation engagement
+2. If the user wishes to toggle off their microphone for any reason they can hit the button and the icon will change indicating the microphone is off
 
-
-## Use Case 10 - Highlighting answers based on location
-<img width="1464" height="920" alt="usecase10" src="https://github.com/user-attachments/assets/df1d7ec6-2dae-4fcf-99e2-c00705d77e93" />

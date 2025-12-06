@@ -1,5 +1,5 @@
 # Coverage-report
-HTML report rewritten in MD for now, will fix down the line with reports for every test  in HTML
+
 ## Summary
 
 | Metric      | Coverage | Covered / Total |
