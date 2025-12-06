@@ -1,6 +1,53 @@
 ---
 sidebar_position: 2
 ---
+# Integration tests
+
+
+## Use Case 1: AAC Board for Communication
+
+- Download mock app and initialize
+
+- Opening the app and connect to Wi-Fi
+
+- Provide a mocked question input
+
+- Select a response using the AAC Board
+
+- Verify that the response is played back through audio
+
+
+## Use Case 2: AAC Board Listens to Its Environment 
+
+- Open the app
+
+- Give access to a mocked microphone
+
+- Simulate speech input through the microphone
+
+- Verify that the input is captured into file and transformed with context prediction
+
+- Verify if suggestions are compatible
+
+
+## Use Case 4: AAC Board Keeps Pictures in the Same Location 
+
+- Open the app and enable the microphone
+
+- Simulate a conversation input and highlight answers
+
+- Select an answer and play it out loud
+
+- Simulate a new conversation input
+
+- Verify that all highlighted and non-highlighted words remain in the same location
+
+
+## Use Case 5: Predicting Answers – Suggest Relevant Responses
+
+- Provide a mocked question input
+
+- Simulate audio-to-text conversion using a mocked speech-to-text module
 
 - Display suggested options for sentence formation
 
@@ -24,4 +71,3 @@ sidebar_position: 2
 ## Use Case 9 - Highlighting specific categories with context from question
 - Use mock input such as “Do you want to play outside” 
 - Expected results to be highlighted should be “yes, no, or maybe”
-
