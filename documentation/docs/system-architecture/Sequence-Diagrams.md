@@ -3,6 +3,8 @@ sidebar_position: 5
 ---
 
 ## Use Case 1 - Audio transcription for hearing loss
+<img width="706" height="583" alt="Usecase1SD" src="https://github.com/user-attachments/assets/9a7ef916-9626-4f14-abf2-fac6d2d0df2b" />
+
 **Figure 1.** Use case 1 Sequence Diagram
 
 
@@ -15,6 +17,9 @@ sidebar_position: 5
 
 
 ## Use Case 2 - Sentence Formation
+<img width="821" height="493" alt="Usecase2SD" src="https://github.com/user-attachments/assets/0e335715-eb59-4bfb-b247-db4cba7139bb" />
+
+
 **Figure 2.** Use case 2 Sequence Diagram
 
 <i> Speech-impaired user wants to communicate with a user via AAC Board </i>
@@ -26,7 +31,9 @@ sidebar_position: 5
 
 
 ## Use Case 3 - Contextual based prediction 
-**Figure 3.** Use case 3 Sequence Diagram
+**<img width="835" height="554" alt="Usecase3SD" src="https://github.com/user-attachments/assets/9693f02d-30eb-48f4-9a60-8ffd30c7d5f7" />
+
+Figure 3.** Use case 3 Sequence Diagram
 
 <i>As a user, it is important that the device can display options to me based on what is being spoken by the other person in conversation </i>
 
