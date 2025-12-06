@@ -2,6 +2,7 @@
 sidebar_position: 5
 ---
 <img width="829" height="667" alt="classdiagram" src="https://github.com/user-attachments/assets/9525e355-a929-4195-8dda-c7b89714e957" />
+**Figure 1.** High level view class diagram
 
 # Class Diagram
 
@@ -35,7 +36,7 @@ sidebar_position: 5
 
 
 
-## Database Layer (Future Integration)
+## Database Layer 
 ### Responsibilities:
 
 

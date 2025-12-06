@@ -58,7 +58,7 @@ Sends back transcription and pictographic classifications to the client.
 **Output**: List of pictographs + context-sensitive highlighting data for client.
 
 
-## Database Layer (Future Integration)
+## Database Layer 
 ### Responsibilities:
 Stores user transcripts, audio metadata, and classification outputs.
 Maintains logs for repeated use and system improvement.
