@@ -4,6 +4,7 @@ import styles from "./AudioTranscription.module.css";
 import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
 import { useUtteredTiles } from "@/react-state-management/providers/useUtteredTiles";
 import { useRecordingControl } from "@/react-state-management/providers/RecordingControlProvider";
+import { getBackendUrl } from "@/util/backend-url";
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -15,6 +16,7 @@ import { useRecordingControl } from "@/react-state-management/providers/Recordin
  * @returns {JSX.Element} A React component with recording controls and transcript display
  */
 const AudioTranscription = () => {
+    const backendBaseUrl = getBackendUrl();
 
     /**
      * WebSocket connection to the transcription server
@@ -457,7 +459,7 @@ const AudioTranscription = () => {
         // Don't clear them here - only update when new data arrives
 
         try {
-            const response = await fetch('http://localhost:5000/api/nextTilePred', {
+            const response = await fetch(`${backendBaseUrl}/api/nextTilePred`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -490,11 +492,11 @@ const AudioTranscription = () => {
         } finally {
             setIsPredicting(false);
         }
-    }, [transcript, utteredTiles, isActive]);
+    }, [transcript, utteredTiles, isActive, backendBaseUrl]);
 
     React.useEffect(() => {
         // establish socket once
-        socketRef.current = io("http://localhost:5000");
+        socketRef.current = io(backendBaseUrl);
         
         // Add connection logging
         socketRef.current.on("connect", () => {
@@ -531,7 +533,7 @@ const AudioTranscription = () => {
                 clearInterval(periodicPredictionIntervalRef.current);
             }
         };
-    }, [startRecording]);
+    }, [startRecording, backendBaseUrl]);
 
     /**
      * Effect to auto-start recording when both MediaRecorder and Socket are ready
@@ -695,7 +697,7 @@ const AudioTranscription = () => {
                 console.log(`[Periodic Prediction] Starting prediction at ${new Date().toLocaleTimeString()}`);
 
                 // Call the prediction API
-                fetch('http://localhost:5000/api/nextTilePred', {
+                fetch(`${backendBaseUrl}/api/nextTilePred`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -732,7 +734,7 @@ const AudioTranscription = () => {
                 periodicPredictionIntervalRef.current = null;
             }
         };
-    }, [isActive]); // Re-run when isActive changes
+    }, [isActive, backendBaseUrl]); // Re-run when isActive changes
 
     /**
      * Renders the AudioTranscription component
