@@ -10,40 +10,38 @@
 
 ## Keywords
 
-Section #, as well as any words that quickly give your peers insights into the application like programming language, development platform, type of application, etc.
-
+002, real-time, AAC, highlighting, context
 ## Project Abstract
 
-This document proposes an application that aims to replicate the intelligent text prediction found within smartphones into an AAC device. The application will use methods of highlighting to direct the attention of the user of the AAC device. This includes primarily the use of different levels of opacity to draw more attention to specific words that are relevant to the context of conversation. The application will allow the user to use the device's microphone to listen to conversations and highlight relevant words to choose from that best fit the context.
+This project aims to enhance an existing Augmentative and Alternative Communication (AAC) application with the integration of intelligent text prediction. The extension will use methods of highlighting to direct the attention of the user of the AAC device. This includes primarily the use of different levels of opacity to draw more attention to specific words that are relevant to the context of conversation. The extension will capture audio input through a microphone and use an intelligent contextual model to analyze and suggest words.
 
-The goal of this application is to give the user a more efficient time to engage in conversation with others using an AAC device, while not limiting or overloading them with word options to choose from.
-
+The goal of this application is to improve the efficiency and communication for AAC users by reducing the time required to create responses during conversations by offering them suggested words based on contextual analysis.
 ## Conceptual Design
 
-The application will be built upon a previous capstone project that made an AAC board, Smartspeech will provide the basis for this project for us to build on it to incorporate the highlighting portion into it. The application will mainly incorporate Typescript and Python for the coding languages as the board was made primarily with them.
+This project builds upon a previous capstone project, SmartSpeech, which developed an AAC board for the use of non-verbal communication. This project will extend SmartSpeech and add the functionality by integrating audio input and a contextual highlighting system that will emphasize suggested word options based on the conversation.
 
-For the speech recognition to apply the highlighting to specific words, we will be using Whisper AI which is an automatic speech recognition system model. The frontend will be using Vercel to host on a browser for easy and convenient access to the board and its highlighting features.
+This extension will be built with TypeScript and Python to maintain compatibility with SmartSpeech's code. Whisper AI, an automatic speech recognition (ASR) model will be incorporated to take care of speech-to-text conversion. This text will be analyzed by an intelligent contextual model and suggest words based on relevant words. Words with higher suggestion scores will have tiles that are made darker to clarify the relevance of the word to the context.
 
-## Background
-
-The use of AAC devices is imperative for non-verbal communication and autism spectrum children. This application aims to improve the time efficiency of communication this way as in most AAC devices now still are lacking in how fast conversations are expected to be. The project hopes to solve this problem of conversations taking longer than expected by using context awareness methods like speech recognition and highlighting.
-
+Background
+The use of AAC devices is imperative for non-verbal communication and autism spectrum children. This project aims to improve the time efficiency of communication that most AAC devices lack in. This project hopes to solve this problem of conversations taking longer than expected by using context awareness methods like speech recognition and highlighting.
 ## How to Run:
 
 1. Clone this repo.
-2. CD into smartspeech/backend and create a .env file 
+2. CD into backend and create a .env file 
 3. In the .env file add in : 
 ```shell 
-OPENAI_API_KEY = yourownkey
+OPENAI_API_KEY=sk-proj-iOpmSXZlUEjyICPAS6Hmef5REO9vKnIBTzrasfjLpXoMA0fvcWLkJzieVWILoFMsZMQqlPyTrOT3IBbkFJOoO6pekfDFvIV58ySsrgSsZX0vPsQKGW6Zptqya1aP34ykSU6d8qafugpX7Eyj56ZG5QhPcA
 ```
-4. Run the following commands in smartspeech/backend:
+NOTE: This specific key is for testing purposes, actual key is protected
+
+4. Run the following commands in backend:
 ```shell 
 npm install
 node server.mjs & (FOR Ubunut / MAC OS)
 start node server.mjs (FOR Powershell)
 ```
 
-5. Run the following commands in smartspeech/frontend:
+5. Run the following commands in frontend:
 ```shell
 npm i
 npm run dev
@@ -51,6 +49,9 @@ npm run dev
 
 6. Go to http://localhost:3000 to view the website
 
+**Deployed version**
+
+1. Go to https://aachighlighting.vercel.app/
 
 ## Required Resources
 
@@ -62,7 +63,7 @@ npm run dev
 * What the project needs:
 
     * Github and git commands
-    * Strong enough machine to run AAC board and its features locally
+    * Strong enough machine to run AAC board and its features locally or through deployed version on Vercel
     * Whisper AI for speech recognition
     * Typescript
     * Python
