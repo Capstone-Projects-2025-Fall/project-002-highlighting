@@ -27,22 +27,22 @@ The use of AAC devices is imperative for non-verbal communication and autism spe
 ## How to Run:
 
 1. Clone this repo.
-2. CD into backend and create a .env file 
-3. In the .env file add in : 
-```shell 
-OPENAI_API_KEY=sk-proj-iOpmSXZlUEjyICPAS6Hmef5REO9vKnIBTzrasfjLpXoMA0fvcWLkJzieVWILoFMsZMQqlPyTrOT3IBbkFJOoO6pekfDFvIV58ySsrgSsZX0vPsQKGW6Zptqya1aP34ykSU6d8qafugpX7Eyj56ZG5QhPcA
-```
-NOTE: This specific key is for testing purposes, actual key is protected
-
-4. Run the following commands in backend:
-```shell 
+2. Run the following commands:
+   
+```shell
+cd backend 
 npm install
 node server.mjs & (FOR Ubunut / MAC OS)
 start node server.mjs (FOR Powershell)
 ```
 
-5. Run the following commands in frontend:
+3. Go back to root folder
 ```shell
+cd..
+```
+4. Run the following commands:
+```shell
+cd frontend
 npm i
 npm run dev
 ```
