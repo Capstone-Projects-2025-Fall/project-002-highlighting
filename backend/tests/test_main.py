@@ -4,7 +4,7 @@ import httpx  # used to add httpx entry to requirements
 import requests
 import requests_mock
 
-from .main import app
+from backend.src.main import app
 
 
 MOCK_TEXT = 'exampledata'
@@ -28,3 +28,4 @@ def test_healthCheck(client: TestClient):
     assert response.status_code == 200
     assert response.json() == {
         "message": "an apple a day keeps the doctor away"}
+

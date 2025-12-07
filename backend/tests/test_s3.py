@@ -7,12 +7,14 @@ from moto import mock_s3
 
 from unittest.mock import patch
 
-from ..s3 import router
+from backend.src.routers.s3 import router
 
-from ..aws_constants import UPLOAD_TO_S3_ROUTE, SAMPLE_BASE64_IMAGE, SAMPLE_UUIDv4
-from ..aws_constants import OBJECT_URL_ENV_VAR, AWS_REGION_ENV_VAR, BUCKET_NAME_ENV_VAR
+from backend.src.routers.aws_constants import UPLOAD_TO_S3_ROUTE, SAMPLE_BASE64_IMAGE, SAMPLE_UUIDv4
+from backend.src.routers.aws_constants import OBJECT_URL_ENV_VAR, AWS_REGION_ENV_VAR, BUCKET_NAME_ENV_VAR
 
-client = TestClient(app=router)
+app = FastAPI()
+app.include_router(router)
+client = TestClient(app)
 
 HEADERS = {
 	'accept': 'application/json',
@@ -52,6 +54,7 @@ def test_image_upload(mock_uuid4):
 		# assert resp.json() == EXPECTED_RESP 
 
 		assert 1 == 1
+
 
 
 

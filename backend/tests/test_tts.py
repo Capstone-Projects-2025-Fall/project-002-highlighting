@@ -7,9 +7,9 @@ import pytest
 import requests
 import requests_mock
 
-from .. import tts
+from backend.src.routers import tts
 
-from ..s3 import get_file_from_s3_logic, upload_file_to_s3_logic
+from backend.src.routers.s3 import get_file_from_s3_logic, upload_file_to_s3_logic
 
 
 MOCK_TTS_ENDPOINT = 'mock://tts.com'
@@ -134,3 +134,4 @@ def test_get_config(client: TestClient):
        We have to assume that dotenv just works, 
        so this is just for 100% coverage."""
     assert type(tts.get_config()) == dict
+

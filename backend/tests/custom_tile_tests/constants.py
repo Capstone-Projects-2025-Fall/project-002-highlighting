@@ -1,4 +1,4 @@
-from ...aws_constants import SAMPLE_BASE64_IMAGE
+from backend.src.routers.aws_constants import SAMPLE_BASE64_IMAGE
 
 VALID_EMAIL = "test@parth.fr"
 INVALID_EMAIL = "I_LOVE_APPLES"
@@ -34,3 +34,4 @@ gen_FAKE_REQ = lambda email, ext=".png": {
 	'tileColor': 'test_tileColor',
 	'email': email
 }
+

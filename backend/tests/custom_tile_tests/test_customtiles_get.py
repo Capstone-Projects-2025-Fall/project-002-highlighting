@@ -2,10 +2,10 @@ import pytest
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from ...custom_tiles import custom_tiles
+from backend.src.routers.custom_tiles import custom_tiles
 
-from ... import aws_constants
-from ...custom_tiles import sql_constants
+from backend.src.routers import aws_constants
+from backend.src.routers.custom_tiles import sql_constants
 from unittest.mock import Mock
 
 from .constants import *
@@ -16,7 +16,7 @@ def client_invalid_SQL_Connection():
 	def mock_getNewMySQLConnection_FAILURE():
 		return None
 
-	from ....main import app
+	from backend.src.main import app
 
 	app.include_router(custom_tiles.router)
 	app.dependency_overrides.update({
@@ -96,3 +96,4 @@ def test_get_custom_tile_failure(client_invalid_SQL_Connection):
 
 	assert resp.status_code == 500
 	assert resp.json()['detail'] == sql_constants.DB_CONNECT_FAILURE_MSG
+

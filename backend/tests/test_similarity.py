@@ -4,7 +4,7 @@ import spacy
 from functools import cache
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from .. import similarity
+from backend.src.routers import similarity
 
 @cache
 def mock_load_model():
@@ -15,7 +15,7 @@ def mock_load_model():
 @cache
 def mock_parse_vocab() -> dict:
     # Import vocab from json file
-    f = open("resources/test_words.json")
+    f = open("backend/resources/test_words.json")
     tiles = json.load(f)["tiles"]
     vocab = " ".join(tiles)
     return vocab
@@ -56,3 +56,4 @@ def test_similarity_ignore_input(client: TestClient):
     payload = { "words": ["apple"]}
     response = client.post(f"{similarity.SIMILARITY_ROUTE}?count=3", json=payload)
     assert "apple" not in response.json()["suggestions"]
+

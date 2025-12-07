@@ -5,8 +5,14 @@ const createJestConfig = nextJest({
 });
 
 const customJestConfig = {
-    moduleDirectories: ["node_modules", "<rootDir>/"],
+    moduleDirectories: ["<rootDir>/node_modules", "node_modules", "<rootDir>/"],
     testEnvironment: "jest-environment-jsdom",
+    roots: ["<rootDir>", "<rootDir>/tests"],
+    testMatch: ["<rootDir>/tests/**/*.test.{ts,tsx}"],
+    moduleNameMapper: {
+        "^frontend/src/(.*)$": "<rootDir>/src/$1",
+        "^@/(.*)$": "<rootDir>/src/$1",
+    },
     coveragePathIgnorePatterns: ["<rootDir>/src/util/", "<rootDir>/src/data/", "<rootDir>/src/react-helpers/"],
     resetMocks: true,
     automock: false,
