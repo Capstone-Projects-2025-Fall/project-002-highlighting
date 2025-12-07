@@ -15,6 +15,8 @@ import SimilarityProvider from "@/react-state-management/providers/useSimilarity
 import InferenceProvider from "@/react-state-management/providers/InferenceProvider";
 import PredictedTilesProvider from "@/react-state-management/providers/PredictedTilesProvider";
 import RecordingControlProvider from "@/react-state-management/providers/RecordingControlProvider";
+import TranscriptProvider from "@/react-state-management/providers/TranscriptProvider";
+import HighlightMethodsProvider from "@/react-state-management/providers/HighlightMethodsProvider";
 
 import useDisableZoom from "@/react-helpers/hooks/useDisableZoom";
 import HealthCheckProvider from "@/react-state-management/providers/HealthCheckProvider";
@@ -33,7 +35,9 @@ export default function Home() {
                 <TileProvider>
                     <RecordingControlProvider>
                         <PredictedTilesProvider>
-                            <RekognitionProvider>
+                            <TranscriptProvider>
+                                <HighlightMethodsProvider>
+                                    <RekognitionProvider>
                                 <SimilarityProvider>
                                     <StrokeProvider>
                                         <InferenceProvider>
@@ -60,6 +64,8 @@ export default function Home() {
                                 </StrokeProvider>
                             </SimilarityProvider>
                         </RekognitionProvider>
+                                    </HighlightMethodsProvider>
+                            </TranscriptProvider>
                     </PredictedTilesProvider>
                 </RecordingControlProvider>
             </TileProvider>
