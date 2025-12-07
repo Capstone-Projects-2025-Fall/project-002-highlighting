@@ -4,6 +4,7 @@ import styles from "./AudioTranscription.module.css";
 import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
 import { useUtteredTiles } from "@/react-state-management/providers/useUtteredTiles";
 import { useRecordingControl } from "@/react-state-management/providers/RecordingControlProvider";
+import { useTranscript } from "@/react-state-management/providers/TranscriptProvider";
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -34,12 +35,12 @@ const AudioTranscription = () => {
     const isRecordingRef = React.useRef<boolean>(false);
 
     /**
-     * State to store the transcribed text from the server
+     * Transcript from context provider
      * 
      * @type {string}
      * @description Accumulates transcribed text received from the server
      */
-    const [transcript, setTranscript] = React.useState("");
+    const { transcript, setTranscript } = useTranscript();
 
     /**
      * State to store the URL for the recorded audio
@@ -80,7 +81,7 @@ const AudioTranscription = () => {
     /**
      * Recording control from context
      */
-    const { isActive } = useRecordingControl();
+    const { isActive, setIsActive } = useRecordingControl();
     
     /**
      * State to track if prediction is loading
@@ -268,7 +269,7 @@ const AudioTranscription = () => {
 
             return newTranscript;
         });
-    }, []);
+    }, [setTranscript]);
 
     /**
      * Starts the audio recording process
@@ -418,6 +419,10 @@ const AudioTranscription = () => {
      * 
      * @async
      * @throws {Error} If the API request fails
+     * 
+     * @note Uses refs for transcript to prevent function recreation on transcript updates
+     * This ensures predictions are only triggered explicitly (tile clicks or button press),
+     * not automatically when transcript changes
      */
     const predictNextTiles = React.useCallback(async () => {
         // Don't predict if recording control is inactive
@@ -431,8 +436,11 @@ const AudioTranscription = () => {
             .map(tile => tile.text)
             .filter(text => text && text.trim());
 
+        // Use ref to get current transcript value (prevents function recreation on transcript changes)
+        const currentTranscript = transcriptRef.current;
+
         // At least one of transcript or pressed tiles must be available
-        if (!transcript.trim() && recentPressedTiles.length === 0) {
+        if (!currentTranscript.trim() && recentPressedTiles.length === 0) {
             // Don't clear tiles if we have no context - just skip prediction
             return;
         }
@@ -463,7 +471,7 @@ const AudioTranscription = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ 
-                    transcript: transcript.trim() || undefined,
+                    transcript: currentTranscript.trim() || undefined,
                     pressedTiles: recentPressedTiles.length > 0 ? recentPressedTiles : undefined
                 }),
             });
@@ -490,10 +498,17 @@ const AudioTranscription = () => {
         } finally {
             setIsPredicting(false);
         }
-    }, [transcript, utteredTiles, isActive]);
+    }, [utteredTiles, isActive]); // Removed transcript from dependencies - using ref instead
+
+    // Store startRecording in a ref to avoid recreating socket when it changes
+    const startRecordingRef = React.useRef(startRecording);
+    React.useEffect(() => {
+        startRecordingRef.current = startRecording;
+    }, [startRecording]);
 
     React.useEffect(() => {
-        // establish socket once
+        // establish socket once - only on mount/unmount, not when startRecording changes
+        console.log(`[Frontend] Initializing socket connection`);
         socketRef.current = io("http://localhost:5000");
         
         // Add connection logging
@@ -504,13 +519,14 @@ const AudioTranscription = () => {
             setTimeout(() => {
                 if (mediaRecorderRef.current && socketRef.current?.connected && !isRecordingRef.current && isActive) {
                     console.log("Auto-starting recording after socket connection...");
-                    startRecording();
+                    startRecordingRef.current(); // Use ref to get latest version
                 }
             }, 500);
         });
         
-        socketRef.current.on("disconnect", () => {
-            console.log("Socket disconnected");
+        socketRef.current.on("disconnect", (reason) => {
+            console.log(`[Frontend] Socket disconnected, reason: ${reason}`);
+            console.log(`[Frontend] Disconnect stack trace:`, new Error().stack);
         });
         
         socketRef.current.on("connect_error", (error) => {
@@ -519,6 +535,8 @@ const AudioTranscription = () => {
         
         return () => {
             if (socketRef.current) {
+                console.log(`[Frontend] Cleaning up socket connection (component unmounting)`);
+                console.log(`[Frontend] Cleanup stack trace:`, new Error().stack);
                 socketRef.current.disconnect();
                 socketRef.current = null;
             }
@@ -531,7 +549,7 @@ const AudioTranscription = () => {
                 clearInterval(periodicPredictionIntervalRef.current);
             }
         };
-    }, [startRecording]);
+    }, []); // Empty dependency array - only run on mount/unmount
 
     /**
      * Effect to auto-start recording when both MediaRecorder and Socket are ready
@@ -649,6 +667,7 @@ const AudioTranscription = () => {
     /**
      * Effect to set up periodic prediction every 15 seconds
      * Uses refs to avoid recreating the interval when transcript changes
+     * DISABLED: Automatic tile prediction every 15 seconds is disabled
      */
     React.useEffect(() => {
         // Don't set up interval if not active
@@ -661,6 +680,9 @@ const AudioTranscription = () => {
             return;
         }
         
+        // DISABLED: Automatic tile prediction every 15 seconds
+        // The following code is commented out to disable automatic predictions
+        /*
         // Set up interval for automatic predictions every 15 seconds
         periodicPredictionIntervalRef.current = setInterval(() => {
             // Check if still active using ref to get current value
@@ -725,6 +747,7 @@ const AudioTranscription = () => {
                 });
             }
         }, 15000); // 15 seconds
+        */
 
         return () => {
             if (periodicPredictionIntervalRef.current) {
@@ -755,10 +778,17 @@ const AudioTranscription = () => {
 
             <div className={styles.controlsContainer}>
                 <button
-                    className={record ? styles.stopButton : styles.recordButton}
-                    onClick={record ? stopRecording : startRecording}
+                    className={isActive ? styles.stopButton : styles.recordButton}
+                    onClick={() => {
+                        const newActiveState = !isActive;
+                        setIsActive(newActiveState);
+                        // Clear predicted tiles immediately when stopping
+                        if (!newActiveState) {
+                            setPredictedTiles([]);
+                        }
+                    }}
                 >
-                    {record ? "Stop Recording" : "Start Recording"}
+                    {isActive ? "Stop" : "Start"}
                 </button>
             </div>
 

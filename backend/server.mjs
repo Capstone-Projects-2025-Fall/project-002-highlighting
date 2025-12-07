@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Audio Transcription Server
  * 
  * @module server
@@ -46,6 +46,8 @@ const server = http.createServer(app);
  */
 const io = new Server(server, {
   cors: { origin: "*" },
+  pingTimeout: 60000, // 60 seconds - increased to handle long Whisper processing
+  pingInterval: 25000, // 25 seconds - send ping every 25 seconds
 });
 
 /**
@@ -387,10 +389,32 @@ async function getLocalWhisperPipeline() {
     // For better accuracy but slower, use 'Xenova/whisper-small.en' (~244MB)
     __localWhisperPipeline = await pipeline(
       'automatic-speech-recognition',
-      'Xenova/whisper-base.en'
+      'Xenova/whisper-small.en'
     );
   }
   return __localWhisperPipeline;
+}
+
+/**
+ * Calculate RMS (Root Mean Square) energy across entire audio
+ * 
+ * @function calculateRMSEnergy
+ * @description Calculates the RMS energy of audio samples to measure overall audio level
+ * @param {Float32Array} audioData - Normalized audio samples
+ * @returns {number} RMS energy value (0 to 1)
+ */
+function calculateRMSEnergy(audioData) {
+  if (!audioData || audioData.length === 0) {
+    return 0;
+  }
+  
+  let sumSquares = 0;
+  for (let i = 0; i < audioData.length; i++) {
+    sumSquares += audioData[i] * audioData[i];
+  }
+  
+  const rms = Math.sqrt(sumSquares / audioData.length);
+  return rms;
 }
 
 /**
@@ -426,6 +450,59 @@ function wavToFloat32Array(wavBuffer) {
   return samples;
 }
 
+/**
+ * Validate transcription text to filter out hallucinations
+ * 
+ * @function validateTranscription
+ * @description Validates transcription to detect and filter out likely hallucinations
+ * @param {string} text - The transcribed text to validate
+ * @param {number} rmsEnergy - RMS energy of the audio (0 to 1)
+ * @returns {boolean} True if transcription is likely valid, false if likely hallucination
+ */
+function validateTranscription(text, rmsEnergy) {
+  if (!text || typeof text !== 'string') {
+    return false;
+  }
+  
+  const trimmedText = text.trim();
+  
+  // Empty text is invalid
+  if (trimmedText.length === 0) {
+    return false;
+  }
+  
+  // If audio energy is very low, be more strict about validation
+  if (rmsEnergy < 0.001) {
+    // Very low energy - likely silence, reject any transcription
+    return false;
+  }
+  
+  // Check for common hallucination patterns
+  const hallucinationPatterns = [
+    /^thank you for watching/i,
+    /^thanks for watching/i,
+    /^please subscribe/i,
+    /^like and subscribe/i,
+    /^hit the bell/i,
+    /^don't forget to/i,
+    /^see you next time/i,
+    /^thanks for listening/i,
+    /^thanks for tuning in/i,
+  ];
+  
+  for (const pattern of hallucinationPatterns) {
+    if (pattern.test(trimmedText)) {
+      return false;
+    }
+  }
+  
+  // If text is too long relative to audio energy, might be hallucination
+  if (trimmedText.length > 200 && rmsEnergy < 0.01) {
+    return false;
+  }
+  
+  return true;
+}
 
 /**
  * Transcribe audio using local Whisper model
@@ -452,34 +529,26 @@ async function transcribeAudioLocal(audioFilePath) {
       return '';
     }
     
-    // Quick silence check - only check first and last 10% of samples for speed
-    const sampleSize = Math.floor(audioData.length * 0.1);
-    let maxAmplitude = 0;
-    for (let i = 0; i < sampleSize; i++) {
-      maxAmplitude = Math.max(maxAmplitude, Math.abs(audioData[i]));
-      maxAmplitude = Math.max(maxAmplitude, Math.abs(audioData[audioData.length - 1 - i]));
-    }
-    
-    // If first/last samples are silent, check middle section 
-    if (maxAmplitude < 0.01) {
-      const midStart = Math.floor(audioData.length * 0.4);
-      const midEnd = Math.floor(audioData.length * 0.6);
-      for (let i = midStart; i < midEnd; i += 100) {
-        maxAmplitude = Math.max(maxAmplitude, Math.abs(audioData[i]));
-      }
-    }
+    // Calculate RMS energy across entire audio
+    const rmsEnergy = calculateRMSEnergy(audioData);
     
     // Skip if completely silent (threshold set to 0.0002)
-    if (maxAmplitude < 0.0002) {
+    if (rmsEnergy < 0.0002) {
       return '';
     }
     
-    // Optimized Whisper call - minimal options for fastest processing
+    // Anti-hallucination parameters for Whisper
+    // These parameters help reduce hallucinations in low-quality or silent audio
     let result;
     try {
       result = await whisper(audioData, {
         return_timestamps: false, // Skip timestamps for speed
         language: 'en', // Specify language to avoid detection step
+        // Anti-hallucination parameters
+        temperature: 0, // Greedy decoding (temperature 0) reduces hallucinations
+        no_speech_threshold: 0.6, // Higher threshold to avoid transcribing silence
+        logprob_threshold: -1.0, // Filter out low-confidence predictions
+        compression_ratio_threshold: 2.4, // Detect repetitive/hallucinated text
       });
     } catch (error) {
       console.error('Whisper call failed:', error.message);
@@ -497,6 +566,11 @@ async function transcribeAudioLocal(audioFilePath) {
     } else if (typeof result === 'string') {
       // Sometimes the result might be a string directly
       transcribedText = result;
+    }
+    
+    // Validate transcription to filter hallucinations
+    if (!validateTranscription(transcribedText, rmsEnergy)) {
+      return '';
     }
     
     return transcribedText.trim();
@@ -953,7 +1027,7 @@ let shutdownTimeout = null;
  * @type {number}
  * @description Time to wait for reconnection before assuming website is closed (5 seconds)
  */
-const SHUTDOWN_DELAY = 5000;
+const SHUTDOWN_DELAY = 7000;
 
 /**
  * Shutdown the frontend Next.js dev server
@@ -1254,7 +1328,7 @@ io.on("connection", (socket) => {
    * @type {number}
    * @description Defines how frequently the audio buffer is processed
    */
-  const CHUNK_DURATION = 2000; // 2 seconds - process more frequently to catch words sooner 
+  const CHUNK_DURATION = 3000; // 3 seconds - process more frequently to catch words sooner 
 
   /**
    * Initializes the FFmpeg process for audio conversion
@@ -1346,14 +1420,20 @@ io.on("connection", (socket) => {
   ffmpeg.stdout.on("data", (chunk) => {
     audioBuffer = Buffer.concat([audioBuffer, chunk]);
     
+    // Dynamic chunk sizing: min 3 seconds, max 6 seconds
+    // 3 seconds = 96000 bytes, 6 seconds = 192000 bytes
+    const minChunkSize = 96000; // 3 seconds = 16000 samples/sec * 2 bytes/sample * 3 sec
+    const maxChunkSize = 192000; // 6 seconds = 16000 samples/sec * 2 bytes/sample * 6 sec
+    
     // Trigger immediate processing if we have enough audio and not already processing
-    // This provides lower latency and better word capture
-    const preferredChunkSize = 128000; // 4 seconds
-    if (!isProcessing && audioBuffer.length >= preferredChunkSize) {
-      // Process immediately instead of waiting for interval
-      processAudio().catch(err => {
-        console.error("Error in immediate audio processing:", err);
-      });
+    // Use dynamic sizing: process when we have at least min, but prefer max for better quality
+    if (!isProcessing && audioBuffer.length >= minChunkSize) {
+      // Process immediately if we have max chunk size, or if we've been waiting
+      if (audioBuffer.length >= maxChunkSize) {
+        processAudio().catch(err => {
+          console.error("Error in immediate audio processing:", err);
+        });
+      }
     }
   });
 
@@ -1478,16 +1558,18 @@ io.on("connection", (socket) => {
    * @async
    */
   const processAudio = async () => {
+    // Dynamic chunk sizing: min 3 seconds, max 6 seconds
+    const minAudioSize = 96000; // 3 seconds = 16000 samples/sec * 2 bytes/sample * 3 sec
+    const maxAudioSize = 192000; // 6 seconds = 16000 samples/sec * 2 bytes/sample * 6 sec
+    
     // Skip processing if already busy or audio buffer is too small
-    // Need at least 1.5 seconds for better transcription quality
-    const minAudioSize = 24000; // 1.5 seconds = 16000 samples/sec * 2 bytes/sample * 1.5 sec
     if (isProcessing || audioBuffer.length < minAudioSize) {
       silenceCounter++;
       // Only reset buffer if we've had many silent attempts AND buffer is getting very large
       if (silenceCounter > 20 && audioBuffer.length > 480000) { // > 15 seconds of audio
         // Reset buffer if too much silence to prevent memory buildup
-        // But keep the last 2 seconds in case there's valid audio
-        const keepSize = 64000; // Keep 2 seconds
+        // But keep the last 3 seconds in case there's valid audio
+        const keepSize = 96000; // Keep 3 seconds
         audioBuffer = audioBuffer.slice(-keepSize);
         silenceCounter = 0;
       }
@@ -1497,13 +1579,16 @@ io.on("connection", (socket) => {
     isProcessing = true;
     silenceCounter = 0;
     
-    // Take a chunk of audio - larger chunks provide better context for Whisper
-    // 4 seconds = 128000 bytes - better quality and more context for accurate transcription
-    const preferredChunkSize = 128000; // 4 seconds = 16000 samples/sec * 2 bytes/sample * 4 sec
-    const chunkSize = Math.min(audioBuffer.length, preferredChunkSize);
+    // Dynamic chunk sizing: use available audio up to max size
+    // Prefer larger chunks (up to 6 seconds) for better context, but use what's available
+    const chunkSize = Math.min(audioBuffer.length, maxAudioSize);
+    const initialBufferSize = audioBuffer.length;
+    
+    // Log buffer size being sent to Whisper
+    console.log(`[Buffer] Sending to Whisper: ${chunkSize} bytes (${(chunkSize / 32000).toFixed(2)}s), Initial buffer: ${initialBufferSize} bytes (${(initialBufferSize / 32000).toFixed(2)}s)`);
     
     // Overlap to catch words at boundaries - 1 second overlap helps ensure no words are missed
-    const overlapSize = 32000; // 1 second overlap - ensures words spanning boundaries are captured
+    const overlapSize = 16000; // 0.5 second overlap - ensures words spanning boundaries are captured
     const pcmChunk = audioBuffer.slice(0, chunkSize);
     
     // DON'T remove audio from buffer yet - wait until we know transcription succeeded
@@ -1522,6 +1607,10 @@ io.on("connection", (socket) => {
       let transcribedText = '';
       try {
         transcribedText = await transcribeAudioLocal(filePath);
+        // Log the raw transcript received from Whisper
+        if (transcribedText && transcribedText.trim()) {
+          console.log('[Whisper Transcript]', transcribedText);
+        }
         if (transcribedText && transcribedText.trim() && !firstTranscriptionLogged) {
           console.log('[Transcription] Using Local Whisper model');
           console.log('[Transcription] Success - Local Whisper');
@@ -1555,11 +1644,11 @@ io.on("connection", (socket) => {
           
           // Stricter duplicate detection:
           // 1. Exact match (similarity = 1.0) - skip sending but still remove audio 
-          // 2. Very similar (>95%) - skip unless enough time has passed
-          // 3. Similar (>85%) - skip if sent recently (< 2 seconds)
+          // 2. Very similar (>98%) - skip unless enough time has passed
+          // 3. Similar (>90%) - skip if sent recently (< 2 seconds)
           // 4. Different enough (<85%) - always send
           
-          if (similarity >= 0.95) {
+          if (similarity >= 0.98) {
             // Very similar or exact match - skip unless it's been a while
             if (timeSinceLastTranscription < MIN_TIME_BETWEEN_SIMILAR * 2) {
               // Skip duplicate, but still remove audio since it was successfully processed
@@ -1568,7 +1657,7 @@ io.on("connection", (socket) => {
               shouldSendTranscription = true;
               shouldRemoveAudio = true;
             }
-          } else if (similarity >= 0.85) {
+          } else if (similarity >= 0.90) {
             // Similar - only send if enough time has passed
             if (timeSinceLastTranscription < MIN_TIME_BETWEEN_SIMILAR) {
               // Skip recent similar, but still remove audio
@@ -1605,6 +1694,8 @@ io.on("connection", (socket) => {
       if (shouldRemoveAudio) {
         const removeSize = chunkSize - overlapSize; // Keep exactly 1 second of overlap
         audioBuffer = audioBuffer.slice(removeSize);
+        // Log remaining buffer size after processing
+        console.log(`[Buffer] Remaining buffer: ${audioBuffer.length} bytes (${(audioBuffer.length / 32000).toFixed(2)}s)`);
       }
       // error handling
     } catch (err) {
@@ -1618,6 +1709,7 @@ io.on("connection", (socket) => {
         const smallRemove = 16000; // Remove only 0.5 seconds
         if (audioBuffer.length > smallRemove) {
           audioBuffer = audioBuffer.slice(smallRemove);
+          console.log(`[Buffer] After error cleanup - Remaining buffer: ${audioBuffer.length} bytes (${(audioBuffer.length / 32000).toFixed(2)}s)`);
         }
       }
       // For other errors, keep the audio in buffer to retry on next interval
@@ -1706,7 +1798,8 @@ io.on("connection", (socket) => {
     clearInterval(interval);
     
     // Process any remaining audio before cleaning up to capture last words
-    if (audioBuffer.length >= 24000 && !isProcessing) { // At least 1.5 seconds
+    // Use min chunk size (3 seconds) for final processing
+    if (audioBuffer.length >= 96000 && !isProcessing) { // At least 3 seconds
       try {
         await processAudio();
       } catch (err) {

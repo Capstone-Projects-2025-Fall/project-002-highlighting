@@ -44,7 +44,7 @@ async function evictCache(cache: Cache) {
 async function requestTTS(phrase: string): Promise<Response | undefined> {
   let backendURL = getBackendUrl();
   let request = new Request(
-    backendURL + "/tts?" + new URLSearchParams("phrase=" + phrase)
+    backendURL + "/tts?" + new URLSearchParams({ phrase })
   );
   let cache = await caches.open("tts-cache");
 
@@ -148,7 +148,9 @@ export function speakViaWebSpeechAPI(sound: string) {
   }
 
   let utterance = new SpeechSynthesisUtterance(sound);
-  utterance.rate = +(process.env.NEXT_PUBLIC_VOICE_SPEED as string) ?? 1;
+  const voiceSpeed = process.env.NEXT_PUBLIC_VOICE_SPEED;
+  const rate = voiceSpeed ? Number(voiceSpeed) : 1;
+  utterance.rate = Number.isFinite(rate) && rate > 0 ? rate : 1;
   speechSynthesis.cancel();
   speechSynthesis.speak(utterance);
 }

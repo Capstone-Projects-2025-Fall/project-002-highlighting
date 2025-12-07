@@ -5,7 +5,7 @@ import { TileAssets, TileData } from "./TileTypes";
 import { useTilesProvider } from "@/react-state-management/providers/tileProvider";
 import { usePredictedTiles } from "@/react-state-management/providers/PredictedTilesProvider";
 import { useRecordingControl } from "@/react-state-management/providers/RecordingControlProvider";
-import { FaCog, FaStop, FaPlay } from 'react-icons/fa';
+import { useHighlightMethods } from "@/react-state-management/providers/HighlightMethodsProvider";
 import type { MouseEvent } from "react";
 
 export const BACK_BTN_TEXT = "Back";
@@ -71,27 +71,9 @@ export default function Tiles() {
     const [currentFrame, setCurrentFrame] = useState<TileAssets>({});
     const [opacity, setOpacity] = useState<number>(40); // Start with lower opacity as default
     const [tacoModeActive, setTacoModeActive] = useState<boolean>(false);
-    // activeHighlights is a Set of highlight method keys that are currently active.
-    // Multiple methods can be active simultaneously (e.g., 'opacity' and 'border' together).
-    // Possible values: 'opacity', 'border', 'pulse', 'darken'
-    const [activeHighlights, setActiveHighlights] = useState<Set<string>>(new Set(['opacity']));
     const [opacityControlsVisible, setOpacityControlsVisible] = useState<boolean>(false);
-    const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-    const { isActive, setIsActive } = useRecordingControl();
+    const { activeHighlights } = useHighlightMethods();
     const { setPredictedTiles } = usePredictedTiles();
-
-    // Helper function to toggle a highlight method on/off
-    const toggleHighlightMethod = (method: string) => {
-        setActiveHighlights((prev) => {
-            const updated = new Set(prev);
-            if (updated.has(method)) {
-                updated.delete(method);
-            } else {
-                updated.add(method);
-            }
-            return updated;
-        });
-    };
 
     useEffect(() => {
         if (Object.keys(tiles).length === 0) return;
@@ -377,74 +359,6 @@ export default function Tiles() {
 
     return (
         <>
-            {/* Settings button and dropdown */}
-            <div className="fixed top-15 left-3.5 z-50">
-                <button
-                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                    className="w-10 h-10 bg-emerald-400 hover:bg-emerald-500 flex items-center justify-center transition-colors duration-200"
-                    title="Settings"
-                >
-                    <FaCog className="w-5 h-5 text-white" />
-                </button>
-                
-                {/* Settings dropdown menu */}
-                {isSettingsOpen && (
-                    <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-                        <div className="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-50 border-b">
-                            Highlighting Methods
-                        </div>
-                        <div className="py-1">
-                            {[
-                                { key: 'opacity', label: 'Opacity' },
-                                { key: 'border', label: 'Border' },
-                                { key: 'pulse', label: 'Pulse' },
-                            ].map((opt) => (
-                                <button
-                                    key={opt.key}
-                                    onClick={() => {
-                                        toggleHighlightMethod(opt.key);
-                                    }}
-                                    className={`w-full px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900 text-left flex items-center gap-2 ${activeHighlights.has(opt.key) ? 'font-bold text-black' : 'text-gray-700'}`}
-                                >
-                                    {/* Checkbox indicator */}
-                                    <input
-                                        type="checkbox"
-                                        checked={activeHighlights.has(opt.key)}
-                                        onChange={() => {}}
-                                        className="cursor-pointer"
-                                    />
-                                    <span>{opt.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-                
-                {/* Start/Stop Recording button below settings */}
-                <button
-                    onClick={() => {
-                        const newActiveState = !isActive;
-                        setIsActive(newActiveState);
-                        // Clear predicted tiles immediately when stopping
-                        if (!newActiveState) {
-                            setPredictedTiles([]);
-                        }
-                    }}
-                    className={`w-10 h-10 mt-2 flex items-center justify-center transition-colors duration-200 ${
-                        isActive 
-                            ? 'bg-red-500 hover:bg-red-600' 
-                            : 'bg-green-500 hover:bg-green-600'
-                    }`}
-                    title={isActive ? "Stop Recording" : "Start Recording"}
-                >
-                    {isActive ? (
-                        <FaStop className="w-4 h-4 text-white" />
-                    ) : (
-                        <FaPlay className="w-4 h-4 text-white" />
-                    )}
-                </button>
-            </div>
-
             {/* Controls collapsed by default (removed small plus opener) */}
 
             {opacityControlsVisible && (
