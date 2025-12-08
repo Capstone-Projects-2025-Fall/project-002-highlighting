@@ -3,6 +3,7 @@ sidebar_position: 5
 ---
 # Class Diagrams
 
+<img width="1724" height="643" alt="FE_classdiagram" src="https://github.com/user-attachments/assets/4b3d35cf-fabc-42f9-b2b7-c452a4f87620" />
 
 
 **Figure 1.** High level view Front end class diagram
@@ -97,6 +98,7 @@ const tileOpacity = shouldBeHighlighted ? 100 : 50;
 
 
 
+<img width="1579" height="579" alt="BE_classdiagram" src="https://github.com/user-attachments/assets/bdf9d157-193a-4df9-817f-81279c72c10c" />
 
 
 
