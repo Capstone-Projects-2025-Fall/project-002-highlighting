@@ -157,13 +157,32 @@ const logPredictionEvent = async ({
   source = 'nextTilePred',
 }) => {
   const LOG_MIN_INTERVAL_MS = 5000;
+  const LOG_DEDUP_WINDOW_MS = 60000;
   const now = Date.now();
   if (!globalThis.__lastSupabaseLogTime) {
     globalThis.__lastSupabaseLogTime = 0;
   }
+  if (!globalThis.__lastSupabaseSignature) {
+    globalThis.__lastSupabaseSignature = '';
+  }
 
+  const signature = JSON.stringify({
+    transcriptText: transcriptText || '',
+    highlightedWords: highlightedWords || [],
+    pressedTiles: pressedTiles || [],
+    confidenceByWord: confidenceByWord || {},
+    source,
+  });
+
+  // Throttle and dedupe: skip if too soon or identical payload within window
   if (now - globalThis.__lastSupabaseLogTime < LOG_MIN_INTERVAL_MS) {
-    return; // Throttle to avoid spamming Supabase
+    return;
+  }
+  if (
+    signature === globalThis.__lastSupabaseSignature &&
+    now - globalThis.__lastSupabaseLogTime < LOG_DEDUP_WINDOW_MS
+  ) {
+    return;
   }
 
   if (!isSupabaseConfigured) {
@@ -205,6 +224,7 @@ const logPredictionEvent = async ({
       const response = await attemptPost(attemptPayload);
       if (response.ok) {
         globalThis.__lastSupabaseLogTime = now;
+        globalThis.__lastSupabaseSignature = signature;
         break;
       }
 
