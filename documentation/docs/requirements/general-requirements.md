@@ -5,6 +5,6 @@ sidebar_position: 3
 - Programming Languages: TypeScript, Python
 - Frontend: React, Vercel
 - Backend: postgres SQL
-- AI Models: Whisper AI (Speech-to-Text), Hugging Face Transformers (context analysis)
+- AI Models: Whisper AI (Speech-to-Text)
 - Version Control: Github
 ---
