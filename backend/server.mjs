@@ -21,6 +21,11 @@ import { pipeline } from "@xenova/transformers";
 dotenv.config();
 import { File } from "node:buffer";
 globalThis.File = File;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
+const SUPABASE_TABLE = process.env.SUPABASE_LOG_TABLE || 'transcript_highlights';
+const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
+let supabaseConfigWarned = false;
 
 /**
  * Express application instance
@@ -140,6 +145,109 @@ try {
   process.exit(1);
 }
 
+/**
+ * Log transcript/highlight events to Supabase.
+ * Uses REST interface to avoid adding extra dependencies.
+ */
+const logPredictionEvent = async ({
+  transcriptText,
+  highlightedWords,
+  pressedTiles,
+  confidenceByWord,
+  source = 'nextTilePred',
+}) => {
+  const LOG_MIN_INTERVAL_MS = 5000;
+  const LOG_DEDUP_WINDOW_MS = 60000;
+  const now = Date.now();
+  if (!globalThis.__lastSupabaseLogTime) {
+    globalThis.__lastSupabaseLogTime = 0;
+  }
+  if (!globalThis.__lastSupabaseSignature) {
+    globalThis.__lastSupabaseSignature = '';
+  }
+
+  const signature = JSON.stringify({
+    transcriptText: transcriptText || '',
+    highlightedWords: highlightedWords || [],
+    pressedTiles: pressedTiles || [],
+    confidenceByWord: confidenceByWord || {},
+    source,
+  });
+
+  // Throttle and dedupe: skip if too soon or identical payload within window
+  if (now - globalThis.__lastSupabaseLogTime < LOG_MIN_INTERVAL_MS) {
+    return;
+  }
+  if (
+    signature === globalThis.__lastSupabaseSignature &&
+    now - globalThis.__lastSupabaseLogTime < LOG_DEDUP_WINDOW_MS
+  ) {
+    return;
+  }
+
+  if (!isSupabaseConfigured) {
+    if (!supabaseConfigWarned) {
+      console.warn('[Supabase] Logging disabled - SUPABASE_URL and SUPABASE_KEY not configured.');
+      supabaseConfigWarned = true;
+    }
+    return;
+  }
+
+  const payload = {
+    transcript_text: transcriptText || '',
+    highlighted_words: highlightedWords || [],
+    pressed_tiles: pressedTiles || [],
+    confidence_by_word: confidenceByWord || {},
+    event_time: new Date().toISOString(),
+    source,
+  };
+
+  try {
+    const endpoint = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': 'return=minimal',
+    };
+
+    const attemptPost = async (bodyObj) => fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(bodyObj),
+    });
+
+    let attemptPayload = { ...payload };
+    let attemptCount = 0;
+
+    while (attemptCount < 3) {
+      const response = await attemptPost(attemptPayload);
+      if (response.ok) {
+        globalThis.__lastSupabaseLogTime = now;
+        globalThis.__lastSupabaseSignature = signature;
+        break;
+      }
+
+      const errorText = await response.text();
+      const missingMatch = errorText.match(/Could not find the '([^']+)' column/i);
+      if (missingMatch && missingMatch[1]) {
+        const missingColumn = missingMatch[1];
+        if (attemptPayload.hasOwnProperty(missingColumn)) {
+          delete attemptPayload[missingColumn];
+          console.warn(`[Supabase] Column '${missingColumn}' missing in table '${SUPABASE_TABLE}'. Retrying without it.`);
+          attemptCount += 1;
+          continue;
+        }
+      }
+
+      console.error(`[Supabase] Failed to log highlight event (${response.status}): ${errorText}`);
+      break;
+    }
+  } catch (error) {
+    console.error('[Supabase] Error logging highlight event:', error);
+  }
+};
+
 
 /**
  * Next Tile Prediction endpoint
@@ -195,7 +303,18 @@ app.post('/api/nextTilePred', async (req, res) => {
         : 'tiles only';
     console.log(`[Prediction] Using Local LLM with vector search (mode: ${predictionMode})`);
     
-    const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 10);
+    const { predictions: predicted, confidenceMap } = await predictNextTilesLocalLLM(contextLines, validPressedTiles, 10);
+
+    // Log highlight event to Supabase without blocking the response path
+    const transcriptText = (typeof transcript === 'string' && transcript.trim()) ? transcript : contextLines;
+    logPredictionEvent({
+      transcriptText,
+      highlightedWords: predicted,
+      pressedTiles: validPressedTiles,
+      confidenceByWord: confidenceMap,
+      source: 'nextTilePred',
+    }).catch(err => console.error('[Supabase] Logging pipeline error:', err));
+
     return res.json({
       predictedTiles: predicted,
       status: 'success',
@@ -894,7 +1013,7 @@ async function getLocalLLMPipeline() {
  * @param {string} contextLines - The conversation context (transcript), can be empty string
  * @param {string[]} pressedTiles - Array of tiles that were recently pressed, can be empty array
  * @param {number} topN - Number of tiles to return (default: 10)
- * @returns {Promise<string[]>} Array of predicted tile words
+ * @returns {Promise<{predictions: string[], confidenceMap: Record<string, number>}>} Predicted words and confidence map
  * @async
  */
 async function predictNextTilesLocalLLM(contextLines = '', pressedTiles = [], topN = 10) {
@@ -911,7 +1030,7 @@ async function predictNextTilesLocalLLM(contextLines = '', pressedTiles = [], to
   ]);
 
   const labels = __labelList.filter(w => !excluded.has(String(w).toLowerCase()));
-  if (!labels.length) return [];
+  if (!labels.length) return { predictions: [], confidenceMap: {} };
 
   // Ensure embeddings are cached
   if (!__labelEmbeddingsCache || __labelEmbeddingsCache.length !== labels.length) {
@@ -941,6 +1060,20 @@ async function predictNextTilesLocalLLM(contextLines = '', pressedTiles = [], to
   // Embed the combined context for vector search
   const queryEmb = await embedText(combinedContext || 'next word');
   const sims = __labelEmbeddingsCache.map(e => cosineSimilarity(queryEmb, e));
+  const labelScoreLookup = labels.reduce((acc, label, idx) => {
+    acc[String(label).toLowerCase()] = sims[idx];
+    return acc;
+  }, {});
+  const normalizeConfidence = (value) => {
+    if (typeof value !== 'number' || Number.isNaN(value)) return 0;
+    const clamped = Math.max(-1, Math.min(1, value));
+    return Number(((clamped + 1) / 2).toFixed(4));
+  };
+  const buildConfidenceMap = (words) => words.reduce((map, word) => {
+    const raw = labelScoreLookup[String(word).toLowerCase()];
+    map[word] = normalizeConfidence(raw);
+    return map;
+  }, {});
   
   // Get a larger set of candidate words from vector search (top 50-80) for LLM to consider
 
@@ -1036,17 +1169,19 @@ Return words only, one per line:
     if (extractedWords.length < topN) {
       const vectorSearchResults = topIndices.slice(0, topN).map(i => labels[i]);
       // Combine and deduplicate
-      const combined = [...extractedWords, ...vectorSearchResults.filter(w => !extractedWords.includes(w.toLowerCase()))];
-      return combined.slice(0, topN);
+      const combined = [...extractedWords, ...vectorSearchResults.filter(w => !extractedWords.includes(String(w).toLowerCase()))];
+      const predictions = combined.slice(0, topN);
+      return { predictions, confidenceMap: buildConfidenceMap(predictions) };
     }
 
-    return extractedWords;
+    return { predictions: extractedWords, confidenceMap: buildConfidenceMap(extractedWords) };
 
   } catch (error) {
     console.error('Local LLM prediction error:', error);
     // Fallback to pure vector search if LLM fails
     const indices = topNIndices(sims, Math.min(topN, labels.length));
-    return indices.map(i => labels[i]);
+    const predictions = indices.map(i => labels[i]);
+    return { predictions, confidenceMap: buildConfidenceMap(predictions) };
   }
 }
 
@@ -1067,19 +1202,28 @@ app.post('/api/nextTilePredLocal', async (req, res) => {
     }
 
     // At least one of transcript or pressedTiles must be provided
-    if (!contextLines.trim() && validPressedTiles.length === 0) {
-      return res.status(400).json({ 
-        error: 'Either transcript or pressedTiles (or both) must be provided', 
-        status: 'error' 
-      });
-    }
+      if (!contextLines.trim() && validPressedTiles.length === 0) {
+        return res.status(400).json({ 
+          error: 'Either transcript or pressedTiles (or both) must be provided', 
+          status: 'error' 
+        });
+      }
 
-    const predicted = await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
+      const { predictions: predicted, confidenceMap } = await predictNextTilesLocalLLM(contextLines, validPressedTiles, topN);
 
-    return res.json({ 
-      predictedTiles: predicted, 
-      status: 'success', 
-      context: contextLines || '',
+      const transcriptText = (typeof transcript === 'string' && transcript.trim()) ? transcript : contextLines;
+      logPredictionEvent({
+        transcriptText,
+        highlightedWords: predicted,
+        pressedTiles: validPressedTiles,
+        confidenceByWord: confidenceMap,
+        source: 'nextTilePredLocal',
+      }).catch(err => console.error('[Supabase] Logging pipeline error:', err));
+
+      return res.json({ 
+        predictedTiles: predicted, 
+        status: 'success', 
+        context: contextLines || '',
       pressedTiles: validPressedTiles
     });
   } catch (err) {

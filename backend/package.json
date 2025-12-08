@@ -1,7 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "test": "set NODE_OPTIONS=--experimental-vm-modules && jest"
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "coverage": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
