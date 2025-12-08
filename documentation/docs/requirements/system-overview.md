@@ -5,7 +5,7 @@ sidebar_position: 1
 # System Overview
 
 ## Project Abstract
-This project aims to enhance an existing Augmentative and Alternative Communication (AAC) application with the integration of intelligent text prediction. The extension will use methods of highlighting to direct the attention of the user of the AAC device. This includes primarily the use of highlighting to draw more attention to specific words that are relevant to the context of conversation. The extension will capture audio input through a microphone and use an intelligent contextual model to analyze and suggest words.
+This project focuses on enhancing an existing Augmentative and Alternative Communication (AAC) application by integrating intelligent text prediction and contextual highlighting. The extension introduces a system that captures audio input through a microphone, processes it using an intelligent contextual model, and suggests relevant words based on the ongoing conversation. Suggested words are visually emphasized through highlighting techniques to help direct the user’s attention and improve communication efficiency.
 
 The goal of this application is to improve the efficiency and communication for AAC users by reducing the time required to create responses during conversations by offering them suggested words based on contextual analysis.
 
@@ -15,4 +15,4 @@ This project builds upon a previous capstone project, SmartSpeech, which develop
 This extension will be built with TypeScript and Python to maintain compatibility with SmartSpeech's code. Whisper AI, an automatic speech recognition (ASR) model will be incorporated to take care of speech-to-text conversion. This text will be analyzed by an intelligent contextual model and suggest words based on relevant words. Words with higher suggestion scores will have tiles that are made darker to clarify the relevance of the word to the context.
 
 ## Background
-The use of AAC devices is imperative for non-verbal communication and autism spectrum children. This project aims to improve the time efficiency of communication that most AAC devices lack in. This project hopes to solve this problem of conversations taking longer than expected by using context awareness methods like speech recognition and highlighting.
+AAC devices play a critical role in supporting communication for individuals who are non-verbal, including many children with autism. However, traditional AAC systems can be slow, requiring users to manually navigate and select words. This project aims to address this challenge by incorporating context-aware methods such as speech recognition and visual highlighting to improve communication speed and user experience.
