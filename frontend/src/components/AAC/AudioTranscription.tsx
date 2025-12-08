@@ -296,6 +296,7 @@ const AudioTranscription = () => {
         }
         setRecording(true);
         isRecordingRef.current = true;
+        setupPeriodicPredictionInterval(); // kick off periodic timer once recording starts
         if (socketRef.current) {
             console.log("Setting up transcript listener, socket connected:", socketRef.current.connected);
             socketRef.current.on("transcript", transcriptHandler);
@@ -522,15 +523,15 @@ const AudioTranscription = () => {
             periodicPredictionIntervalRef.current = null;
         }
 
-        // Don't set up interval if not active
-        if (!isActiveRef.current) {
+        // Don't set up interval if not active or not recording
+        if (!isActiveRef.current || !isRecordingRef.current) {
             return;
         }
 
         // Set up interval for automatic predictions every 15 seconds
         periodicPredictionIntervalRef.current = setInterval(() => {
             // Check if still active using ref to get current value
-            if (!isActiveRef.current) {
+            if (!isActiveRef.current || !isRecordingRef.current) {
                 return;
             }
             
