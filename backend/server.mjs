@@ -508,7 +508,7 @@ async function getLocalWhisperPipeline() {
     // For better accuracy but slower, use 'Xenova/whisper-small.en' (~244MB)
     __localWhisperPipeline = await pipeline(
       'automatic-speech-recognition',
-      'Xenova/whisper-small.en'
+      'Xenova/whisper-tiny.en'
     );
   }
   return __localWhisperPipeline;
