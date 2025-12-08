@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "test": "jest"
+    "test": "set NODE_OPTIONS=--experimental-vm-modules && jest"
   },
   "dependencies": {
     "dotenv": "^17.2.3",

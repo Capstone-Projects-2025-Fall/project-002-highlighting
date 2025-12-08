@@ -505,6 +505,114 @@ function validateTranscription(text, rmsEnergy) {
 }
 
 /**
+ * Creates a WAV file from raw PCM data
+ * 
+ * @function createWavFile
+ * @description Manually constructs a WAV file by adding a WAV header to PCM data
+ * 
+ * @param {Buffer} pcmData - The raw PCM audio data
+ * @returns {Buffer} A complete WAV file as a buffer
+ */
+const createWavFile = (pcmData) => {
+  const wavHeader = Buffer.alloc(44);
+  const dataSize = pcmData.length;
+  
+  // RIFF header
+  wavHeader.write('RIFF', 0);
+  wavHeader.writeUInt32LE(36 + dataSize, 4);
+  wavHeader.write('WAVE', 8);
+  
+  // fmt chunk
+  wavHeader.write('fmt ', 12);
+  wavHeader.writeUInt32LE(16, 16); // chunk size
+  wavHeader.writeUInt16LE(1, 20); // PCM format
+  wavHeader.writeUInt16LE(1, 22); // mono
+  wavHeader.writeUInt32LE(16000, 24); // sample rate
+  wavHeader.writeUInt32LE(16000 * 2, 28); // byte rate
+  wavHeader.writeUInt16LE(2, 32); // block align
+  wavHeader.writeUInt16LE(16, 34); // bits per sample
+  
+  // data chunk
+  wavHeader.write('data', 36);
+  wavHeader.writeUInt32LE(dataSize, 40);
+  
+  return Buffer.concat([wavHeader, pcmData]);
+};
+
+/**
+ * Calculate similarity between two strings using word overlap
+ * 
+ * @function calculateSimilarity
+ * @description Calculates similarity percentage between two text strings
+ * @param {string} text1 - First text
+ * @param {string} text2 - Second text
+ * @returns {number} Similarity score between 0 and 1
+ */
+const calculateSimilarity = (text1, text2) => {
+  if (!text1 || !text2) return 0;
+  
+  // Exact match check first (case-insensitive)
+  if (text1.toLowerCase() === text2.toLowerCase()) return 1;
+  
+  // Normalize texts for comparison (remove punctuation, lowercase)
+  const normalize = (text) => text.toLowerCase().replace(/[^\w\s]/g, '').trim();
+  const norm1 = normalize(text1);
+  const norm2 = normalize(text2);
+  
+  // Word-based similarity
+  const words1 = new Set(norm1.split(/\s+/).filter(w => w.length > 0));
+  const words2 = new Set(norm2.split(/\s+/).filter(w => w.length > 0));
+  
+  if (words1.size === 0 && words2.size === 0) return 1;
+  if (words1.size === 0 || words2.size === 0) return 0;
+  
+  let intersection = 0;
+  for (const word of words1) {
+    if (words2.has(word)) intersection++;
+  }
+  
+  const union = words1.size + words2.size - intersection;
+  return intersection / union;
+};
+
+/**
+ * Cleans transcription text by removing unwanted markers
+ * 
+ * @function cleanTranscription
+ * @description Removes all square bracket markers (e.g., [BLANK_AUDIO], [INAUDIBLE], [gunshot], [clears throat]) from transcription text
+ * 
+ * @param {string} text - The raw transcription text
+ * @returns {string} Cleaned transcription text without any markers, only spoken words
+ */
+const cleanTranscription = (text) => {
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+  
+  // Remove all square bracket markers (e.g., [BLANK_AUDIO], [INAUDIBLE], [gunshot], [clears throat], etc.)
+  // Remove standalone ] and ^ markers as they are not actual speech content
+  let cleaned = text
+    // Remove all text in square brackets with any dots/spaces around them
+    .replace(/\s*\.*\s*\[[^\]]+\]\s*\.*\s*/gi, ' ')
+    // Remove standalone ] characters (not part of brackets)
+    .replace(/\]/g, '')
+    // Remove ^ characters (used by Whisper to indicate unclear/missing speech)
+    .replace(/\^+/g, '')
+    // Remove excessive dots (2 or more consecutive dots)
+    .replace(/\.{2,}/g, '')
+    // Remove dots/spaces at the beginning or end of lines
+    .replace(/^[\s\.]+|[\s\.]+$/gm, '')
+    // Clean up multiple spaces
+    .replace(/\s+/g, ' ')
+    // Remove standalone dots with spaces
+    .replace(/\s*\.\s*/g, ' ')
+    // Final trim
+    .trim();
+  
+  return cleaned;
+};
+
+/**
  * Transcribe audio using local Whisper model
  * 
  * @function transcribeAudioLocal
@@ -1226,8 +1334,20 @@ async function startServer() {
   }
 }
 
-// Start the server
-startServer();
+// Start the server unless we're running tests
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
+
+export {
+  findRelevantWords,
+  calculateRMSEnergy,
+  wavToFloat32Array,
+  validateTranscription,
+  createWavFile,
+  calculateSimilarity,
+  cleanTranscription,
+};
 
 /**
  * Socket.io connection event handler
@@ -1436,114 +1556,6 @@ io.on("connection", (socket) => {
       }
     }
   });
-
-  /**
-   * Creates a WAV file from raw PCM data
-   * 
-   * @function createWavFile
-   * @description Manually constructs a WAV file by adding a WAV header to PCM data
-   * 
-   * @param {Buffer} pcmData - The raw PCM audio data
-   * @returns {Buffer} A complete WAV file as a buffer
-   */
-  const createWavFile = (pcmData) => {
-    const wavHeader = Buffer.alloc(44);
-    const dataSize = pcmData.length;
-    
-    // RIFF header
-    wavHeader.write('RIFF', 0);
-    wavHeader.writeUInt32LE(36 + dataSize, 4);
-    wavHeader.write('WAVE', 8);
-    
-    // fmt chunk
-    wavHeader.write('fmt ', 12);
-    wavHeader.writeUInt32LE(16, 16); // chunk size
-    wavHeader.writeUInt16LE(1, 20); // PCM format
-    wavHeader.writeUInt16LE(1, 22); // mono
-    wavHeader.writeUInt32LE(16000, 24); // sample rate
-    wavHeader.writeUInt32LE(16000 * 2, 28); // byte rate
-    wavHeader.writeUInt16LE(2, 32); // block align
-    wavHeader.writeUInt16LE(16, 34); // bits per sample
-    
-    // data chunk
-    wavHeader.write('data', 36);
-    wavHeader.writeUInt32LE(dataSize, 40);
-    
-    return Buffer.concat([wavHeader, pcmData]);
-  };
-
-  /**
-   * Calculate similarity between two strings using word overlap
-   * 
-   * @function calculateSimilarity
-   * @description Calculates similarity percentage between two text strings
-   * @param {string} text1 - First text
-   * @param {string} text2 - Second text
-   * @returns {number} Similarity score between 0 and 1
-   */
-  const calculateSimilarity = (text1, text2) => {
-    if (!text1 || !text2) return 0;
-    
-    // Exact match check first (case-insensitive)
-    if (text1.toLowerCase() === text2.toLowerCase()) return 1;
-    
-    // Normalize texts for comparison (remove punctuation, lowercase)
-    const normalize = (text) => text.toLowerCase().replace(/[^\w\s]/g, '').trim();
-    const norm1 = normalize(text1);
-    const norm2 = normalize(text2);
-    
-    // Word-based similarity
-    const words1 = new Set(norm1.split(/\s+/).filter(w => w.length > 0));
-    const words2 = new Set(norm2.split(/\s+/).filter(w => w.length > 0));
-    
-    if (words1.size === 0 && words2.size === 0) return 1;
-    if (words1.size === 0 || words2.size === 0) return 0;
-    
-    let intersection = 0;
-    for (const word of words1) {
-      if (words2.has(word)) intersection++;
-    }
-    
-    const union = words1.size + words2.size - intersection;
-    return intersection / union;
-  };
-
-  /**
-   * Cleans transcription text by removing unwanted markers
-   * 
-   * @function cleanTranscription
-   * @description Removes all square bracket markers (e.g., [BLANK_AUDIO], [INAUDIBLE], [gunshot], [clears throat]) from transcription text
-   * 
-   * @param {string} text - The raw transcription text
-   * @returns {string} Cleaned transcription text without any markers, only spoken words
-   */
-  const cleanTranscription = (text) => {
-    if (!text || typeof text !== 'string') {
-      return '';
-    }
-    
-    // Remove all square bracket markers (e.g., [BLANK_AUDIO], [INAUDIBLE], [gunshot], [clears throat], etc.)
-    // Remove standalone ] and ^ markers as they are not actual speech content
-    let cleaned = text
-      // Remove all text in square brackets with any dots/spaces around them
-      .replace(/\s*\.*\s*\[[^\]]+\]\s*\.*\s*/gi, ' ')
-      // Remove standalone ] characters (not part of brackets)
-      .replace(/\]/g, '')
-      // Remove ^ characters (used by Whisper to indicate unclear/missing speech)
-      .replace(/\^+/g, '')
-      // Remove excessive dots (2 or more consecutive dots)
-      .replace(/\.{2,}/g, '')
-      // Remove dots/spaces at the beginning or end of lines
-      .replace(/^[\s\.]+|[\s\.]+$/gm, '')
-      // Clean up multiple spaces
-      .replace(/\s+/g, ' ')
-      // Remove standalone dots with spaces
-      .replace(/\s*\.\s*/g, ' ')
-      // Final trim
-      .trim();
-    
-    return cleaned;
-  };
 
   /**
    * Processes audio data and sends it for transcription
