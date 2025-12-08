@@ -32,6 +32,7 @@ The use of AAC devices is imperative for non-verbal communication and autism spe
 OPENAI_API_KEY= (yourkey)
 ```
 NOTE: This specific key is for testing purposes, actual key is protected
+
 4. Run the following commands:
    
 ```shell
