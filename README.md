@@ -33,7 +33,7 @@ OPENAI_API_KEY= (yourkey)
 ```
 NOTE: This specific key is for testing purposes, actual key is protected
 
-4. Run the following commands:
+3. Run the following commands:
    
 ```shell
 cd backend 
@@ -42,11 +42,11 @@ node server.mjs & (FOR Ubunut / MAC OS)
 start node server.mjs (FOR Powershell)
 ```
 
-3. Go back to root folder
+4. Go back to root folder
 ```shell
 cd..
 ```
-4. Run the following commands:
+5. Run the following commands:
 ```shell
 cd frontend
 npm i
