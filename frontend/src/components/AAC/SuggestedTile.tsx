@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import Tile from "./Tile";
 import { useSuggestedTilesContext } from "@/react-state-management/providers/SuggestedTilesProvider";
+import { getBackendUrl } from "@/util/backend-url";
 
 export async function getSimilarWords(wordsArray: string[]): Promise<string[]> {
   // Create a data object with the words
   const data = { words: wordsArray };
 
   // Make a POST request to the similarity backend
-  const url = process.env.NEXT_PUBLIC_PROG_MODE === 'PROD' ? process.env.NEXT_PUBLIC_BACKEND_URL_PROD : process.env.NEXT_PUBLIC_BACKEND_URL_DEV;
+  const url = getBackendUrl();
   const response = await fetch(url + '/similarity', {
     method: 'POST',
     headers: {

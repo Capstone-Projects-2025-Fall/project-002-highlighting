@@ -2,16 +2,29 @@ import axios from "axios";
 
 type HealthCheckSuccessResp = { message: string };
 
+const DEFAULT_BACKEND_URL = "http://localhost:8000";
+
+function normalize(url?: string) {
+    if (!url || typeof url !== "string") return "";
+    const trimmed = url.trim();
+    if (!trimmed) return "";
+    return trimmed.replace(/\/$/, "");
+}
+
+/**
+ * Resolve the backend base URL.
+ * Priority:
+ * 1) NEXT_PUBLIC_API_BASE (new)
+ * 2) NEXT_PUBLIC_BACKEND_URL_PROD (legacy prod)
+ * 3) NEXT_PUBLIC_BACKEND_URL_DEV (legacy dev)
+ * 4) DEFAULT_BACKEND_URL (localhost)
+ */
 export function getBackendUrl() {
-    const defaultUrl = "http://localhost:8000";
+    const apiBase = normalize(process.env.NEXT_PUBLIC_API_BASE);
+    const legacyProd = normalize(process.env.NEXT_PUBLIC_BACKEND_URL_PROD);
+    const legacyDev = normalize(process.env.NEXT_PUBLIC_BACKEND_URL_DEV);
 
-    if (!process.env.NEXT_PUBLIC_PROG_MODE || typeof process.env.NEXT_PUBLIC_PROG_MODE !== "string") return defaultUrl;
-    if (!process.env.NEXT_PUBLIC_BACKEND_URL_DEV || typeof process.env.NEXT_PUBLIC_BACKEND_URL_DEV !== "string") return defaultUrl;
-    if (!process.env.NEXT_PUBLIC_BACKEND_URL_PROD || typeof process.env.NEXT_PUBLIC_BACKEND_URL_PROD !== "string") return defaultUrl;
-
-    if (process.env.NEXT_PUBLIC_PROG_MODE === "DEV") return process.env.NEXT_PUBLIC_BACKEND_URL_DEV;
-    else if (process.env.NEXT_PUBLIC_PROG_MODE === "PROD") return process.env.NEXT_PUBLIC_BACKEND_URL_PROD;
-    else return defaultUrl;
+    return apiBase || legacyProd || legacyDev || DEFAULT_BACKEND_URL;
 }
 
 export async function isBackendActive() {

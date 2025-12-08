@@ -16,6 +16,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AudioTranscription from 'frontend/src/components/AAC/AudioTranscription';
+import { getBackendUrl } from 'frontend/src/util/backend-url';
 
 // Mock providers
 jest.mock('frontend/src/react-state-management/providers/PredictedTilesProvider', () => ({
@@ -73,6 +74,8 @@ global.MediaRecorder = jest.fn().mockImplementation(() => ({
 // Mock URL methods
 global.URL.createObjectURL = jest.fn(() => 'mock-audio-url');
 global.URL.revokeObjectURL = jest.fn();
+
+process.env.NEXT_PUBLIC_API_BASE = "http://localhost:5000";
 
 describe('AudioTranscription Component - Basic Tests', () => {
   beforeEach(() => {
@@ -160,7 +163,7 @@ describe('AudioTranscription Component - Basic Tests', () => {
       
       render(<AudioTranscription />);
       
-      expect(io).toHaveBeenCalledWith('http://localhost:5000');
+      expect(io).toHaveBeenCalledWith(getBackendUrl());
     });
 
     test('disconnects socket on unmount', () => {

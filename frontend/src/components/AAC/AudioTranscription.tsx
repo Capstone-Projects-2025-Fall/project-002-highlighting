@@ -5,6 +5,7 @@ import { usePredictedTiles } from "@/react-state-management/providers/PredictedT
 import { useUtteredTiles } from "@/react-state-management/providers/useUtteredTiles";
 import { useRecordingControl } from "@/react-state-management/providers/RecordingControlProvider";
 import { useTranscript } from "@/react-state-management/providers/TranscriptProvider";
+import { getBackendUrl } from "@/util/backend-url";
 
 /**
  * AudioTranscription component for recording audio and displaying real-time transcriptions.
@@ -16,6 +17,7 @@ import { useTranscript } from "@/react-state-management/providers/TranscriptProv
  * @returns {JSX.Element} A React component with recording controls and transcript display
  */
 const AudioTranscription = () => {
+    const backendBaseUrl = getBackendUrl();
 
     /**
      * WebSocket connection to the transcription server
@@ -474,7 +476,7 @@ const AudioTranscription = () => {
         // Don't clear them here - only update when new data arrives
 
         try {
-            const response = await fetch('http://localhost:5000/api/nextTilePred', {
+            const response = await fetch(`${backendBaseUrl}/api/nextTilePred`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -507,7 +509,7 @@ const AudioTranscription = () => {
         } finally {
             setIsPredicting(false);
         }
-    }, [utteredTiles, isActive]); // Removed transcript from dependencies - using ref instead
+    }, [utteredTiles, isActive, backendBaseUrl]); // Removed transcript from dependencies - using ref instead
 
     /**
      * Sets up or resets the periodic prediction interval
@@ -562,7 +564,7 @@ const AudioTranscription = () => {
                 console.log(`[Periodic Prediction] Starting prediction at ${new Date().toLocaleTimeString()}`);
 
                 // Call the prediction API
-                fetch('http://localhost:5000/api/nextTilePred', {
+                fetch(`${backendBaseUrl}/api/nextTilePred`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -592,7 +594,7 @@ const AudioTranscription = () => {
                 });
             }
         }, 15000); // 15 seconds
-    }, []);
+    }, [backendBaseUrl]);
 
     // Store startRecording in a ref to avoid recreating socket when it changes
     const startRecordingRef = React.useRef(startRecording);
@@ -603,7 +605,7 @@ const AudioTranscription = () => {
     React.useEffect(() => {
         // establish socket once - only on mount/unmount, not when startRecording changes
         console.log(`[Frontend] Initializing socket connection`);
-        socketRef.current = io("http://localhost:5000");
+        socketRef.current = io(backendBaseUrl);
         
         // Add connection logging
         socketRef.current.on("connect", () => {
@@ -689,7 +691,7 @@ const AudioTranscription = () => {
             clearInterval(checkInterval);
             clearTimeout(timeout);
         };
-    }, [startRecording]);
+    }, [startRecording, backendBaseUrl]);
 
     /**
      * Effect to set up automatic prediction on tile clicks
