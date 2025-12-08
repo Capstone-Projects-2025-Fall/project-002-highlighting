@@ -27,7 +27,12 @@ The use of AAC devices is imperative for non-verbal communication and autism spe
 ## How to Run:
 
 1. Clone this repo.
-2. Run the following commands:
+2. Create a .env file and add in:
+```shell 
+OPENAI_API_KEY=sk-proj-iOpmSXZlUEjyICPAS6Hmef5REO9vKnIBTzrasfjLpXoMA0fvcWLkJzieVWILoFMsZMQqlPyTrOT3IBbkFJOoO6pekfDFvIV58ySsrgSsZX0vPsQKGW6Zptqya1aP34ykSU6d8qafugpX7Eyj56ZG5QhPcA
+```
+NOTE: This specific key is for testing purposes, actual key is protected
+4. Run the following commands:
    
 ```shell
 cd backend 
