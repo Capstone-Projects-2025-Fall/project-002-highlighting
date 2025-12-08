@@ -132,6 +132,14 @@ const AudioTranscription = () => {
     const previousUtteredTilesLengthRef = React.useRef(0);
 
     /**
+     * Reference to store the debounce timeout for tile click predictions
+     * 
+     * @type {React.MutableRefObject<NodeJS.Timeout | null>}
+     * @description Stores the timeout ID for debouncing tile click predictions
+     */
+    const tileClickDebounceTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    /**
      * Reference to store the latest isActive state for use in intervals
      */
     const isActiveRef = React.useRef(isActive);
@@ -500,189 +508,25 @@ const AudioTranscription = () => {
         }
     }, [utteredTiles, isActive]); // Removed transcript from dependencies - using ref instead
 
-    // Store startRecording in a ref to avoid recreating socket when it changes
-    const startRecordingRef = React.useRef(startRecording);
-    React.useEffect(() => {
-        startRecordingRef.current = startRecording;
-    }, [startRecording]);
-
-    React.useEffect(() => {
-        // establish socket once - only on mount/unmount, not when startRecording changes
-        console.log(`[Frontend] Initializing socket connection`);
-        socketRef.current = io("http://localhost:5000");
-        
-        // Add connection logging
-        socketRef.current.on("connect", () => {
-            console.log("Socket connected:", socketRef.current?.id);
-            // Auto-start recording if MediaRecorder is ready and isActive is true
-            // Use a small delay to ensure everything is initialized
-            setTimeout(() => {
-                if (mediaRecorderRef.current && socketRef.current?.connected && !isRecordingRef.current && isActive) {
-                    console.log("Auto-starting recording after socket connection...");
-                    startRecordingRef.current(); // Use ref to get latest version
-                }
-            }, 500);
-        });
-        
-        socketRef.current.on("disconnect", (reason) => {
-            console.log(`[Frontend] Socket disconnected, reason: ${reason}`);
-            console.log(`[Frontend] Disconnect stack trace:`, new Error().stack);
-        });
-        
-        socketRef.current.on("connect_error", (error) => {
-            console.error("Socket connection error:", error);
-        });
-        
-        return () => {
-            if (socketRef.current) {
-                console.log(`[Frontend] Cleaning up socket connection (component unmounting)`);
-                console.log(`[Frontend] Cleanup stack trace:`, new Error().stack);
-                socketRef.current.disconnect();
-                socketRef.current = null;
-            }
-            // Clean up auto-prediction timeout
-            if (autoPredictionTimeoutRef.current) {
-                clearTimeout(autoPredictionTimeoutRef.current);
-            }
-            // Clean up periodic prediction interval
-            if (periodicPredictionIntervalRef.current) {
-                clearInterval(periodicPredictionIntervalRef.current);
-            }
-        };
-    }, []); // Empty dependency array - only run on mount/unmount
-
     /**
-     * Effect to auto-start recording when both MediaRecorder and Socket are ready
-     * This ensures recording starts regardless of which initializes first
+     * Sets up or resets the periodic prediction interval
+     * This function can be called to reset the 15-second timer
+     * 
+     * @method setupPeriodicPredictionInterval
+     * @description Creates a new 15-second interval for automatic predictions, clearing any existing one
      */
-    React.useEffect(() => {
-        const tryAutoStart = () => {
-            if (
-                mediaRecorderRef.current && 
-                socketRef.current?.connected && 
-                !isRecordingRef.current &&
-                isActive
-            ) {
-                console.log("Both MediaRecorder and Socket ready - auto-starting recording...");
-                startRecording();
-                return true; // Successfully started
-            }
-            return false; // Not ready yet
-        };
-
-        // Try to start immediately if both are already ready
-        if (tryAutoStart()) {
-            return; // Already started, no need for interval
+    const setupPeriodicPredictionInterval = React.useCallback(() => {
+        // Clear existing interval if it exists
+        if (periodicPredictionIntervalRef.current) {
+            clearInterval(periodicPredictionIntervalRef.current);
+            periodicPredictionIntervalRef.current = null;
         }
 
-        // Also set up a periodic check in case initialization is delayed
-        const checkInterval = setInterval(() => {
-            if (tryAutoStart()) {
-                clearInterval(checkInterval);
-            }
-        }, 1000); // Check every second
-
-        // Stop checking after 10 seconds to avoid infinite checking
-        const timeout = setTimeout(() => {
-            clearInterval(checkInterval);
-        }, 10000);
-
-        return () => {
-            clearInterval(checkInterval);
-            clearTimeout(timeout);
-        };
-    }, [startRecording]);
-
-    /**
-     * Effect to set up automatic prediction on tile clicks
-     * Triggers prediction whenever user clicks a tile
-     * Tile clicks always trigger predictions (no throttling)
-     */
-    React.useEffect(() => {
-        // Don't predict if not active
-        if (!isActive) {
-            return;
-        }
-        
-        // Only trigger if tiles actually changed (length increased, meaning a new tile was clicked)
-        if (utteredTiles.length > previousUtteredTilesLengthRef.current && utteredTiles.length > 0) {
-            previousUtteredTilesLengthRef.current = utteredTiles.length;
-            
-            console.log(`[Prediction] Triggered by tile click (${utteredTiles.length} tiles)`);
-            // Small delay to ensure state is updated
-            const timeoutId = setTimeout(() => {
-                predictNextTiles();
-            }, 100);
-            return () => clearTimeout(timeoutId);
-        } else if (utteredTiles.length !== previousUtteredTilesLengthRef.current) {
-            // Update ref even if length decreased (tiles cleared)
-            previousUtteredTilesLengthRef.current = utteredTiles.length;
-        }
-        
-    }, [utteredTiles.length, isActive, predictNextTiles]);
-
-    /**
-     * Update refs when transcript or utteredTiles change
-     */
-    React.useEffect(() => {
-        transcriptRef.current = transcript;
-    }, [transcript]);
-
-    React.useEffect(() => {
-        utteredTilesRef.current = utteredTiles;
-    }, [utteredTiles]);
-
-    React.useEffect(() => {
-        isActiveRef.current = isActive;
-    }, [isActive]);
-
-    /**
-     * Effect to handle recording control state changes
-     * Stops recording and clears data when isActive becomes false
-     */
-    React.useEffect(() => {
-        if (!isActive) {
-            // Stop recording if it's currently active
-            if (isRecordingRef.current && mediaRecorderRef.current) {
-                console.log("Stopping recording due to inactive state");
-                setRecording(false);
-                isRecordingRef.current = false;
-                mediaRecorderRef.current.stop();
-                if (socketRef.current) {
-                    socketRef.current.off("transcript", transcriptHandler);
-                }
-            }
-            // Clear transcript and predicted tiles
-            setTranscript("");
-            setPredictedTiles([]);
-        } else {
-            // If becoming active and not already recording, try to start
-            if (!isRecordingRef.current && mediaRecorderRef.current && socketRef.current?.connected) {
-                console.log("Starting recording due to active state");
-                startRecording();
-            }
-        }
-    }, [isActive, startRecording, transcriptHandler]);
-
-    /**
-     * Effect to set up periodic prediction every 15 seconds
-     * Uses refs to avoid recreating the interval when transcript changes
-     * DISABLED: Automatic tile prediction every 15 seconds is disabled
-     */
-    React.useEffect(() => {
         // Don't set up interval if not active
-        if (!isActive) {
-            // Clear interval if it exists
-            if (periodicPredictionIntervalRef.current) {
-                clearInterval(periodicPredictionIntervalRef.current);
-                periodicPredictionIntervalRef.current = null;
-            }
+        if (!isActiveRef.current) {
             return;
         }
-        
-        // DISABLED: Automatic tile prediction every 15 seconds
-        // The following code is commented out to disable automatic predictions
-        /*
+
         // Set up interval for automatic predictions every 15 seconds
         periodicPredictionIntervalRef.current = setInterval(() => {
             // Check if still active using ref to get current value
@@ -747,7 +591,222 @@ const AudioTranscription = () => {
                 });
             }
         }, 15000); // 15 seconds
-        */
+    }, []);
+
+    // Store startRecording in a ref to avoid recreating socket when it changes
+    const startRecordingRef = React.useRef(startRecording);
+    React.useEffect(() => {
+        startRecordingRef.current = startRecording;
+    }, [startRecording]);
+
+    React.useEffect(() => {
+        // establish socket once - only on mount/unmount, not when startRecording changes
+        console.log(`[Frontend] Initializing socket connection`);
+        socketRef.current = io("http://localhost:5000");
+        
+        // Add connection logging
+        socketRef.current.on("connect", () => {
+            console.log("Socket connected:", socketRef.current?.id);
+            // Auto-start recording if MediaRecorder is ready and isActive is true
+            // Use a small delay to ensure everything is initialized
+            setTimeout(() => {
+                if (mediaRecorderRef.current && socketRef.current?.connected && !isRecordingRef.current && isActive) {
+                    console.log("Auto-starting recording after socket connection...");
+                    startRecordingRef.current(); // Use ref to get latest version
+                }
+            }, 500);
+        });
+        
+        socketRef.current.on("disconnect", (reason) => {
+            console.log(`[Frontend] Socket disconnected, reason: ${reason}`);
+            console.log(`[Frontend] Disconnect stack trace:`, new Error().stack);
+        });
+        
+        socketRef.current.on("connect_error", (error) => {
+            console.error("Socket connection error:", error);
+        });
+        
+        return () => {
+            if (socketRef.current) {
+                console.log(`[Frontend] Cleaning up socket connection (component unmounting)`);
+                console.log(`[Frontend] Cleanup stack trace:`, new Error().stack);
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
+            // Clean up auto-prediction timeout
+            if (autoPredictionTimeoutRef.current) {
+                clearTimeout(autoPredictionTimeoutRef.current);
+            }
+            // Clean up periodic prediction interval
+            if (periodicPredictionIntervalRef.current) {
+                clearInterval(periodicPredictionIntervalRef.current);
+            }
+            // Clean up tile click debounce timeout
+            if (tileClickDebounceTimeoutRef.current) {
+                clearTimeout(tileClickDebounceTimeoutRef.current);
+            }
+        };
+    }, []); // Empty dependency array - only run on mount/unmount
+
+    /**
+     * Effect to auto-start recording when both MediaRecorder and Socket are ready
+     * This ensures recording starts regardless of which initializes first
+     */
+    React.useEffect(() => {
+        const tryAutoStart = () => {
+            if (
+                mediaRecorderRef.current && 
+                socketRef.current?.connected && 
+                !isRecordingRef.current &&
+                isActive
+            ) {
+                console.log("Both MediaRecorder and Socket ready - auto-starting recording...");
+                startRecording();
+                return true; // Successfully started
+            }
+            return false; // Not ready yet
+        };
+
+        // Try to start immediately if both are already ready
+        if (tryAutoStart()) {
+            return; // Already started, no need for interval
+        }
+
+        // Also set up a periodic check in case initialization is delayed
+        const checkInterval = setInterval(() => {
+            if (tryAutoStart()) {
+                clearInterval(checkInterval);
+            }
+        }, 1000); // Check every second
+
+        // Stop checking after 10 seconds to avoid infinite checking
+        const timeout = setTimeout(() => {
+            clearInterval(checkInterval);
+        }, 10000);
+
+        return () => {
+            clearInterval(checkInterval);
+            clearTimeout(timeout);
+        };
+    }, [startRecording]);
+
+    /**
+     * Effect to set up automatic prediction on tile clicks
+     * Triggers prediction whenever user clicks a tile
+     * Uses debouncing to prevent rapid duplicate requests when multiple tiles are clicked quickly
+     */
+    React.useEffect(() => {
+        // Don't predict if not active
+        if (!isActive) {
+            // Clear any pending debounce timeout
+            if (tileClickDebounceTimeoutRef.current) {
+                clearTimeout(tileClickDebounceTimeoutRef.current);
+                tileClickDebounceTimeoutRef.current = null;
+            }
+            return;
+        }
+        
+        // Only trigger if tiles actually changed (length increased, meaning a new tile was clicked)
+        if (utteredTiles.length > previousUtteredTilesLengthRef.current && utteredTiles.length > 0) {
+            previousUtteredTilesLengthRef.current = utteredTiles.length;
+            
+            console.log(`[Prediction] Tile clicked (${utteredTiles.length} tiles) - debouncing prediction`);
+            
+            // Clear any existing debounce timeout
+            if (tileClickDebounceTimeoutRef.current) {
+                clearTimeout(tileClickDebounceTimeoutRef.current);
+            }
+            
+            // Debounce: wait for a pause in tile clicks before making prediction
+            // If multiple tiles are clicked within 1.5 seconds, only one prediction will be made
+            tileClickDebounceTimeoutRef.current = setTimeout(async () => {
+                console.log(`[Prediction] Triggered by tile click after debounce (${utteredTiles.length} tiles)`);
+                await predictNextTiles();
+                // Reset the 15-second periodic prediction timer after tile click prediction completes
+                console.log(`[Periodic Prediction] Resetting 15-second timer after tile click prediction`);
+                setupPeriodicPredictionInterval();
+                tileClickDebounceTimeoutRef.current = null;
+            }, 1500); // 1.5 second debounce - wait for pause in clicks
+            
+        } else if (utteredTiles.length !== previousUtteredTilesLengthRef.current) {
+            // Update ref even if length decreased (tiles cleared)
+            previousUtteredTilesLengthRef.current = utteredTiles.length;
+            // Clear debounce timeout if tiles were cleared
+            if (tileClickDebounceTimeoutRef.current) {
+                clearTimeout(tileClickDebounceTimeoutRef.current);
+                tileClickDebounceTimeoutRef.current = null;
+            }
+        }
+        
+        return () => {
+            // Clean up debounce timeout on unmount or when dependencies change
+            if (tileClickDebounceTimeoutRef.current) {
+                clearTimeout(tileClickDebounceTimeoutRef.current);
+                tileClickDebounceTimeoutRef.current = null;
+            }
+        };
+    }, [utteredTiles.length, isActive, predictNextTiles, setupPeriodicPredictionInterval]);
+
+    /**
+     * Update refs when transcript or utteredTiles change
+     */
+    React.useEffect(() => {
+        transcriptRef.current = transcript;
+    }, [transcript]);
+
+    React.useEffect(() => {
+        utteredTilesRef.current = utteredTiles;
+    }, [utteredTiles]);
+
+    React.useEffect(() => {
+        isActiveRef.current = isActive;
+    }, [isActive]);
+
+    /**
+     * Effect to handle recording control state changes
+     * Stops recording and clears data when isActive becomes false
+     */
+    React.useEffect(() => {
+        if (!isActive) {
+            // Stop recording if it's currently active
+            if (isRecordingRef.current && mediaRecorderRef.current) {
+                console.log("Stopping recording due to inactive state");
+                setRecording(false);
+                isRecordingRef.current = false;
+                mediaRecorderRef.current.stop();
+                if (socketRef.current) {
+                    socketRef.current.off("transcript", transcriptHandler);
+                }
+            }
+            // Clear transcript and predicted tiles
+            setTranscript("");
+            setPredictedTiles([]);
+        } else {
+            // If becoming active and not already recording, try to start
+            if (!isRecordingRef.current && mediaRecorderRef.current && socketRef.current?.connected) {
+                console.log("Starting recording due to active state");
+                startRecording();
+            }
+        }
+    }, [isActive, startRecording, transcriptHandler]);
+
+    /**
+     * Effect to set up periodic prediction every 15 seconds
+     * Uses refs to avoid recreating the interval when transcript changes
+     */
+    React.useEffect(() => {
+        // Don't set up interval if not active
+        if (!isActive) {
+            // Clear interval if it exists
+            if (periodicPredictionIntervalRef.current) {
+                clearInterval(periodicPredictionIntervalRef.current);
+                periodicPredictionIntervalRef.current = null;
+            }
+            return;
+        }
+        
+        // Set up the interval
+        setupPeriodicPredictionInterval();
 
         return () => {
             if (periodicPredictionIntervalRef.current) {
@@ -755,7 +814,7 @@ const AudioTranscription = () => {
                 periodicPredictionIntervalRef.current = null;
             }
         };
-    }, [isActive]); // Re-run when isActive changes
+    }, [isActive, setupPeriodicPredictionInterval]); // Re-run when isActive changes
 
     /**
      * Renders the AudioTranscription component

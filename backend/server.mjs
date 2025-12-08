@@ -653,10 +653,10 @@ async function transcribeAudioLocal(audioFilePath) {
         return_timestamps: false, // Skip timestamps for speed
         language: 'en', // Specify language to avoid detection step
         // Anti-hallucination parameters
-        temperature: 0, // Greedy decoding (temperature 0) reduces hallucinations
-        no_speech_threshold: 0.6, // Higher threshold to avoid transcribing silence
-        logprob_threshold: -1.0, // Filter out low-confidence predictions
-        compression_ratio_threshold: 2.4, // Detect repetitive/hallucinated text
+        temperature: [0.0, 0.2],
+        no_speech_threshold: 0.3, 
+        logprob_threshold: -3.0, 
+        compression_ratio_threshold: 2.4, 
       });
     } catch (error) {
       console.error('Whisper call failed:', error.message);
