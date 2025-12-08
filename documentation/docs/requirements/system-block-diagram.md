@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 ---
+<img width="1901" height="1186" alt="SBD" src="https://github.com/user-attachments/assets/04475812-f8ab-4e42-9b0b-7a32422ecfc1" />
 
 
 # System Block Diagram
@@ -8,7 +9,7 @@ sidebar_position: 2
 
 # System Block Diagram
 
-[View System Block Diagram (PDF)](docs/System_Block_Diagram.pdf)
+
 
 
 
