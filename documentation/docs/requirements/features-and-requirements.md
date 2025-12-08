@@ -12,11 +12,7 @@ sidebar_position: 4
 * User will be able to toggle the microphone on/off through AAC Board
 
 ### Virtual AAC Board 
-* The system will be organized in the fitzgerald color key organization.
-    - verbs are highlighted in green
-    - pronouns are highlighted in yellow
-    - nouns are highlighted in orange
-    - adjectives are highlighted in blue
+* System will be organized in a color key organization to make simpler access to similar tiles
 * Categories will be a folder in which corresponding tiles will be placed
 
 ### Context Analysis ###
