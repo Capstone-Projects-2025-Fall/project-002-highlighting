@@ -22,7 +22,7 @@ This project builds upon a previous capstone project, SmartSpeech, which develop
 
 This extension will be built with TypeScript and Python to maintain compatibility with SmartSpeech's code. Whisper AI, an automatic speech recognition (ASR) model will be incorporated to take care of speech-to-text conversion. This text will be analyzed by an intelligent contextual model and suggest words based on relevant words. Words with higher suggestion scores will have tiles that are made darker to clarify the relevance of the word to the context.
 
-Background
+##Background
 The use of AAC devices is imperative for non-verbal communication and autism spectrum children. This project aims to improve the time efficiency of communication that most AAC devices lack in. This project hopes to solve this problem of conversations taking longer than expected by using context awareness methods like speech recognition and highlighting.
 ## How to Run:
 
