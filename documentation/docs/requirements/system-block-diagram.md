@@ -18,7 +18,11 @@ sidebar_position: 2
 **Figure 1.** High level design of Highlighting project
 
 
-# Description
-User speech is audio input to the AAC Board. Audio recording is transcribed by Whisper AI and saved into transcription which will then be sent back to the AAC board and sent to an intelligent contextual model which will analyze possible suggestions to answer audio input based on similarity scores. Analyzed scores will be sent to backend database and will change opacity of tiles on AAC board based on how well answer choices fit the audio input.
+# Description  
+The frontend consists of a web-based interface that captures user audio and displays AAC tiles. Audio is streamed to the backend through a WebSocket connection, while tile prediction requests are sent via REST.  
+
+The backend includes two main services. The Audio Transcription Service converts audio with FFmpeg and produces transcripts using a local Whisper model. The Prediction Service processes transcripts by generating embeddings, comparing them to cached tile vectors, and using a local LLM to refine the top predicted tiles. These predictions are then returned to the frontend for highlighting.  
+
+Optional auxiliary systems, such as Supabase and FastAPI, support logging, analytics, and utility functions.
 
 
