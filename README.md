@@ -56,7 +56,7 @@ npm run dev
 
 **Deployed version**
 
-1. Go to https://aachighlighting.vercel.app/
+1. Go to https://highlighting.vercel.app/
 
 ## Required Resources
 
