@@ -40,7 +40,7 @@ This component is ideal for applications that require speech-to-text capabilitie
 
 
 
-# Main Functions & Their Roles
+## Main Functions & Their Roles
 
 | Function                       | Purpose                                                                                     | Usage Context               |
 |--------------------------------|--------------------------------------------------------------------------------------------|-----------------------------|
