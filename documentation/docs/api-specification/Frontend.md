@@ -101,13 +101,3 @@ Here are the most relevant internal methods in the component:
 
 ---
 
-# Example UI Flow
-
-1. **User clicks Start:** Microphone permission is requested. If granted, recording begins.
-2. **Audio chunks stream to backend:** Transcription server emits transcript snippets, which display in real time.
-3. **User presses tiles:** Prediction is (debounced) triggered and suggestions update.
-4. **User clicks 🔍:** Manual prediction request is sent.
-5. **Recording stops:** Transcript and suggestions reset; audio playback controls appear.
-
-
----
