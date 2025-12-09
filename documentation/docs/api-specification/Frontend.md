@@ -1,4 +1,4 @@
-# AudioTranscription.tsx 📻
+# AudioTranscription.tsx 
 
 The `AudioTranscription.tsx` file implements a **React component** for real-time audio transcription and tile prediction, using the browser's microphone, the [MediaRecorder API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder), and a backend via [Socket.io](https://socket.io/).
 
