@@ -38,10 +38,6 @@ The Audio Transcription Server enables real-time speech-to-text and context-awar
 
 # API Endpoints
 
-Below are all available API endpoints, their usage, input/output details, and example requests.
-
----
-
 ## Next Tile Prediction (Local LLM + Vector)
 
 ### `/api/nextTilePred` (POST)
