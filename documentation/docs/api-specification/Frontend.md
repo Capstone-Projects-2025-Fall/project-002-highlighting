@@ -99,5 +99,4 @@ Here are the most relevant internal methods in the component:
 - **Debounced by Tile Clicks:** When the user clicks tiles, a prediction is made after 1.5 seconds of inactivity, so rapid clicks don't spam the API.
 - **Manual:** User can press the 🔍 button to force a prediction.
 
----
 
