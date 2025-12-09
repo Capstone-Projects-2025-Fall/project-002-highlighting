@@ -4,28 +4,6 @@ The `AudioTranscription.tsx` file implements a **React component** for real-time
 
 This component is ideal for applications that require speech-to-text capabilities with intelligent suggestions (tiles) based on both spoken words and tile interactions—such as communication boards or accessible UIs for AAC (Augmentative and Alternative Communication).
 
----
-
-## Component Purpose
-
-- **Records audio** from the user via the browser.
-- Sends audio chunks to a local transcription server via WebSockets.
-- Receives live transcription results and displays them.
-- Predicts and displays "next tiles" (suggested actions or words) based on the transcript and tile interactions.
-- Provides UI controls for starting/stopping recording, audio playback, and fetching suggestions.
-
----
-
-## Key Features & Data Flow
-
-- **Live audio recording** and real-time transcription.
-- **Tile prediction** via a backend API endpoint.
-- **Periodic and debounced prediction triggers** (every 15 seconds and on user tile clicks).
-- **User interface** for controlling recording, viewing transcriptions, and exploring predictions.
-- **Playback controls** for recorded audio.
-
----
-
 ## Dependencies - Socket.io
 
 - `socket.io-client` for WebSocket communication.
@@ -42,7 +20,6 @@ This component is ideal for applications that require speech-to-text capabilitie
 - Client emits: `audio-chunk` (binary)
 - Server responds: `transcript` (string)
 
----
 
 ## Component Structure
 
@@ -62,25 +39,8 @@ This component is ideal for applications that require speech-to-text capabilitie
 | ...                 | ...                        | Various refs for timers, intervals, handlers    |
 
 
----
-
-## UI Controls and Layout
-
-- **Start/Stop** button toggles audio recording and prediction.
-- **Transcript area** shows the latest transcription.
-- **Tile prediction** section with:
-  - Search (🔍) button to manually fetch suggestions.
-  - List of suggested tiles (or "No suggestions yet").
-- **Audio playback** controls (if a recording exists):
-  - Play/Pause button.
-  - Progress bar with current/total time.
-
----
-
 
 # Main Functions & Their Roles
-
-Here are the most relevant internal methods in the component:
 
 | Function                       | Purpose                                                                                     | Usage Context               |
 |--------------------------------|--------------------------------------------------------------------------------------------|-----------------------------|
@@ -91,12 +51,5 @@ Here are the most relevant internal methods in the component:
 | `togglePlayback()`             | Plays or pauses recorded audio                                                             | On play/pause button        |
 | `handleTimeUpdate()`           | Updates progress bar as audio plays                                                        | On audio playback           |
 
----
-
-### Special Logic: Prediction Triggers
-
-- **Periodic:** Every 15 seconds during recording, if transcript or tiles have content, prediction is called.
-- **Debounced by Tile Clicks:** When the user clicks tiles, a prediction is made after 1.5 seconds of inactivity, so rapid clicks don't spam the API.
-- **Manual:** User can press the 🔍 button to force a prediction.
 
 
