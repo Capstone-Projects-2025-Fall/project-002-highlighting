@@ -1,4 +1,5 @@
-# AudioTranscription.tsx 
+# Frontend API
+## AudioTranscription.tsx 
 
 The `AudioTranscription.tsx` file implements a **React component** for real-time audio transcription and tile prediction, using the browser's microphone, the [MediaRecorder API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder), and a backend via [Socket.io](https://socket.io/).
 
@@ -33,7 +34,7 @@ This component is ideal for applications that require speech-to-text capabilitie
 | audioProgress       | number                     | Audio playback progress (0–100%)                |
 | isPlaying           | boolean                    | If audio is currently playing                   |
 | predictedTiles      | string[]                   | Tile suggestions from backend                   |
-| utteredTiles        | Array<{ text: string } >   | Tiles "pressed" by the user                     |
+| utteredTiles        | `Array<{ text: string }>`   | Tiles "pressed" by the user |
 | isActive            | boolean                    | If recording/session is enabled                 |
 | isPredicting        | boolean                    | If a prediction request is in progress          |
 | ...                 | ...                        | Various refs for timers, intervals, handlers    |
