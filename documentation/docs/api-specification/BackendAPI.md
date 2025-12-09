@@ -11,21 +11,6 @@ The Audio Transcription Server enables real-time speech-to-text and context-awar
 - **Local LLM (DistilGPT2)** and **vector search (MiniLM)** for word prediction
 - **Supabase** (optional) for event logging
 
----
-
-
-## Core Features
-
-- **Real-time speech-to-text via Whisper**
-- **Next tile/word prediction using context & pressed tiles**
-- **Vector search for semantic matching**
-- **LLM prompt-based filtering**
-- **Supabase logging**
-- **Process management and temp file cleanup**
-- **Graceful shutdown when no clients are connected**
-
----
-
 ## Environment Variables
 
 | Variable                     | Description                                 | Required? | Example                             |
@@ -33,8 +18,6 @@ The Audio Transcription Server enables real-time speech-to-text and context-awar
 | `SUPABASE_URL`               | Supabase project REST API URL               | Optional  | `https://xyz.supabase.co`           |
 | `SUPABASE_KEY`               | Supabase API Key                            | Optional  | `service-role-key`                  |
 | `SUPABASE_LOG_TABLE`         | Supabase table for logging events           | Optional  | `transcript_highlights`             |
-
----
 
 # API Endpoints
 
@@ -78,8 +61,6 @@ curl -X POST http://localhost:5000/api/nextTilePred \
 }
 ```
 
----
-
 ### API Block: Next Tile Prediction (POST)
 
 ```api
@@ -116,8 +97,6 @@ curl -X POST http://localhost:5000/api/nextTilePred \
     }
 }
 ```
-
----
 
 ## Next Tile Prediction (Local LLM, Customizable TopN)
 
@@ -161,8 +140,6 @@ curl -X POST http://localhost:5000/api/nextTilePredLocal \
 }
 ```
 
----
-
 ### API Block: Next Tile Prediction Local (POST)
 
 ```api
@@ -200,8 +177,6 @@ curl -X POST http://localhost:5000/api/nextTilePredLocal \
 }
 ```
 
----
-
 # WebSocket (Real-time) Audio Transcription
 
 Clients can connect to the server via Socket.io and stream audio in real time. The server transcribes audio and emits results back.
@@ -231,24 +206,6 @@ socket.on("transcript", (text) => {
   console.log("Transcribed:", text);
 });
 ```
-
----
-
-# Core Functions
-
-Here are the main utility and processing functions provided by the server, along with their descriptions:
-
-| Function                      | Purpose                                                      |
-|-------------------------------|--------------------------------------------------------------|
-| `findRelevantWords`           | Matches context text with potential relevant words            |
-| `calculateRMSEnergy`          | Computes RMS (energy) of audio samples                       |
-| `wavToFloat32Array`           | Converts WAV buffer to normalized Float32Array               |
-| `validateTranscription`       | Checks transcription for validity and hallucinations         |
-| `createWavFile`               | Constructs a WAV file from PCM data                          |
-| `calculateSimilarity`         | Word-overlap similarity of two texts                         |
-| `cleanTranscription`          | Removes non-speech markers from transcription                |
-
----
 
 ## Example: Finding Relevant Words
 
