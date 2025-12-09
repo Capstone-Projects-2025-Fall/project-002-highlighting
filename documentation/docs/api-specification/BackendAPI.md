@@ -1,8 +1,4 @@
-# Audio Transcription Server Documentation
-
-This documentation explains the architecture, endpoints, data flow, and core logic of the `server.mjs` file, which implements a Node.js server for real-time audio transcription and intelligent tile/word prediction using both local Whisper and LLM models.
-
----
+# Audio Transcription Server 
 
 ## Overview
 
@@ -17,36 +13,6 @@ The Audio Transcription Server enables real-time speech-to-text and context-awar
 
 ---
 
-## System Architecture
-
-The server handles both HTTP and WebSocket traffic, processes audio streams, and exposes API endpoints for prediction and transcription.
-
-```mermaid
-flowchart TD
-    subgraph Client Side
-        A[Web App / Client]
-        A -- Sends audio chunks --> B[Socket.io Server]
-    end
-
-    subgraph Server Side
-        B -- Streams audio --> C[FFmpeg Process]
-        C -- PCM audio --> D[Audio Buffer]
-        D -- Triggers transcription --> E[Whisper Model]
-        E -- Result --> F[Transcription Output]
-        F -- Prediction API Request --> G[LLM + Vector Search]
-        G -- Predicted tiles --> F
-        F -- Emits --> A
-        F -- Optionally logs --> H[Supabase]
-    end
-
-    subgraph REST API
-        A -- Prediction/Transcription requests --> I[Express API Endpoints]
-        I -- Call --> G
-        I -- Respond with prediction --> A
-    end
-```
-
----
 
 ## Core Features
 
@@ -349,20 +315,5 @@ This ensures that first requests are fast and responsive.
 - **Internal errors**: HTTP 500 with details.
 - **Audio issues**: The server discards or retries problematic buffers.
 
----
-
-# Security & Best Practices
-
-- Never expose Supabase `service_role_key` in client code.
-- Regularly clean up temporary files.
-- Always run the server behind a firewall in production.
-
----
-
-# Conclusion
-
-This server is a robust solution for real-time audio transcription and context-aware prediction using only local, open-source models and minimal dependencies, with optional event logging. Its REST API and real-time WebSocket interface make it suitable for interactive, assistive, and multimodal applications.
-
-If you have further questions or need more integration examples, please refer to the code or contact the maintainer.
 
 ---

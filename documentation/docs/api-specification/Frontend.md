@@ -26,10 +26,21 @@ This component is ideal for applications that require speech-to-text capabilitie
 
 ---
 
-## Dependencies
+## Dependencies - Socket.io
 
 - `socket.io-client` for WebSocket communication.
 - Several state/context providers (e.g., `useTranscript`, `usePredictedTiles`, `useUtteredTiles`, `useRecordingControl`)—assumed to be from the app's custom state management system.
+
+**Purpose:** Sends audio chunks to the backend, receives live transcription.
+
+- **Client emits:** `audio-chunk`
+- **Server emits:** `transcript` (with transcribed text)
+
+> **No REST endpoint, handled via Socket.io events.**
+
+**Example flow:**
+- Client emits: `audio-chunk` (binary)
+- Server responds: `transcript` (string)
 
 ---
 
@@ -50,23 +61,6 @@ This component is ideal for applications that require speech-to-text capabilitie
 | isPredicting        | boolean                    | If a prediction request is in progress          |
 | ...                 | ...                        | Various refs for timers, intervals, handlers    |
 
----
-
-## Core Workflow
-
-```mermaid
-flowchart TD
-    A[User clicks Start] --> B[MediaRecorder starts recording]
-    B --> C[Audio chunks sent to server via Socket.io]
-    C --> D[Server responds with transcription]
-    D --> E[Transcript state is updated]
-    E --> F[Prediction triggered by interval/tile clicks]
-    F --> G[Prediction API called with transcript/tiles]
-    G --> H[Predicted tiles displayed as suggestions]
-    B --> I[User clicks Stop]
-    I --> J[Recording stops, transcript/tiles cleared]
-    B --> K[Audio playback controls available after recording]
-```
 
 ---
 
@@ -83,118 +77,6 @@ flowchart TD
 
 ---
 
-# API Endpoints
-
-The component interacts with two backend endpoints:
-
----
-
-## 1. Socket.io: Real-Time Transcription
-
-**Purpose:** Sends audio chunks to the backend, receives live transcription.
-
-- **Client emits:** `audio-chunk`
-- **Server emits:** `transcript` (with transcribed text)
-
-> **No REST endpoint, handled via Socket.io events.**
-
-**Example flow:**
-- Client emits: `audio-chunk` (binary)
-- Server responds: `transcript` (string)
-
----
-
-## 2. POST `/api/nextTilePred` — Predict Next Tiles
-
-### Predict Next Tiles (POST)
-
-#### Description
-
-Predicts the most likely next tiles based on the current transcript and/or tiles the user has just pressed. Used for intelligent next-word or next-action suggestions.
-
-#### Request
-
-- **Method:** `POST`
-- **URL:** `http://localhost:5000/api/nextTilePred`
-- **Headers:** `Content-Type: application/json`
-- **Body:**
-  - `transcript`: (string, optional) Current transcript from audio
-  - `pressedTiles`: (array of string, optional) Recent pressed tile texts
-
-#### Response
-
-- **200 OK** (success):
-  ```json
-  {
-    "status": "success",
-    "predictedTiles": ["Hello", "How are you", "Goodbye"]
-  }
-  ```
-- **Error JSON**:
-  ```json
-  {
-    "status": "error",
-    "error": "Error message"
-  }
-  ```
-
----
-
-### API Block: Predict Next Tiles
-
-#### Predict Next Tiles - POST
-
-```api
-{
-  "title": "Predict Next Tiles",
-  "description": "Suggests next possible tiles based on the transcript and/or pressed tiles.",
-  "method": "POST",
-  "baseUrl": "http://localhost:5000",
-  "endpoint": "/api/nextTilePred",
-  "headers": [
-    {
-      "key": "Content-Type",
-      "value": "application/json",
-      "required": true
-    }
-  ],
-  "queryParams": [],
-  "pathParams": [],
-  "bodyType": "json",
-  "requestBody": "{\n  \"transcript\": \"I want to go\",\n  \"pressedTiles\": [\"I\", \"want\", \"to\", \"go\"]\n}",
-  "responses": {
-    "200": {
-      "description": "Prediction results",
-      "body": "{\n  \"status\": \"success\",\n  \"predictedTiles\": [\"to the park\", \"home\", \"outside\"]\n}"
-    },
-    "400": {
-      "description": "Bad Request",
-      "body": "{\n  \"status\": \"error\",\n  \"error\": \"Missing required input\"\n}"
-    }
-  }
-}
-```
-
----
-
-### Usage Example
-
-**Request:**
-```bash
-curl -X POST http://localhost:5000/api/nextTilePred \
-  -H "Content-Type: application/json" \
-  -d '{"transcript": "Can you help", "pressedTiles": ["Can", "you", "help"]}'
-```
-
-**Response:**
-```json
-{
-  "status": "success",
-  "predictedTiles": ["me", "with this", "please"]
-}
-```
-
----
 
 # Main Functions & Their Roles
 
@@ -227,34 +109,5 @@ Here are the most relevant internal methods in the component:
 4. **User clicks 🔍:** Manual prediction request is sent.
 5. **Recording stops:** Transcript and suggestions reset; audio playback controls appear.
 
----
-
-# Error Handling & User Experience
-
-- All prediction API calls are **throttled** to prevent overload (min 500ms between requests).
-- Failures in prediction API do **not clear existing suggestions**—previous results stay visible for smoother UX.
-- Socket and recorder resources are **cleaned up** on component unmount.
-- UI shows "No suggestions yet" if there are no prediction results.
 
 ---
-
-# Card: Key Takeaways
-
-```card
-{
-  "title": "Key Takeaways",
-  "content": "AudioTranscription offers real-time voice transcription and intelligent tile suggestions, combining live audio, WebSockets, and REST APIs for a robust, accessible user experience."
-}
-```
-
----
-
-# Summary
-
-- **`AudioTranscription.tsx`** provides a comprehensive UI and logic for live audio transcription and predictive suggestions.
-- Uses **Socket.io** for real-time transcription and a **REST API** for predictive tile suggestions.
-- Designed for responsive, accessible, and interactive communication applications.
-
----
-
-**For further integration, ensure your backend supports the Socket.io and `/api/nextTilePred` endpoints as documented above.**
